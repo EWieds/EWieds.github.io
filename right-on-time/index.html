@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+    <head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right On Time | Carzzy Apps</title>
+
+    <meta name="description" content="Test your timing in this stopwatch game by stopping the timer exactly on the second and building a streak.">
+    <meta name="keywords" content="stopwatch game, timing game, precision timer, Carzzy Apps">
+    <meta name="author" content="Avis, DeBus">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="color-scheme" content="dark">
+    <meta name="application-name" content="Carzzy Apps">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Carzzy Apps">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Right On Time | Carzzy Apps">
+    <meta property="og:description" content="Test your timing in this stopwatch game by stopping the timer exactly on the second and building a streak.">
+    <meta property="og:url" content="https://www.carzzyapps.com/right-on-time/">
+    <meta property="og:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta property="og:image:alt" content="Carzzy Apps logo">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Right On Time | Carzzy Apps">
+    <meta name="twitter:description" content="Test your timing in this stopwatch game by stopping the timer exactly on the second and building a streak.">
+    <meta name="twitter:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta name="twitter:image:alt" content="Carzzy Apps logo">
+    <link rel="canonical" href="https://www.carzzyapps.com/right-on-time/">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+		<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VD38580YSL"></script>	
+	<script>
+  		window.dataLayer = window.dataLayer || [];
+  		function gtag(){dataLayer.push(arguments);}
+  		gtag('js', new Date());
+  		gtag('config', 'G-VD38580YSL');
+	</script>
+
+        <style>
+
+            body {
+                background: #0a0a0a;
+                color: #00d1b2;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                text-align: center;
+                user-select: none;
+            }
+
+            #stats {
+                position: absolute;
+                top: 90px;
+                right: 20px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            .best-scores {
+                font-size: 14px;
+                color: #ffd700;
+            }
+
+            h2 {
+                font-size: 40px;
+                margin-top: 160px;
+                margin-bottom: 5px;
+            }
+
+            #timer {
+                font-size: 115px;
+                margin-bottom: 0px;
+            }
+
+            #message {
+                color: #ffd700;
+                font-size: 20px;
+            }
+
+            button {
+                color: white;
+                border: solid white 5px;
+                font-size: 45px;
+                width: 175px;
+                padding: 10px;
+                border-radius: 50px;
+                cursor: pointer;
+                margin: 15px 20px;
+                transition: 0.15s;
+            }
+
+            button:hover {
+                transform: scale(1.05);
+                box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.5);
+            }
+
+            button:active {
+                transform: scale(0.98);
+            }
+
+            #start-stop {
+                background: #00a500;
+            }
+
+            #reset {
+                background: #0000ff;
+            }
+
+        </style>
+
+</head>
+
+    <body>
+
+		<script src="/nav-bar.js"></script>
+
+        <div id="stats">
+            Session Score: <span id="session-score"></span>
+            <div class="best-scores">All Time Score: <span id="all-time-score"></span></div>
+            Streak: <span id="streak"></span>
+            <div class="best-scores">Highest Streak: <span id="highest-streak"></span></div>
+        </div>
+
+        <h2>Right On Time</h2>
+        <p style="color: #ffd700">
+            Try to stop the stopwatch exactly on the second (1.00s, 2.00s, etc.). You can wait as long as you want before you stop it.<br>
+            Try to build a streak!
+        </p>
+
+        <div id="timer">
+            <span id="minutes"></span><span id="seconds">00</span>.<span id="centiseconds">00</span>
+        </div>
+
+        <p id="message">&nbsp;</p>
+
+        <button id="start-stop" onmousedown="doTimer()">Start</button>
+        <button id="reset" onmousedown="resetTimer()">Reset</button>
+
+        <script>
+
+            let s = 0;
+            let cs = 0;
+            let m = 0;
+            let score = 0;
+            let ATScore = Number(localStorage.getItem('all-time-score')) || 0;
+            let currStreak = 0;
+            let highestStreak = Number(localStorage.getItem('highest-streak')) || 0;
+            let stopMessage;
+
+            const sessionScore = document.getElementById('session-score');
+            const allTimeScore = document.getElementById('all-time-score');
+            const streak = document.getElementById('streak');
+            const bestStreak = document.getElementById('highest-streak');
+
+            sessionScore.innerHTML = score;
+            allTimeScore.innerHTML = ATScore;
+            streak.innerHTML = currStreak;
+            bestStreak.innerHTML = highestStreak;
+
+            const minutes = document.getElementById('minutes');
+            const seconds = document.getElementById('seconds');
+            const centiseconds = document.getElementById('centiseconds');
+            const message = document.getElementById('message');
+
+            const startStop = document.getElementById('start-stop');
+            const reset = document.getElementById('reset');
+
+            let timer = null;
+
+            function doTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                    startStop.style.backgroundColor = "#00a500"
+                    startStop.innerText = "Start";
+
+                    if (s > 0 && cs === 0) {
+                        stopMessage = "You did it! Continue the streak!";
+                        message.style.color = '#0f0';
+
+                        score += 1;
+                        ATScore += 1;
+                        currStreak += 1;
+                        sessionScore.innerHTML = score;
+                        allTimeScore.innerHTML = ATScore;
+                        streak.innerHTML = currStreak;
+                        localStorage.setItem('all-time-score', ATScore);
+                        if (currStreak > highestStreak) {
+                            highestStreak += 1;
+                            bestStreak.innerHTML = highestStreak;
+                            localStorage.setItem('highest-streak', currStreak);
+                        }
+
+                    } else if (cs >= 95 || (s > 0 && cs <= 5)) {
+                        stopMessage = "So Close! Try again.";
+                        message.style.color = '#ffd700';
+                        currStreak = 0;
+                        streak.innerHTML = currStreak;
+                    } else if (cs >= 90 || (s > 0 && cs <= 10)) {
+                        stopMessage = "Off by just a bit! Try again.";
+                        message.style.color = '#ffd700';
+                        currStreak = 0;
+                        streak.innerHTML = currStreak;
+                    } else {
+                        stopMessage = "You can do better than that. Try again.";
+                        message.style.color = '#f00';
+                        currStreak = 0;
+                        streak.innerHTML = currStreak;
+                    }
+
+                    message.innerHTML = stopMessage;
+
+                } else {
+                    timer = setInterval(() => {
+                        cs += 1;
+                        if (cs > 99) {
+                            s +=1;
+                            cs = 0;
+                        }
+                        seconds.innerHTML = s;
+                        if (cs < 10) {
+                            centiseconds.innerHTML = "0" + cs;
+                        } else {
+                            centiseconds.innerHTML = cs;
+                        }
+                        if (s > 59) {
+                            m += 1;
+                            s = 0;
+                            cs = 0;
+                            minutes.innerHTML = m + ":";
+                            seconds.innerHTML = "0" + s;
+                            centiseconds.innerHTML = cs;
+                        }
+                        if (s < 10) {
+                            seconds.innerHTML = "0" + s;
+                        } else {
+                            seconds.innerHTML = s;
+                        }
+                    }, 10)
+
+                    startStop.style.backgroundColor = "#ff0000";
+                    startStop.style.color = "#fff";
+                    startStop.innerText = "Stop";
+                    message.innerHTML = "&nbsp;";
+                }
+            }
+
+            function resetTimer() {
+                clearInterval(timer);
+                timer = null;
+                s = 0;
+                cs = 0;
+                minutes.innerHTML = "";
+                seconds.innerHTML = "00";
+                centiseconds.innerHTML = "00";
+                startStop.style.backgroundColor = "#00a500"
+                startStop.innerText = "Start";
+                message.innerHTML = "&nbsp;";
+            }
+
+        </script>
+
+    </body>
+<script data-goatcounter="https://carzzyapps.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+</html>

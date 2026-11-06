@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Email | Carzzy Apps</title>
+
+    <meta name="description" content="Verify your email address to secure your Carzzy Apps account.">
+    <meta name="keywords" content="Carzzy Apps, verify email, account security">
+    <meta name="author" content="Avis, DeBus">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="color-scheme" content="dark">
+    <meta name="application-name" content="Carzzy Apps">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Carzzy Apps">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Verify Email | Carzzy Apps">
+    <meta property="og:description" content="Verify your email address to secure your Carzzy Apps account.">
+    <meta property="og:url" content="https://www.carzzyapps.com/auth/verify-email/">
+    <meta property="og:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta property="og:image:alt" content="Carzzy Apps logo">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Verify Email | Carzzy Apps">
+    <meta name="twitter:description" content="Verify your email address to secure your Carzzy Apps account.">
+    <meta name="twitter:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta name="twitter:image:alt" content="Carzzy Apps logo">
+    <link rel="canonical" href="https://www.carzzyapps.com/auth/verify-email/">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #ccc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background-color: #1a1a1a;
+      padding: 2.5rem;
+      border: #00d1b2 solid 1px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 {
+      color: #00d1b2;
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+    }
+    p {
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    button {
+      background-color: #00d1b2;
+      color: #0a0a0a;
+      border: none;
+      padding: 0.8rem 2rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s ease;
+    }
+    button:hover:not(:disabled) {
+      background-color: #00b59c;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  
+  <script src="/nav-bar.js"></script>
+  
+  <div class="card">
+    <h2>Verify Your Email</h2>
+    <p>We need to verify your email address to secure your account on Carzzy Apps.</p>
+    <button id="sendBtn" disabled>Send Verification Email</button>
+    <div id="statusMsg" class="status"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgu1uiobgixRWcvIja6bI1l6M2KQ36FL4",
+      authDomain: "carzzy-apps.firebaseapp.com",
+      projectId: "carzzy-apps"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const actionCodeSettings = {
+      url: sessionStorage.getItem("prevPage"), 
+      handleCodeInApp: false 
+    };
+    const sendBtn = document.getElementById('sendBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    
+    let cooldownInterval = null;
+    const COOLDOWN_DURATION = 60000; // 60 seconds in milliseconds
+
+    // Helper to translate raw Firebase auth errors to readable user messages
+    function getFriendlyAuthErrorMessage(error) {
+      const code = error.code || error;
+
+      switch (code) {
+        case 'auth/too-many-requests':
+          return "You've made too many requests. Please wait a minute and try again.";
+        case 'auth/user-disabled':
+          return "This account has been disabled. Please contact support for help.";
+        case 'auth/user-token-expired':
+          return "Your session has expired. Please sign out and log back in to try again.";
+        case 'auth/network-request-failed':
+          return "A network error occurred. Please check your internet connection.";
+        case 'auth/invalid-email':
+          return "The associated email address is invalid.";
+        case 'auth/unauthorized-domain':
+          return "This domain is not authorized. Please configure your authorized domains in the Firebase Console.";
+        default:
+          return error.message || "An unexpected error occurred. Please try again later.";
+      }
+    }
+
+    // Function to run the button timer
+    function startCooldown(remainingSeconds) {
+      clearInterval(cooldownInterval);
+      sendBtn.disabled = true;
+
+      const updateTimer = () => {
+        if (remainingSeconds <= 0) {
+          clearInterval(cooldownInterval);
+          sendBtn.disabled = false;
+          sendBtn.textContent = "Resend Verification Email";
+          return;
+        }
+        sendBtn.textContent = `Resend in ${remainingSeconds}s`;
+        remainingSeconds--;
+      };
+
+      updateTimer();
+      cooldownInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Function to check and resume previous cooldown from localStorage
+    function checkCooldown(uid) {
+      const lastSent = localStorage.getItem(`lastSentVerification_${uid}`);
+      if (lastSent) {
+        const timePassed = Date.now() - parseInt(lastSent, 10);
+        if (timePassed < COOLDOWN_DURATION) {
+          const remainingSeconds = Math.ceil((COOLDOWN_DURATION - timePassed) / 1000);
+          startCooldown(remainingSeconds);
+        }
+      }
+    }
+
+    // Monitor Auth State and Verification Status
+    onAuthStateChanged(auth, (user) => {
+      // Always clear running intervals if auth state changes
+      clearInterval(cooldownInterval);
+
+      if (user) {
+        if (user.emailVerified) {
+          statusMsg.style.color = '#00d1b2';
+          statusMsg.textContent = "Your email is already verified!";
+          sendBtn.textContent = "Verified ✓";
+          sendBtn.disabled = true;
+        } else {
+          statusMsg.style.color = '#ccc';
+          statusMsg.textContent = "Your email is not verified yet.";
+          sendBtn.textContent = "Send Verification Email";
+          sendBtn.disabled = false;
+          
+          // Resume cooldown if the page was refreshed during a wait
+          checkCooldown(user.uid);
+        }
+      } else {
+        statusMsg.style.color = '#f00';
+        statusMsg.textContent = "You must be logged in to verify your email.";
+        sendBtn.disabled = true;
+      }
+    });
+
+    sendBtn.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        sendBtn.disabled = true;
+        statusMsg.style.color = '#ccc';
+        statusMsg.textContent = "Sending verification link...";
+
+        await sendEmailVerification(user, actionCodeSettings);
+
+        // 1. Save timestamp to localStorage
+        localStorage.setItem(`lastSentVerification_${user.uid}`, Date.now().toString());
+
+        statusMsg.style.color = '#00d1b2';
+        statusMsg.innerHTML = "Verification email sent! Please check your inbox.<br><span style='color: #ccc'>Didn't receive the email? Check your spam folder or resend the email.</span>";
+        
+        // 2. Start the client-side 60s cooldown countdown
+        startCooldown(60);
+      } catch (error) {
+        statusMsg.style.color = '#f00';
+        // 3. Display user-friendly translated error message
+        statusMsg.textContent = getFriendlyAuthErrorMessage(error);
+        sendBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

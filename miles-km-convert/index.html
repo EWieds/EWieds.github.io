@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+    <head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miles to Kilometers Converter | Carzzy Apps</title>
+
+    <meta name="description" content="Convert distances between miles and kilometers with this simple online converter.">
+    <meta name="keywords" content="miles to kilometers, km to miles, distance converter, Carzzy Apps">
+    <meta name="author" content="Avis, DeBus">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="color-scheme" content="dark">
+    <meta name="application-name" content="Carzzy Apps">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Carzzy Apps">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Miles to Kilometers Converter | Carzzy Apps">
+    <meta property="og:description" content="Convert distances between miles and kilometers with this simple online converter.">
+    <meta property="og:url" content="https://www.carzzyapps.com/miles-km-convert/">
+    <meta property="og:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta property="og:image:alt" content="Carzzy Apps logo">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Miles to Kilometers Converter | Carzzy Apps">
+    <meta name="twitter:description" content="Convert distances between miles and kilometers with this simple online converter.">
+    <meta name="twitter:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta name="twitter:image:alt" content="Carzzy Apps logo">
+    <link rel="canonical" href="https://www.carzzyapps.com/miles-km-convert/">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+        <!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VD38580YSL"></script>	
+	<script>
+  		window.dataLayer = window.dataLayer || [];
+  		function gtag(){dataLayer.push(arguments);}
+  		gtag('js', new Date());
+  		gtag('config', 'G-VD38580YSL');
+	</script>
+
+        <style>
+
+            body {
+                background: #0a0a0a;
+                color: #00d1b2;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                text-align: center;
+            }
+
+            h2 {
+                margin-top: 100px;
+                font-size: 32px;
+            }
+
+            h3 {
+                font-size: 24px;
+            }
+
+            .convert {
+                display: inline-block;
+                margin: 10px 50px 30px;
+            }
+
+            input {
+                width: 245px;
+                height: 40px;
+                font-size: 20px;
+                padding-left: 5px;
+                border: #00d1b2 5px outset;
+                box-sizing: border-box;
+            }
+
+            .convert-btn {
+                display: block;
+                background: linear-gradient(135deg,rgb(0 209 178) 0%, rgb(0 130 144) 100%);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                margin: 10px;
+                width: 245px;
+                font-size: 18px;
+                cursor: pointer;
+                transition: 0.3s;
+                box-sizing: border-box;
+            }
+
+            .convert-btn:hover {
+                transform: scale(1.05);
+            }
+
+            .convert-btn:active {
+                transform: scale(1);
+                transition: 0.15s;
+            }
+
+            .result {
+                margin-top: 15px;
+                font-size: 20px;
+            }
+
+            footer {
+                margin-top: 10px;
+                margin-bottom: 30px;
+                font-size: 12.8px;
+                color: #444;
+            }
+
+        </style>
+
+</head>
+
+    <body>
+
+        <script src="/nav-bar.js"></script>
+
+        <h2>Miles ↔ Kilometers Converter</h2>
+
+            <div class="convert">
+                <h3>Miles to Kilometers</h3>
+                <input type="number" id="miles" placeholder="Miles">
+                <button class="convert-btn" id="mi-to-km" onclick="convertMi()">CONVERT</button>
+                <div class="result">
+                    <b>Result:</b> <span id="km-result"><br>&nbsp;</span>
+                </div>
+            </div>
+
+            <div class="convert">
+                <h3>Kilometers to Miles</h3>
+                <input type="number" id="km" placeholder="Kilometers">
+                <button class="convert-btn" id="km-to-mi" onclick="convertKm()">CONVERT</button>
+                <div class="result">
+                    <b>Result:</b> <span id="mi-result"><br>&nbsp;</span>
+                </div>
+            </div>
+
+
+        <footer>Avis & DeBus v1.0.0 PRO</footer>
+
+        <script>
+
+            const milesKm = 1.60934;
+            const milesBtn = document.getElementById('miles-to-km');
+            const kmBtn = document.getElementById('km-to-mi');
+            const miInput = document.getElementById('miles');
+            const kmInput = document.getElementById('km');
+            let result;
+
+            function convertMi() {
+                result = miInput.value * milesKm;
+                document.getElementById('km-result').innerHTML = "<br>" + result + " Km";
+            }
+
+            function convertKm() {
+                result = kmInput.value / milesKm;
+                document.getElementById('mi-result').innerHTML = "<br>" + result + " Mi";
+            }
+
+        </script>
+
+</body>
+	<script data-goatcounter="https://carzzyapps.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+</html>

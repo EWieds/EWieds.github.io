@@ -1,0 +1,82 @@
+{
+  "ratioNote": "Every game is tuned to the same scale: skilled play earns about 100 Lazer Points (LP) per minute, so a hard game and an easy game pay the same for the same effort.",
+  "categories": [
+    {
+      "id": "tycoon",
+      "name": "Tycoon"
+    },
+    {
+      "id": "time",
+      "name": "Time management"
+    },
+    {
+      "id": "3d",
+      "name": "3D"
+    },
+    {
+      "id": "strategy",
+      "name": "Strategy"
+    },
+    {
+      "id": "puzzle",
+      "name": "Puzzle"
+    },
+    {
+      "id": "brain",
+      "name": "Brain"
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade"
+    },
+    {
+      "id": "idle",
+      "name": "Idle"
+    },
+    {
+      "id": "learn",
+      "name": "Learn a skill"
+    }
+  ],
+  "games": [
+    {
+      "id": "crema",
+      "name": "Crema Rush",
+      "version": "3.1",
+      "path": "/arcade/crema-rush/",
+      "hook": "Run the counter, juggle orders and machines, then grow one coffee shop into a caf\u00e9 empire with bakeries, juice bars and ice cream.",
+      "categories": [
+        "tycoon",
+        "time",
+        "3d",
+        "strategy"
+      ],
+      "ratio": 0.04,
+      "scoreLabel": "shift score",
+      "accent": [
+        "#ff9a3d",
+        "#ff3d7f"
+      ],
+      "thumb": "/arcade/img/crema-rush.jpg",
+      "released": "2026-11-04"
+    },
+    {
+      "id": "harbor",
+      "name": "Harbor Rush",
+      "version": "3.0",
+      "path": "/arcade/harbor-rush/",
+      "hook": "Swing a real crane over a stacked ship. Dig out exactly what each truck wants and land every box dead center, through wind, frozen reefers and a night shift with hazmat.",
+      "categories": ["arcade", "puzzle", "time"],
+      "ratio": 0.04,
+      "scoreLabel": "level score",
+      "accent": [
+        "#ff9a1f",
+        "#2f8fd0"
+      ],
+      "thumb": "/arcade/img/harbor-rush.jpg",
+      "released": "2026-11-12",
+      "earlyAccess": true,
+      "eaBoost": 1.5
+    }
+  ]
+}

@@ -1,0 +1,360 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isCremaRushAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.enabled == true;
+    }
+
+    match /adminUsers/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow list, create, update, delete: if false;
+    }
+
+    match /usernames/{username} {
+      function validUsernameClaim(data) {
+        return data.keys().hasAll(['uid', 'guest', 'username'])
+          && data.keys().hasOnly(['uid', 'guest', 'username'])
+          && data.uid == request.auth.uid
+          && data.guest is bool
+          && data.username is string
+          && data.username.matches('^[^/]{1,30}$')
+          && username.matches('^[^/]{1,30}$')
+          && (data.guest
+            ? request.auth.token.firebase.sign_in_provider == 'anonymous'
+            : request.auth.token.email is string);
+      }
+
+      allow read: if true;
+      allow create: if request.auth != null
+        && validUsernameClaim(request.resource.data);
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && validUsernameClaim(request.resource.data);
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    match /usernameAuthLookup/{username} {
+      allow read, write: if false;
+    }
+
+    match /guestAccounts/{playerId} {
+      allow read, write: if false;
+    }
+
+    function isNumber(value) {
+      return value is int || value is float;
+    }
+
+    function validGameState(state) {
+      return state.keys().hasAll([
+        'v', 'day', 'cash', 'rating', 'lvl', 'mach', 'spd',
+        'cashiers', 'baristas', 'cTrain', 'bTrain', 'locs', 'served', 'earned'
+      ])
+      && state.keys().hasOnly([
+        'v', 'day', 'cash', 'rating', 'lvl', 'mach', 'spd',
+        'cashiers', 'baristas', 'cTrain', 'bTrain', 'locs', 'served', 'earned'
+      ])
+      && state.v == 1
+      && isNumber(state.day)
+      && state.day >= 1
+      && isNumber(state.cash)
+      && isNumber(state.rating)
+      && state.rating >= 1
+      && state.rating <= 5
+      && state.lvl is int
+      && state.lvl >= 1
+      && state.lvl <= 3
+      && state.mach is list
+      && state.mach.size() >= 1
+      && state.mach.size() <= 11
+      && state.mach.hasOnly(['E', 'M', 'D', 'C'])
+      && state.spd is map
+      && state.spd.keys().hasAll(['E', 'M', 'D', 'C'])
+      && state.spd.keys().hasOnly(['E', 'M', 'D', 'C'])
+      && state.spd.E is int
+      && state.spd.E >= 0
+      && state.spd.E <= 3
+      && state.spd.M is int
+      && state.spd.M >= 0
+      && state.spd.M <= 3
+      && state.spd.D is int
+      && state.spd.D >= 0
+      && state.spd.D <= 3
+      && state.spd.C is int
+      && state.spd.C >= 0
+      && state.spd.C <= 3
+      && state.cashiers is int
+      && state.cashiers >= 0
+      && state.cashiers <= 3
+      && state.baristas is int
+      && state.baristas >= 0
+      && state.baristas <= 4
+      && state.cTrain is int
+      && state.cTrain >= 0
+      && state.cTrain <= 3
+      && state.bTrain is int
+      && state.bTrain >= 0
+      && state.bTrain <= 3
+      && state.locs is map
+      && state.locs.keys().hasOnly(['kiosk', 'midtown', 'airport', 'roastery'])
+      && (!('kiosk' in state.locs) || (state.locs.kiosk is int && state.locs.kiosk >= 0 && state.locs.kiosk <= 3))
+      && (!('midtown' in state.locs) || (state.locs.midtown is int && state.locs.midtown >= 0 && state.locs.midtown <= 3))
+      && (!('airport' in state.locs) || (state.locs.airport is int && state.locs.airport >= 0 && state.locs.airport <= 3))
+      && (!('roastery' in state.locs) || (state.locs.roastery is int && state.locs.roastery >= 0 && state.locs.roastery <= 3))
+      && isNumber(state.served)
+      && state.served >= 0
+      && isNumber(state.earned)
+      && state.earned >= 0;
+    }
+
+    function validGameSave(data) {
+      return data.keys().hasAll(['state', 'updatedAt'])
+        && data.keys().hasOnly(['state', 'username', 'gameVersion', 'updatedAt'])
+        && data.state is map
+        && validGameState(data.state)
+        && (!('username' in data)
+          || (data.username is string && data.username.matches('^[^/]{1,30}$')))
+        && (!('gameVersion' in data)
+          || data.gameVersion == 'yes-graphics')
+        && data.updatedAt == request.time;
+    }
+
+    match /cremaTycoonSaves/{playerId} {
+      allow read: if request.auth != null && request.auth.uid == playerId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == playerId
+        && validGameSave(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /cremaRushYesGraphicsSaves/{playerId} {
+      allow read: if request.auth != null && request.auth.uid == playerId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == playerId
+        && request.resource.data.username is string
+        && request.resource.data.username.matches('^[^/]{1,30}$')
+        && request.resource.data.gameVersion == 'yes-graphics'
+        && validGameSave(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /{progressCollection}/{playerId} {
+      function isRushProgressCollection() {
+        return progressCollection == 'cremaRushProgress'
+          || progressCollection == 'cremaRushNoGraphicsProgress';
+      }
+
+      function validRushProgress(data) {
+        return data.keys().hasAll([
+            'best', 'lastScore', 'lastServed', 'shifts', 'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'best', 'lastScore', 'lastServed', 'shifts', 'adminRevision',
+            'username', 'gameVersion', 'updatedAt'
+          ])
+          && (progressCollection != 'cremaRushNoGraphicsProgress'
+            || data.gameVersion == 'no-graphics')
+          && data.best is int
+          && data.best >= 0
+          && data.lastScore is int
+          && data.lastScore >= 0
+          && data.lastServed is int
+          && data.lastServed >= 0
+          && data.shifts is int
+          && data.shifts >= 0
+          && (!('adminRevision' in data)
+            || (data.adminRevision is int && data.adminRevision >= 0))
+          && (!('username' in data)
+            || (data.username is string && data.username.matches('^[^/]{1,30}$')))
+          && (!('gameVersion' in data) || data.gameVersion == 'no-graphics')
+          && data.updatedAt == request.time;
+      }
+
+      allow read: if isRushProgressCollection()
+        && ((request.auth != null && request.auth.uid == playerId)
+          || isCremaRushAdmin());
+      allow create: if isRushProgressCollection()
+        && request.auth != null
+        && request.auth.uid == playerId
+        && validRushProgress(request.resource.data)
+        && (!('adminRevision' in request.resource.data) || request.resource.data.adminRevision == 0);
+      allow update: if isRushProgressCollection()
+        && ((request.auth != null
+          && request.auth.uid == playerId
+          && validRushProgress(request.resource.data)
+          && (('adminRevision' in resource.data
+              && 'adminRevision' in request.resource.data
+              && request.resource.data.adminRevision == resource.data.adminRevision)
+            || (!('adminRevision' in resource.data)
+              && (!('adminRevision' in request.resource.data)
+                || request.resource.data.adminRevision == 0))))
+        || (isCremaRushAdmin()
+          && validRushProgress(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'best', 'adminRevision', 'username', 'updatedAt'
+          ])
+          && request.resource.data.adminRevision
+            == (('adminRevision' in resource.data) ? resource.data.adminRevision : 0) + 1));
+      allow delete: if false;
+    }
+
+    match /cremaRushScoreEvents/{eventId} {
+      function validPlayerScoreEvent(data) {
+        return data.keys().hasAll([
+            'actorType', 'uid', 'username', 'best', 'lastScore',
+            'lastServed', 'shifts', 'savedAt'
+          ])
+          && data.keys().hasOnly([
+            'actorType', 'uid', 'username', 'best', 'lastScore',
+            'lastServed', 'shifts', 'gameVersion', 'savedAt'
+          ])
+          && data.actorType == 'player'
+          && data.uid == request.auth.uid
+          && data.username is string
+          && data.username.matches('^[^/]{1,30}$')
+          && (!('gameVersion' in data) || data.gameVersion == 'no-graphics')
+          && data.best is int
+          && data.best >= 0
+          && data.lastScore is int
+          && data.lastScore >= 0
+          && data.lastServed is int
+          && data.lastServed >= 0
+          && data.shifts is int
+          && data.shifts >= 0
+          && data.savedAt == request.time;
+      }
+
+      function validAdminScoreEvent(data) {
+        return data.keys().hasAll([
+            'actorType', 'uid', 'username', 'previousBest',
+            'newBest', 'changedBy', 'savedAt'
+          ])
+          && data.keys().hasOnly([
+            'actorType', 'uid', 'username', 'previousBest',
+            'newBest', 'changedBy', 'gameVersion', 'savedAt'
+          ])
+          && data.actorType == 'admin'
+          && data.uid is string
+          && data.username is string
+          && data.username.matches('^[^/]{1,30}$')
+          && (!('gameVersion' in data) || data.gameVersion == 'no-graphics')
+          && data.previousBest is int
+          && data.previousBest >= 0
+          && data.newBest is int
+          && data.newBest >= 0
+          && data.changedBy == request.auth.token.email
+          && data.savedAt == request.time;
+      }
+
+      allow read: if isCremaRushAdmin();
+      allow create: if request.auth != null
+        && (validPlayerScoreEvent(request.resource.data)
+          || (isCremaRushAdmin() && validAdminScoreEvent(request.resource.data)));
+      allow update, delete: if false;
+    }
+
+      // ===================== Lazer Arcade =====================
+    function arcadeAccount() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function ownsUsername(name) {
+      return name is string
+        && name.matches('^[^/]{1,30}$')
+        && exists(/databases/$(database)/documents/usernames/$(name.lower()))
+        && get(/databases/$(database)/documents/usernames/$(name.lower())).data.uid == request.auth.uid;
+    }
+
+    function isArcadeAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/arcadeRoles/$(request.auth.uid))
+        && get(/databases/$(database)/documents/arcadeRoles/$(request.auth.uid)).data.role in ['creator', 'admin'];
+    }
+
+    // Staff roles (creator/admin). Public so badges can show; only the deploy workflow writes them.
+    match /arcadeRoles/{uid} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Public leaderboard rows. Each player writes only their own row; one write can add at most 20,000 LP.
+    match /arcadePlayers/{uid} {
+      function validPlayer(data) {
+        return data.keys().hasAll(['username', 'lp', 'games', 'updatedAt'])
+          && data.keys().hasOnly(['username', 'lp', 'games', 'prog', 'updatedAt'])
+          && (!('prog' in data) || data.prog is map)
+          && ownsUsername(data.username)
+          && data.lp is int
+          && data.lp >= 0
+          && data.games is map
+          && data.games.size() <= 60
+          && data.updatedAt == request.time;
+      }
+      allow read: if true;
+      allow create: if arcadeAccount() && request.auth.uid == uid
+        && validPlayer(request.resource.data)
+        && request.resource.data.lp <= 20000;
+      allow update: if arcadeAccount() && request.auth.uid == uid
+        && validPlayer(request.resource.data)
+        && request.resource.data.lp >= resource.data.lp
+        && request.resource.data.lp <= resource.data.lp + 20000;
+      // Staff can correct or remove rows (cheating, offensive names).
+      allow update: if isArcadeAdmin()
+        && request.resource.data.keys().hasOnly(['username', 'lp', 'games', 'prog', 'updatedAt'])
+        && request.resource.data.lp is int && request.resource.data.lp >= 0;
+      allow delete: if isArcadeAdmin();
+    }
+
+    // Per-account game saves, private to the player.
+    match /arcadeSaves/{uid}/games/{gameId} {
+      allow read: if arcadeAccount() && request.auth.uid == uid;
+      allow create, update: if arcadeAccount() && request.auth.uid == uid
+        && gameId.matches('^[a-z0-9]{2,24}$')
+        && request.resource.data.keys().hasAll(['data', 'major', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['data', 'major', 'minor', 'progress', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 700000
+        && request.resource.data.major is int
+        && (!('minor' in request.resource.data) || request.resource.data.minor is int)
+        && (!('progress' in request.resource.data) || request.resource.data.progress is number)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if arcadeAccount() && request.auth.uid == uid;
+    }
+
+    // Play counters used to sort games by popularity. Anyone may add exactly one play.
+    match /arcadeStats/{gameId} {
+      allow read: if true;
+      allow create: if gameId.matches('^[a-z0-9]{2,24}$')
+        && request.resource.data.keys().hasOnly(['plays'])
+        && request.resource.data.plays == 1;
+      allow update: if request.resource.data.keys().hasOnly(['plays'])
+        && request.resource.data.plays == resource.data.plays + 1;
+      allow delete: if false;
+    }
+
+    // Feedback tickets. Write-only for players; a GitHub Action copies them into repo Issues.
+    match /arcadeTickets/{ticketId} {
+      function validTicket(data) {
+        return data.keys().hasAll(['kind', 'game', 'text', 'synced', 'createdAt'])
+          && data.keys().hasOnly(['kind', 'game', 'text', 'contact', 'uid', 'username', 'page', 'synced', 'createdAt'])
+          && data.kind in ['bug', 'idea', 'request', 'other', 'access']
+          && data.game is string && data.game.size() <= 40
+          && data.text is string && data.text.size() >= 3 && data.text.size() <= 4000
+          && (!('contact' in data) || (data.contact is string && data.contact.size() <= 200))
+          && (!('page' in data) || (data.page is string && data.page.size() <= 120))
+          && (!('uid' in data) || (request.auth != null && data.uid == request.auth.uid))
+          && (!('username' in data) || (data.username is string && data.username.size() <= 20))
+          && data.synced == false
+          && data.createdAt == request.time;
+      }
+      allow create: if validTicket(request.resource.data);
+      allow read: if isArcadeAdmin();
+      allow update, delete: if false;
+    }
+
+  }
+}
