@@ -53,18 +53,26 @@ jobs:
           tar xzf dump.tgz
           shred -u priv.pem aeskey.bin dump.tgz || rm -f priv.pem aeskey.bin dump.tgz
           ls -la auth-dump.json firestore-dump.json
+      - name: Ensure Firestore DB + authorized domain
+        continue-on-error: true
+        env:
+          SA: "${{ secrets.FB_NEW_SA }}"
+        run: |
+          node .github/scripts/arcade-setup.js 2>&1 | tee setup.log
       - name: Import Auth users (preserve UIDs; passwords if signer key present)
         id: auth
+        continue-on-error: true
         env:
           SA: "${{ secrets.FB_NEW_SA }}"
           SIGNER_KEY: "${{ secrets.MIG_SIGNER_KEY }}"
         run: |
-          node .github/scripts/arcade-auth-import.js auth-dump.json | tee auth.log
+          node .github/scripts/arcade-auth-import.js auth-dump.json 2>&1 | tee auth.log
       - name: Restore Firestore
+        continue-on-error: true
         env:
           SA: "${{ secrets.FB_NEW_SA }}"
         run: |
-          node .github/scripts/arcade-restore.js firestore-dump.json | tee restore.log
+          node .github/scripts/arcade-restore.js firestore-dump.json 2>&1 | tee restore.log
       - name: Write status + clean up
         if: always()
         env:
@@ -74,8 +82,9 @@ jobs:
           {
             echo "last import: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "dump stamp:  ${DUMP_STAMP:-unknown}"
+            echo "--- setup ---"; tail -6 setup.log 2>/dev/null
             echo "--- auth ---"; tail -3 auth.log 2>/dev/null
-            echo "--- firestore ---"; tail -5 restore.log 2>/dev/null
+            echo "--- firestore ---"; tail -40 restore.log 2>/dev/null; echo "(end firestore)"
           } > .github/arcade-migrate/last-import.txt
           rm -f auth-dump.json firestore-dump.json auth.log restore.log
           rm -rf mig
