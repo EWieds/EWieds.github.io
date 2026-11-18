@@ -73,6 +73,16 @@ jobs:
           SA: "${{ secrets.FB_NEW_SA }}"
         run: |
           node .github/scripts/arcade-restore.js firestore-dump.json 2>&1 | tee restore.log
+      - name: Deploy Firestore rules
+        continue-on-error: true
+        env:
+          SA: "${{ secrets.FB_NEW_SA }}"
+        run: |
+          printf '%s' "$SA" > sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$PWD/sa.json"
+          PID=$(node -e "console.log(JSON.parse(process.env.SA).project_id)")
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project "$PID" --non-interactive 2>&1 | tee rules.log
+          rm -f sa.json
       - name: Write status + clean up
         if: always()
         env:
@@ -84,9 +94,10 @@ jobs:
             echo "dump stamp:  ${DUMP_STAMP:-unknown}"
             echo "--- setup ---"; tail -6 setup.log 2>/dev/null
             echo "--- auth ---"; tail -3 auth.log 2>/dev/null
-            echo "--- firestore ---"; tail -40 restore.log 2>/dev/null; echo "(end firestore)"
+            echo "--- firestore ---"; tail -6 restore.log 2>/dev/null
+            echo "--- rules deploy ---"; tail -15 rules.log 2>/dev/null; echo "(end rules)"
           } > .github/arcade-migrate/last-import.txt
-          rm -f auth-dump.json firestore-dump.json auth.log restore.log
+          rm -f auth-dump.json firestore-dump.json auth.log restore.log rules.log
           rm -rf mig
           git config user.name "arcade-import"; git config user.email "actions@github.com"
           git add .github/arcade-migrate/last-import.txt

@@ -586,5 +586,3 @@ service cloud.firestore {
 
   }
 }
-
-// migration: rules deploy trigger 2026-11-18T03:43:04Z
