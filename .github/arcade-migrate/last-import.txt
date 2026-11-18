@@ -1,49 +1,49 @@
-last import: 2026-11-18T03:29:02Z
+last import: 2026-11-18T03:42:04Z
 dump stamp:  20261118T011313Z
 --- setup ---
-::warning::Could not check Firestore DB (403). If sign-in/data fails, create Firestore (Native) in the console.
+Firestore: default database already exists.
 Auth: ewieds.github.io already authorized.
 --- auth ---
 Auth import: 0 created, 16 refreshed, 0 failed. One-time password set (reset-free sign-in).
 --- firestore ---
-    at ProxyTracer.startActiveSpan (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@opentelemetry/api/dist/trace/ProxyTracer.cjs:20:18)
-    at EnabledTraceUtil.startActiveSpan (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@google-cloud/firestore/build/src/telemetry/enabled-trace-util.js:102:28)
-    at WriteBatch.commit (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@google-cloud/firestore/build/src/write-batch.js:436:43)
-    at /home/runner/work/EWieds.github.io/EWieds.github.io/.github/scripts/arcade-restore.js:42:19
-    at Object.<anonymous> (/home/runner/work/EWieds.github.io/EWieds.github.io/.github/scripts/arcade-restore.js:49:3) {
-  code: 7,
-  details: 'Cloud Firestore API has not been used in project lazer-arcade before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.',
-  metadata: Metadata {
-    internalRepr: Map(5) {
-      'google.rpc.errorinfo-bin' => [Array],
-      'google.rpc.help-bin' => [Array],
-      'google.rpc.localizedmessage-bin' => [Array],
-      'grpc-status-details-bin' => [Array],
-      'x-debug-tracking-id' => [Array]
-    },
-    options: {}
-  },
-  note: 'Exception occurred in retry method that was not classified as transient',
-  statusDetails: [
-    ErrorInfo {
-      metadata: [Object],
-      reason: 'SERVICE_DISABLED',
-      domain: 'googleapis.com'
-    },
-    LocalizedMessage {
-      locale: 'en-US',
-      message: 'Cloud Firestore API has not been used in project lazer-arcade before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.'
-    },
-    Help { links: [Array] }
-  ],
-  reason: 'SERVICE_DISABLED',
-  domain: 'googleapis.com',
-  errorInfoMetadata: {
-    serviceTitle: 'Cloud Firestore API',
-    containerInfo: 'lazer-arcade',
-    service: 'firestore.googleapis.com',
-    activationUrl: 'https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade',
-    consumer: 'projects/lazer-arcade'
-  }
-}
+  communityScores/harborclassic/rows: 2
+  communityScores/mw58mcdfrkmpqo/rows: 1
+  communityScores/mw59gd16qz0p5l/rows: 4
+  communityScores/mw8ksb7fgzr250/rows: 2
+  communityReports: 0
+  studioProjects: 0
+  studioProjects/2qKI2s9DXmRAEKaLsidweZLOa9D3/items: 3
+  studioProjects/Wr4b7u4A2BeLwgc2YyNil2Lv2I42/items: 1
+  studioProjects/e9vSJQS2FLSjgnoot4747bqXF723/items: 6
+  studioProjects/iGfdu9doCGS6ywDE2skHw6aGeD33/items: 1
+  studioProjects/kMDeiwbnfvaiqiJsjq0lp5XWmB23/items: 1
+  studioProjects/uvXBFeqSGPWuCdXrAClkQFI30IC3/items: 16
+  dominionPlayers: 2
+  dominionChat: 0
+  dominionChat/global/msgs: 1
+  dominionChatFlags: 0
+  dominionChatRate: 1
+  dominionInbox: 0
+  rhythmRunnerScores: 0
+  cremaRushScoreEvents: 0
+  cremaRushYesGraphicsSaves: 4
+  cremaTycoonSaves: 4
+  arcadeSaves: 0
+  arcadeSaves/0Vyg0gh2XEPw5uHgeRIBcz2lPCS2/games: 2
+  arcadeSaves/2qKI2s9DXmRAEKaLsidweZLOa9D3/games: 1
+  arcadeSaves/CLIT7JdbikbCtg1PrdKoKxCYau12/games: 1
+  arcadeSaves/NBhh3TgHFYRDYrosivXyixGTlwv1/games: 1
+  arcadeSaves/Q8boRHP3czcLEP0axhBoTkUsj2z1/games: 2
+  arcadeSaves/Wr4b7u4A2BeLwgc2YyNil2Lv2I42/games: 2
+  arcadeSaves/duj3g2CWFxNhSd6HTKvfvNlhuZS2/games: 2
+  arcadeSaves/e9vSJQS2FLSjgnoot4747bqXF723/games: 3
+  arcadeSaves/iGfdu9doCGS6ywDE2skHw6aGeD33/games: 2
+  arcadeSaves/iyh48m44grO95w3hctXfcvikHZU2/games: 2
+  arcadeSaves/kMDeiwbnfvaiqiJsjq0lp5XWmB23/games: 4
+  arcadeSaves/uvXBFeqSGPWuCdXrAClkQFI30IC3/games: 4
+  arcadeSaves/woDQCfdwguNrEKlrEdcUSp1hepe2/games: 2
+  arcadeSaves/zpDZXlNLbiZWCSEpIZm6tYAUOuq1/games: 2
+  usernameAuthLookup: 0
+  guestAccounts: 0
+Restored 147 docs across 57 collection paths into lazer-arcade.
 (end firestore)
