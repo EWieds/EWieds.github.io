@@ -33,7 +33,7 @@ function mountEmailVerificationPrompt() {
     overlay.innerHTML = `<section class="lz-verify-dialog" role="dialog" aria-modal="true" aria-labelledby="lz-verify-title" aria-describedby="lz-verify-copy">
       <h2 id="lz-verify-title">Verify your email</h2>
       <p id="lz-verify-copy">Your email address isn't verified yet. Verify it to help keep your Carzzy Apps account secure.</p>
-      <a class="lz-verify-btn" href="/auth/verify-email">Verify email</a>
+      <a class="lz-verify-btn" href="/arcade/auth/verify-email">Verify email</a>
       <button class="lz-verify-btn secondary" type="button" data-signout>Sign out</button>
     </section>`;
     overlay.prepend(style);

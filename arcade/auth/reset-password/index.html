@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password | Lazer Arcade</title>
+  <style>
+    body{background:#0a0a0a;color:#00d1b2;font-family:sans-serif;margin:0}
+    .card{background:#1a1a1a;border:1px solid #00d1b2;padding:30px;border-radius:12px;width:100%;max-width:450px;box-sizing:border-box;margin:150px auto 0 auto;}
+    h2{font-size:30px;text-align:center}
+    p{color:#ccc;font-size:14px;text-align:center}
+    label{display:block;margin-top:20px;font-size:15px}
+    input,button{width:100%;padding:10px;margin-top:5px;border-radius:6px;box-sizing:border-box}
+    input{background:#2a2a2a;border:1px solid #333;color:#fff}
+    button{background:#00d1b2;border:none;color:#0a0a0a;font-weight:bold;cursor:pointer;margin-top:25px;font-size:18px}
+    .msg{text-align:center;margin-top:15px}
+  </style>
+</head>
+<body>
+  <script src="/nav-bar.js"></script>
+  <div class="card">
+    <h2>Reset Password</h2>
+    <p>Enter your email and we'll send a reset link.</p>
+    <form id="f">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+      <button type="submit">Send reset link</button>
+    </form>
+    <div id="msg" class="msg"></div>
+    <div style="text-align:center;margin-top:18px;color:#ccc"><a href="/arcade/auth/sign-in" style="color:#00d1b2">Back to sign in</a></div>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    const app = initializeApp({ apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
+    const auth = getAuth(app);
+    document.getElementById("f").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      try {
+        await sendPasswordResetEmail(auth, document.getElementById("email").value.trim());
+        msg.style.color = "#00d1b2"; msg.textContent = "If that email has an account, a reset link is on its way.";
+      } catch (err) {
+        // Don't reveal whether the email exists.
+        msg.style.color = "#00d1b2"; msg.textContent = "If that email has an account, a reset link is on its way.";
+      }
+    });
+  </script>
+</body>
+</html>

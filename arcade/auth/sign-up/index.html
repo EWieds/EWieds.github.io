@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up | Lazer Arcade</title>
+  <style>
+    body{background:#0a0a0a;color:#00d1b2;font-family:sans-serif;margin:0}
+    .card{background:#1a1a1a;border:1px solid #00d1b2;padding:30px;border-radius:12px;width:100%;max-width:450px;box-sizing:border-box;margin:90px auto 0 auto;}
+    h2{font-size:32px;text-align:center}
+    label{display:block;margin-top:20px;font-size:15px}
+    input,button{width:100%;padding:10px;margin-top:5px;border-radius:6px;box-sizing:border-box}
+    input{background:#2a2a2a;border:1px solid #333;color:#fff}
+    button{background:#00d1b2;border:none;color:#0a0a0a;font-weight:bold;cursor:pointer;margin-top:25px;font-size:20px}
+    .msg{text-align:center;margin-top:15px}
+    .stay-signed-in-container{display:flex;align-items:center;gap:8px;margin-top:12px;color:#ccc;font-size:14px}
+    .stay-signed-in-container input{width:auto;margin:0;accent-color:#00d1b2}
+    .stay-signed-in-container label{margin:0;cursor:pointer}
+  </style>
+</head>
+<body>
+  <script src="/nav-bar.js"></script>
+  <div class="card">
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+      <label for="username">Username</label>
+      <input type="text" id="username" required placeholder="lazer_boss" maxlength="15">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+      <label for="password">Password</label>
+      <input type="password" id="password" required placeholder="••••••••" autocomplete="new-password">
+      <label for="confirm-password">Confirm Password</label>
+      <input type="password" id="confirm-password" required placeholder="••••••••" autocomplete="new-password">
+      <div style="display:flex;align-items:center;gap:8px;margin-top:15px;font-size:14px;">
+        <input type="checkbox" id="show-password" style="width:auto;margin:0;cursor:pointer;accent-color:#00d1b2;">
+        <label for="show-password" style="margin:0;cursor:pointer;color:#ccc;">Show Password</label>
+      </div>
+      <div class="stay-signed-in-container">
+        <input type="checkbox" id="stay-signed-in" checked>
+        <label for="stay-signed-in">Stay signed in on this device</label>
+      </div>
+      <button type="submit">Sign Up</button>
+    </form>
+    <div id="msg" class="msg"></div>
+    <div style="text-align:center;margin-top:15px;color:#ccc;">Already have an account? <a href="/arcade/auth/sign-in" style="color:#00d1b2">Sign In</a></div>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import {
+      browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword,
+      getAuth, setPersistence, updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, collection, query, where, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const app = initializeApp({ apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
+    const auth = getAuth(app);
+
+    async function claimUsernameSafely(user, username) {
+      const db = getFirestore(app);
+      const lower = username.toLowerCase();
+      const snap = await getDocs(query(collection(db, "usernames"), where("usernameLower", "==", lower)));
+      let taken = false;
+      snap.forEach((d) => { if (d.data().uid !== user.uid) taken = true; });
+      if (taken) { const e = new Error("taken"); e.code = "already-exists"; throw e; }
+      await runTransaction(db, async (tx) => {
+        tx.set(doc(db, "usernames", user.uid), { uid: user.uid, guest: false, username, usernameLower: lower });
+      });
+    }
+
+    const pw = document.getElementById("password"), cpw = document.getElementById("confirm-password");
+    document.getElementById("show-password").addEventListener("change", (e) => {
+      pw.type = cpw.type = e.target.checked ? "text" : "password";
+    });
+
+    document.getElementById("signup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
+      if (pw.value !== cpw.value) { msg.style.color = "#f00"; msg.textContent = "Passwords do not match!"; return; }
+      if (!username || username.length > 15) { msg.style.color = "#f00"; msg.textContent = "Username must be up to 15 characters."; return; }
+      let cred = null;
+      try {
+        const stay = document.getElementById("stay-signed-in").checked;
+        await setPersistence(auth, stay ? browserLocalPersistence : browserSessionPersistence);
+        cred = await createUserWithEmailAndPassword(auth, email, pw.value);
+        await updateProfile(cred.user, { displayName: username });
+        await claimUsernameSafely(cred.user, username);
+        try { stay ? localStorage.setItem("signIn", "true") : localStorage.removeItem("signIn"); } catch (e) {}
+        msg.style.color = "#00d1b2"; msg.textContent = "Account created!";
+        setTimeout(() => { document.location.href = sessionStorage.getItem("prevPage") || "/arcade/"; }, 400);
+      } catch (err) {
+        if (cred && cred.user) { try { await cred.user.delete(); } catch (x) {} }
+        msg.style.color = "#f00";
+        const m = {
+          "auth/email-already-in-use": "This email is already registered — try signing in.",
+          "already-exists": "That username is already taken.",
+          "auth/invalid-email": "Please enter a valid email address.",
+          "auth/weak-password": "Password must be at least 6 characters.",
+          "auth/password-does-not-meet-requirements": "Password must be at least 6 characters.",
+          "auth/network-request-failed": "Network error. Check your connection and try again.",
+          "permission-denied": "Username registration failed.",
+        };
+        msg.textContent = m[err.code] || err.message;
+      }
+    });
+  </script>
+</body>
+</html>

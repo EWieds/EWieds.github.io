@@ -9,12 +9,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const CONFIG = {
-  apiKey: "AIzaSyAgu1uiobgixRWcvIja6bI1l6M2KQ36FL4",
-  authDomain: "carzzy-apps.firebaseapp.com",
-  projectId: "carzzy-apps",
-  storageBucket: "carzzy-apps.firebasestorage.app",
-  messagingSenderId: "716862658931",
-  appId: "1:716862658931:web:6295033aaa1d8155dc0d06"
+  apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8",
+  authDomain: "lazer-arcade.firebaseapp.com",
+  projectId: "lazer-arcade",
+  storageBucket: "lazer-arcade.firebasestorage.app"
 };
 const BASE = "/arcade/";
 const USERNAME_RE = /^[^\/]{1,30}$/;
@@ -505,8 +503,8 @@ async function sendTicket(t) {
    Lazer Arcade has no separate login: it uses the Carzzy Apps account system. Sign-in and sign-up happen
    on carzzyapps.com's own pages, and the shared Firebase session carries the player straight back. */
 
-function goSignIn() { window.location.href = "/auth/sign-in/"; }
-function goSignUp() { window.location.href = "/auth/sign-up/"; }
+function goSignIn() { window.location.href = "/arcade/auth/sign-in/"; }
+function goSignUp() { window.location.href = "/arcade/auth/sign-up/"; }
 let wasSignedIn = null;
 onChange(() => {
   // Signed in from another tab or after returning: move guest progress and points to the account.
@@ -615,7 +613,7 @@ function accountMenu() {
     <h2>${esc(state.username)}</h2>
     <p class="sub">Signed in to Carzzy Apps. Progress and Lazer Points save to this account.</p>
     <button class="btn" data-lb>View leaderboard</button>
-    <a href="/auth/account"><button class="btn">Account</button></a>
+    <a href="/arcade/auth/account"><button class="btn">Account</button></a>
     <button class="btn alt" data-out>Sign out</button>`,
   (card, done) => {
     card.querySelector("[data-lb]").onclick = () => { location.href = BASE + "leaderboard/"; };

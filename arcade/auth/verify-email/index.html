@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Email | Lazer Arcade</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    body{background:#0a0a0a;color:#ccc;font-family:'Segoe UI',Tahoma,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:#1a1a1a;padding:2.5rem;border:#00d1b2 solid 1px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);width:100%;max-width:400px;text-align:center}
+    h2{color:#00d1b2;margin:0 0 1rem;font-size:1.8rem}
+    p{line-height:1.6;margin-bottom:2rem}
+    button{background:#00d1b2;color:#0a0a0a;border:none;padding:.8rem 2rem;font-size:1rem;font-weight:bold;border-radius:4px;cursor:pointer;width:100%}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .status{margin-top:1.5rem;font-size:.95rem;font-weight:500}
+    a{color:#00d1b2}
+  </style>
+</head>
+<body>
+  <script src="/nav-bar.js"></script>
+  <div class="card">
+    <h2>Verify Your Email</h2>
+    <p>Verify your email to secure your Lazer Arcade account.</p>
+    <button id="sendBtn" disabled>Send Verification Email</button>
+    <div id="statusMsg" class="status"></div>
+    <p style="margin-top:1.5rem;margin-bottom:0"><a href="/arcade/">Back to the arcade</a></p>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    const app = initializeApp({ apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
+    const auth = getAuth(app);
+    const actionCodeSettings = { url: sessionStorage.getItem("prevPage") || (location.origin + "/arcade/"), handleCodeInApp: false };
+    const sendBtn = document.getElementById('sendBtn'), statusMsg = document.getElementById('statusMsg');
+    let cd = null; const COOL = 60000;
+    function friendly(e){const c=e.code||e;return ({'auth/too-many-requests':"Too many requests. Wait a minute and try again.",'auth/network-request-failed':"Network error. Check your connection.",'auth/unauthorized-domain':"This domain isn't authorized yet."})[c]||e.message||"Something went wrong.";}
+    function startCooldown(s){clearInterval(cd);sendBtn.disabled=true;const t=()=>{if(s<=0){clearInterval(cd);sendBtn.disabled=false;sendBtn.textContent="Resend Verification Email";return;}sendBtn.textContent=`Resend in ${s}s`;s--;};t();cd=setInterval(t,1000);}
+    function checkCooldown(uid){const last=localStorage.getItem(`lastSentVerification_${uid}`);if(last){const p=Date.now()-parseInt(last,10);if(p<COOL)startCooldown(Math.ceil((COOL-p)/1000));}}
+    onAuthStateChanged(auth,(user)=>{clearInterval(cd);
+      if(user){ if(user.emailVerified){statusMsg.style.color='#00d1b2';statusMsg.textContent="Your email is already verified!";sendBtn.textContent="Verified ✓";sendBtn.disabled=true;}
+        else{statusMsg.style.color='#ccc';statusMsg.textContent="Your email is not verified yet.";sendBtn.textContent="Send Verification Email";sendBtn.disabled=false;checkCooldown(user.uid);} }
+      else{statusMsg.style.color='#f00';statusMsg.textContent="You must be logged in to verify your email.";sendBtn.disabled=true;} });
+    sendBtn.addEventListener('click',async()=>{const user=auth.currentUser;if(!user)return;
+      try{sendBtn.disabled=true;statusMsg.style.color='#ccc';statusMsg.textContent="Sending verification link...";
+        await sendEmailVerification(user,actionCodeSettings);
+        localStorage.setItem(`lastSentVerification_${user.uid}`,Date.now().toString());
+        statusMsg.style.color='#00d1b2';statusMsg.innerHTML="Verification email sent! Check your inbox.<br><span style='color:#ccc'>No email? Check spam or resend.</span>";
+        startCooldown(60);
+      }catch(e){statusMsg.style.color='#f00';statusMsg.textContent=friendly(e);sendBtn.disabled=false;} });
+  </script>
+</body>
+</html>

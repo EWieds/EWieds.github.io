@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Account | Lazer Arcade</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *, *:before, *:after { box-sizing: border-box; }
+    body { background:#0a0a0a; color:#ccc; font-family:sans-serif; margin:0; padding-top:80px; }
+    .container { display: flex; flex-direction: row; flex-wrap: nowrap; max-width: 900px; margin: 40px auto; gap: 20px; padding: 0 15px; }
+    .sidebar { width: 220px; flex-shrink: 0; background: #2a2a2a; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 8px; margin-top: 100px; }
+    .sidebar-btn { background: none; border: none; color: #aaa; cursor: pointer; padding: 12px; text-align: left; font-weight: bold; border-radius: 4px; }
+    .sidebar-btn.active { color: #00d1b2; background: #1a1a1a; }
+    .main-content { flex: 1; min-width: 0; background: #2a2a2a; padding: 30px; border-radius: 8px; margin-top: 100px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    h2 { color: #00d1b2; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+    label { font-size: 0.8rem; color: #aaa; display: block; margin: 15px 0 5px; }
+    input:not([type="checkbox"]) { background: #1a1a1a; border: 1px solid #444; color: #ccc; padding: 10px; width: 100%; box-sizing: border-box; border-radius: 4px; }
+    button.action-btn { background: #00d1b2; color: #0a0a0a; border: none; padding: 12px; font-weight: bold; border-radius: 4px; width: 100%; margin-top: 15px; cursor: pointer; }
+    .status { color: #00d1b2; margin-top: 15px; text-align: center; }
+    .file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 15px; }
+    .custom-file-upload { display: block; background: #1a1a1a; border: 1.5px dashed #00d1b2; color: #00d1b2; padding: 25px; width: 100%; text-align: center; border-radius: 8px; cursor: pointer; box-sizing: border-box; font-weight: bold; transition: 0.2s; }
+    .custom-file-upload.dragover { background: rgba(0,209,178,0.2); border-color: #fff; }
+    #pic-in { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <button class="sidebar-btn active" onclick="showTab('tab-user')">Username</button>
+    <button class="sidebar-btn" onclick="showTab('tab-pwd')">Password</button>
+    <button class="sidebar-btn" onclick="showTab('tab-email')">Email</button>
+    <button class="sidebar-btn" onclick="showTab('tab-pic')">Profile Picture</button>
+    <button class="sidebar-btn" onclick="showTab('tab-del')">Delete Account</button>
+  </div>
+  <div class="main-content">
+    <div id="profile" style="display:none;">
+      <div id="tab-user" class="panel active">
+        <h2>Username</h2>
+        <label>New Username</label>
+        <input id="username-in" type="text" readonly onfocus="this.removeAttribute('readonly')" placeholder="Enter new username" />
+        <button class="action-btn" onclick="updateUsername()">Update</button>
+      </div>
+      <div id="tab-pwd" class="panel">
+        <h2>Password</h2>
+        <label>Current Password</label><input id="pwd-curr" type="password" autocomplete="new-password" />
+        <label>New Password</label><input id="pwd-new" type="password" autocomplete="new-password" />
+        <button class="action-btn" onclick="changePassword()">Update</button>
+      </div>
+      <div id="tab-email" class="panel">
+        <h2>Email</h2>
+        <label>Current Password</label><input id="email-curr-pwd" type="password" autocomplete="new-password" />
+        <label>New Email</label><input id="email-new" type="email" autocomplete="off" />
+        <button class="action-btn" onclick="changeEmail()">Update</button>
+      </div>
+      <div id="tab-pic" class="panel">
+        <h2>Profile Picture</h2>
+        <div class="file-upload-wrapper">
+          <img id="preview" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid #00d1b2;display:none;" />
+          <label for="pic-in" class="custom-file-upload"><span id="upload-placeholder">Upload or Drag and Drop Photo</span></label>
+          <input id="pic-in" type="file" accept="image/*" onchange="showLocalPreview(this)" />
+          <button class="action-btn" onclick="updateProfilePic()">Upload & Crop</button>
+        </div>
+      </div>
+      <div id="tab-del" class="panel">
+        <h2 style="color:#ff3860;">Delete Account</h2>
+        <label>Current Password</label><input id="del-pwd" type="password" autocomplete="new-password" />
+        <button class="action-btn" style="background:#ff3860;color:#fff;" onclick="deleteAcc()">Delete</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+</div>
+<script src="/nav-bar.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, updatePassword, verifyBeforeUpdateEmail, deleteUser, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const app = initializeApp({ apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
+  const auth = getAuth(app), db = getFirestore(app);
+  let curUser = null;
+  const cloudName = "u5bvfdsm", uploadPreset = "Carzzy-Apps-Profile-Pictures";
+
+  window.showTab = (id) => {
+    document.querySelectorAll('.panel, .sidebar-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+    document.getElementById('status').innerText = "";
+  };
+
+  onAuthStateChanged(auth, u => {
+    if (!u || u.isAnonymous) { window.location.href = "/arcade/auth/sign-in"; return; }
+    // No email-verification gate — the arcade allows unverified accounts.
+    curUser = u;
+    document.getElementById('profile').style.display = 'block';
+    if (u.photoURL) {
+      const preview = document.getElementById('preview');
+      preview.src = u.photoURL;
+      preview.style.display = 'inline-block';
+    }
+  });
+
+  const reauth = async (pwd) => reauthenticateWithCredential(curUser, EmailAuthProvider.credential(curUser.email, pwd));
+  const setStatus = (msg, err = false) => {
+    const el = document.getElementById('status');
+    el.style.color = err ? '#ff3860' : '#00d1b2';
+    el.innerText = msg;
+  };
+
+  window.showLocalPreview = (input) => {
+    const file = input.files[0];
+    if (file) {
+      const preview = document.getElementById('preview');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'inline-block';
+      document.getElementById('upload-placeholder').textContent = `Selected: ${file.name}`;
+    }
+  };
+
+  const dropZone = document.querySelector('.custom-file-upload');
+  const fileInput = document.getElementById('pic-in');
+  ['dragenter', 'dragover'].forEach(name => dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+  ['dragleave', 'dragend', 'drop'].forEach(name => dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; window.showLocalPreview(fileInput); }
+  });
+
+  window.updateUsername = async () => {
+    const val = document.getElementById('username-in').value.trim();
+    if (!val) return setStatus("Username cannot be empty.", true);
+    try {
+      setStatus("Checking availability...");
+      const snap = await getDocs(query(collection(db, "usernames"), where("usernameLower", "==", val.toLowerCase()), limit(1)));
+      let isTaken = false;
+      snap.forEach(d => { if (d.id !== curUser.uid) isTaken = true; });
+      if (isTaken) return setStatus("Username taken.", true);
+      setStatus("Updating...");
+      await updateProfile(curUser, { displayName: val });
+      await setDoc(doc(db, "usernames", curUser.uid), { uid: curUser.uid, guest: false, username: val, usernameLower: val.toLowerCase() });
+      try { await updateDoc(doc(db, "arcadePlayers", curUser.uid), { username: val, updatedAt: serverTimestamp() }); } catch {}
+      setStatus("Username updated!");
+    } catch (e) { setStatus("Error updating username.", true); console.error(e); }
+  };
+
+  window.changePassword = async () => {
+    try {
+      setStatus("Verifying...");
+      await reauth(document.getElementById('pwd-curr').value);
+      await updatePassword(curUser, document.getElementById('pwd-new').value);
+      setStatus("Password changed!");
+    } catch (e) { setStatus("Password change failed.", true); console.error(e); }
+  };
+
+  window.changeEmail = async () => {
+    try {
+      setStatus("Verifying...");
+      await reauth(document.getElementById('email-curr-pwd').value);
+      await verifyBeforeUpdateEmail(curUser, document.getElementById('email-new').value, { url: window.location.href });
+      setStatus("Verification email sent!");
+    } catch (e) { setStatus("Email change failed.", true); console.error(e); }
+  };
+
+  window.updateProfilePic = async () => {
+    const fileInput = document.getElementById('pic-in');
+    if (!fileInput.files[0]) return setStatus("Please select an image.", true);
+    try {
+      setStatus("Uploading image...");
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("upload_preset", uploadPreset);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: formData });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const croppedUrl = data.secure_url.replace("/upload/", "/upload/c_thumb,g_face,w_150,h_150,z_0.7/");
+      setStatus("Saving...");
+      await updateProfile(curUser, { photoURL: croppedUrl });
+      await updateDoc(doc(db, "arcadePlayers", curUser.uid), { photoURL: croppedUrl, updatedAt: serverTimestamp() });
+      const preview = document.getElementById('preview');
+      preview.src = croppedUrl; preview.style.display = 'inline-block';
+      setStatus("Profile picture updated!");
+    } catch (e) { setStatus("Upload failed.", true); console.error(e); }
+  };
+
+  window.deleteAcc = async () => {
+    try {
+      setStatus("Deleting...");
+      await reauth(document.getElementById('del-pwd').value);
+      await deleteDoc(doc(db, "usernames", curUser.uid));
+      await deleteDoc(doc(db, "arcadePlayers", curUser.uid));
+      await deleteUser(curUser);
+      location.reload();
+    } catch (e) { setStatus("Deletion failed.", true); console.error(e); }
+  };
+</script>
+</body>
+</html>
