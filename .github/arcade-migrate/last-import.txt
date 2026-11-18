@@ -1,5 +1,49 @@
-last import: 2026-11-18T01:15:06Z
+last import: 2026-11-18T03:29:02Z
 dump stamp:  20261118T011313Z
+--- setup ---
+::warning::Could not check Firestore DB (403). If sign-in/data fails, create Firestore (Native) in the console.
+Auth: ewieds.github.io already authorized.
 --- auth ---
-Auth import: 16 created, 0 refreshed, 0 failed. One-time password set (reset-free sign-in).
+Auth import: 0 created, 16 refreshed, 0 failed. One-time password set (reset-free sign-in).
 --- firestore ---
+    at ProxyTracer.startActiveSpan (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@opentelemetry/api/dist/trace/ProxyTracer.cjs:20:18)
+    at EnabledTraceUtil.startActiveSpan (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@google-cloud/firestore/build/src/telemetry/enabled-trace-util.js:102:28)
+    at WriteBatch.commit (/home/runner/work/EWieds.github.io/EWieds.github.io/node_modules/@google-cloud/firestore/build/src/write-batch.js:436:43)
+    at /home/runner/work/EWieds.github.io/EWieds.github.io/.github/scripts/arcade-restore.js:42:19
+    at Object.<anonymous> (/home/runner/work/EWieds.github.io/EWieds.github.io/.github/scripts/arcade-restore.js:49:3) {
+  code: 7,
+  details: 'Cloud Firestore API has not been used in project lazer-arcade before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.',
+  metadata: Metadata {
+    internalRepr: Map(5) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'google.rpc.help-bin' => [Array],
+      'google.rpc.localizedmessage-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    options: {}
+  },
+  note: 'Exception occurred in retry method that was not classified as transient',
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'SERVICE_DISABLED',
+      domain: 'googleapis.com'
+    },
+    LocalizedMessage {
+      locale: 'en-US',
+      message: 'Cloud Firestore API has not been used in project lazer-arcade before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.'
+    },
+    Help { links: [Array] }
+  ],
+  reason: 'SERVICE_DISABLED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    serviceTitle: 'Cloud Firestore API',
+    containerInfo: 'lazer-arcade',
+    service: 'firestore.googleapis.com',
+    activationUrl: 'https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=lazer-arcade',
+    consumer: 'projects/lazer-arcade'
+  }
+}
+(end firestore)
