@@ -28,7 +28,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    const app = initializeApp({ apiKey: "NEW_API_KEY_PLACEHOLDER", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
+    const app = initializeApp({ apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8", authDomain: "lazer-arcade.firebaseapp.com", projectId: "lazer-arcade" });
     const auth = getAuth(app);
     const actionCodeSettings = { url: sessionStorage.getItem("prevPage") || (location.origin + "/arcade/"), handleCodeInApp: false };
     const sendBtn = document.getElementById('sendBtn'), statusMsg = document.getElementById('statusMsg');

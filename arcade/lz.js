@@ -9,7 +9,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const CONFIG = {
-  apiKey: "NEW_API_KEY_PLACEHOLDER",
+  apiKey: "AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8",
   authDomain: "lazer-arcade.firebaseapp.com",
   projectId: "lazer-arcade",
   storageBucket: "lazer-arcade.firebasestorage.app"
