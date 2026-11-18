@@ -1,0 +1,85 @@
+name: Lazer Arcade migration import
+
+# Pulls the encrypted dump from carzzyapps' arcade-migration branch, decrypts it
+# with MIG_PRIVKEY, and imports Auth users (same UIDs) + all Firestore data into
+# the new project (FB_NEW_SA). If SIGNER_KEY is set, passwords are preserved too.
+# Writes a status file back to the repo so results are visible without log access.
+#
+# Fires only when `.github/arcade-migrate/RUN` changes — trigger it at cutover,
+# AFTER the export job has published a fresh dump.
+
+on:
+  push:
+    paths: [".github/arcade-migrate/RUN"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arcade-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        id: s
+        env:
+          SA: "${{ secrets.FB_NEW_SA }}"
+          PK: "${{ secrets.MIG_PRIVKEY }}"
+        run: |
+          [ -z "$SA" ] && { echo "::error::FB_NEW_SA not set."; exit 1; } || true
+          [ -z "$PK" ] && { echo "::error::MIG_PRIVKEY not set."; exit 1; } || true
+          echo "ok=1" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm i --no-save firebase-admin@13
+      - name: Fetch encrypted dump
+        run: |
+          git clone --depth 1 -b arcade-migration https://github.com/CARZZYAPPS/carzzyapps.github.io mig
+          ls -la mig/dump.enc mig/aeskey.enc
+          echo "DUMP_STAMP=$(cat mig/STAMP 2>/dev/null || echo unknown)" >> "$GITHUB_ENV"
+      - name: Decrypt
+        env:
+          PK: "${{ secrets.MIG_PRIVKEY }}"
+        run: |
+          printf '%s' "$PK" > priv.pem
+          openssl pkeyutl -decrypt -inkey priv.pem \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -in mig/aeskey.enc -out aeskey.bin
+          openssl enc -d -aes-256-cbc -pbkdf2 -in mig/dump.enc -out dump.tgz -pass file:aeskey.bin
+          tar xzf dump.tgz
+          shred -u priv.pem aeskey.bin dump.tgz || rm -f priv.pem aeskey.bin dump.tgz
+          ls -la auth-dump.json firestore-dump.json
+      - name: Import Auth users (preserve UIDs; passwords if signer key present)
+        id: auth
+        env:
+          SA: "${{ secrets.FB_NEW_SA }}"
+          SIGNER_KEY: "${{ secrets.MIG_SIGNER_KEY }}"
+        run: |
+          node .github/scripts/arcade-auth-import.js auth-dump.json | tee auth.log
+      - name: Restore Firestore
+        env:
+          SA: "${{ secrets.FB_NEW_SA }}"
+        run: |
+          node .github/scripts/arcade-restore.js firestore-dump.json | tee restore.log
+      - name: Write status + clean up
+        if: always()
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          mkdir -p .github/arcade-migrate
+          {
+            echo "last import: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "dump stamp:  ${DUMP_STAMP:-unknown}"
+            echo "--- auth ---"; tail -3 auth.log 2>/dev/null
+            echo "--- firestore ---"; tail -5 restore.log 2>/dev/null
+          } > .github/arcade-migrate/last-import.txt
+          rm -f auth-dump.json firestore-dump.json auth.log restore.log
+          rm -rf mig
+          git config user.name "arcade-import"; git config user.email "actions@github.com"
+          git add .github/arcade-migrate/last-import.txt
+          git commit -m "Migration import status [skip ci]" || exit 0
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" HEAD:main
