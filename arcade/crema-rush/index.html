@@ -2344,7 +2344,11 @@ function init(){
   requestAnimationFrame(function(t){last=t;requestAnimationFrame(tick);});
 }
 var fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(function(r){setTimeout(r,1800);})]):Promise.resolve();
-Promise.all([fontsReady,lzBoot()]).then(init,init);
+// Staff gifts (e.g. in-game cash): applied once each, recorded in the save. Checked at start and every minute.
+function applyGrants(){if(!G||!window.LZ||!LZ.grants)return;LZ.grants(LZ_GAME).then(function(list){var n=0,note='';G.claims=G.claims||{};
+  list.forEach(function(g){if(G.claims[g.id])return;G.claims[g.id]=now();if(g.cash>0){G.cash+=g.cash;n+=g.cash;note=g.note||note;}});
+  if(n){save();try{toast('Gift from Lazer Arcade staff: +$'+Math.round(n).toLocaleString()+' cash','good');}catch(e){}}}).catch(function(){});}
+Promise.all([fontsReady,lzBoot()]).then(init,init).then(function(){setTimeout(applyGrants,2500);setInterval(applyGrants,60000);});
 })();
 </script>
 </body>

@@ -117,8 +117,10 @@ async function writeCloud(id) {
   const g = games[id]; if (!g || !signedIn() || !lockOk()) return false;
   const data = ls.raw(g.localKey); if (!data) return false;
   try {
+    await liveReady();
+    if (!lockOk()) return false;
     await setDoc(doc(db, "arcadeSaves", state.user.uid, "games", id), {
-      data, major: g.major, minor: g.minor || 0, progress: Number(g.progressOf(data)) || 0, updatedAt: serverTimestamp()
+      data, major: g.major, minor: g.minor || 0, progress: Number(g.progressOf(data)) || 0, liveTab: TAB, updatedAt: serverTimestamp()
     });
     g.dirty = false; return true;
   } catch (e) { console.warn("cloud save", e.code || e); return false; }
@@ -235,9 +237,9 @@ async function boot(id, opts) {
   await Promise.race([readyP, sleep(3000)]);
   countPlay(id);
   lock.keys.add(games[id].localKey);
-  try { await within(reconcile(id), 6000, null); } catch (e) { console.warn("reconcile", e); }
   claimLock(id);
   await liveReady();
+  try { await within(reconcile(id), 6000, null); } catch (e) { console.warn("reconcile", e); }
   bootedRes();
   if (signedIn()) syncPending().catch(() => {});
   return { user: state.user, username: state.username };
@@ -521,7 +523,11 @@ async function syncPending() {
   if (syncing) return syncing;
   syncing = (async () => {
     await afterBoot();
-    const p = pendingAll(); if (!Object.keys(p).length || !signedIn()) return 0;
+    const p0 = pendingAll(), p = {};
+    // Only move points queued by this version (older queues include points rejected from extra tabs).
+    Object.keys(p0).forEach((k) => { if (p0[k] && p0[k].v === 2) p[k] = p0[k]; });
+    if (Object.keys(p).length !== Object.keys(p0).length) setPending(p);
+    if (!Object.keys(p).length || !signedIn()) return 0;
     let moved = 0, first = true;
     while (Object.keys(p).length) {
       let budget = 19000; const batch = {};
@@ -579,7 +585,7 @@ async function endSession(id, raw, info) {
   return lp;
 }
 function stash(id, e) {
-  const p = pendingAll(), o = p[id] || { lp: 0, best: 0, plays: 0, last: 0 };
+  const p = pendingAll(), o = p[id] && p[id].v === 2 ? p[id] : { lp: 0, best: 0, plays: 0, last: 0, v: 2 };
   p[id] = { lp: o.lp + (e.lp || 0), best: Math.max(o.best, e.best || 0), plays: o.plays + (e.plays || 0), last: e.last || o.last };
   if (e.eaLp || o.eaLp) p[id].eaLp = (o.eaLp || 0) + (e.eaLp || 0);
   if (e.round || o.round) p[id].round = Math.max(o.round || 0, e.round || 0);
@@ -855,11 +861,23 @@ async function openFeedback(gameId) {
   });
 }
 
+/* ---------------- staff grants ----------------
+   arcadeGrants/{uid} = { items: [{ id, game, cash, note }] } written by staff tooling only.
+   Games apply each item once and record its id in their own save. */
+async function grants(game) {
+  if (!signedIn() || !lockOk()) return [];
+  try {
+    const s = await within(getDoc(doc(db, "arcadeGrants", state.user.uid)), 4000, null);
+    const items = s && s.exists() ? s.data().items || [] : [];
+    return items.filter((g) => g && g.id && g.game === game);
+  } catch (e) { return []; }
+}
+
 /* ---------------- public API ---------------- */
 const LZ = {
   ready: readyP, auth, db, catalog, gameInfo, toLP, onChange, signedIn,
   get user() { return state.user; }, get username() { return state.username; },
-  boot, save, flush, endSession, inEarlyAccess, settleEarly, gameOfTheDay, multiplier, progress, claimDoor, syncProg, extras, today, pendingLP, playtime, plays, top, watchTop, me, rank, playerCount, goSignIn, goSignUp, roles, setPins, setHideCredits, vote, votes, access, credits,
+  boot, save, flush, endSession, grants, lockOk, inEarlyAccess, settleEarly, gameOfTheDay, multiplier, progress, claimDoor, syncProg, extras, today, pendingLP, playtime, plays, top, watchTop, me, rank, playerCount, goSignIn, goSignUp, roles, setPins, setHideCredits, vote, votes, access, credits,
   openAccount, openFeedback, requestAccess, accountMenu, toast, logout, base: BASE, fmt, esc
 };
 window.LZ = LZ;

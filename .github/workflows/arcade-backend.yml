@@ -49,6 +49,15 @@ jobs:
         run: |
           cd "$RUNNER_TEMP" && npm init -y >/dev/null && npm i firebase-admin@13 >/dev/null
           NODE_PATH="$RUNNER_TEMP/node_modules" node "$GITHUB_WORKSPACE/.github/scripts/arcade-setup.js"
+      - name: Test Firestore rules in the emulator (deploy is skipped if any case fails)
+        if: steps.s.outputs.ok == '1'
+        run: |
+          mkdir -p "$RUNNER_TEMP/rt" && cd "$RUNNER_TEMP/rt" && npm init -y >/dev/null
+          npm i firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10 >/dev/null
+          cp "$GITHUB_WORKSPACE/.github/scripts/rules-test.mjs" test.mjs
+          cp "$GITHUB_WORKSPACE/firestore.rules" firestore.rules
+          echo '{"firestore":{"rules":"firestore.rules"},"emulators":{"firestore":{"port":8089}}}' > firebase.json
+          npx firebase emulators:exec --only firestore --project demo-la "node test.mjs"
       - name: Deploy Firestore rules
         if: steps.s.outputs.ok == '1'
         env: { SA: "${{ secrets.FB_NEW_SA }}" }

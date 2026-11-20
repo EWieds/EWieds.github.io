@@ -48,17 +48,31 @@ function floors(r) {
   const players = await db.collection("arcadePlayers").get();
   out.push(`Players: ${players.size}`, "");
   // ---- grants
-  out.push("## Grants", "", "| player | game | LP | status |", "|---|---|---|---|");
+  out.push("## Grants", "", "| player | game | amount | status |", "|---|---|---|---|");
   for (const g of task.grants || []) {
     const hits = players.docs.filter((d) => (d.data().username || "") === g.username);
-    if (hits.length !== 1) { out.push(`| ${g.username} | ${g.game} | ${g.lp} | NOT APPLIED: ${hits.length} matching players |`); continue; }
+    const amt = g.cash ? `$${g.cash} in-game cash` : `${g.lp} LP`;
+    if (hits.length !== 1) { out.push(`| ${g.username} | ${g.game} | ${amt} | NOT APPLIED: ${hits.length} matching players |`); continue; }
     const ref = hits[0].ref;
+    if (g.cash) {
+      // In-game cash: the game applies it once on next load (or within a minute if open).
+      if (apply) {
+        const gref = db.collection("arcadeGrants").doc(hits[0].id), id = task.id + ":" + g.game;
+        await db.runTransaction(async (tx) => {
+          const cur = (await tx.get(gref)).data() || {}, items = (cur.items || []).filter((x) => x.id !== id);
+          items.push({ id, game: g.game, cash: g.cash, note: g.note || "" });
+          tx.set(gref, { items, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        });
+      }
+      out.push(`| ${g.username} | ${g.game} | ${amt} | ${apply ? "queued for the game to apply" : "dry run"} |`);
+      continue;
+    }
     if (apply) await db.runTransaction(async (tx) => {
       const r = (await tx.get(ref)).data(), gm = Object.assign({}, r.games || {});
       const row = Object.assign({ lp: 0, best: 0, plays: 0, last: 0 }, gm[g.game] || {}); row.lp += g.lp; gm[g.game] = row;
       tx.update(ref, { lp: (r.lp || 0) + g.lp, games: gm, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
     });
-    out.push(`| ${g.username} | ${g.game} | +${g.lp} | ${apply ? "applied" : "dry run"} |`);
+    out.push(`| ${g.username} | ${g.game} | +${amt} | ${apply ? "applied" : "dry run"} |`);
   }
   // ---- achievement compensation
   out.push("", "## Achievements", "", "missing = earned (lifetime totals count) but never unlocked; short = unlocked but bonus underpaid (e.g. cut off by the 20k-per-write cap)", "",
@@ -74,6 +88,7 @@ function floors(r) {
     const short = Math.max(0, marked - paid);
     const total = missLp + short;
     if (!total) continue;
+    if ((task.exclude || []).includes(r.username)) { out.push(`| ${r.username} | ${r.lp || 0} | ${miss.join(", ") || "-"} | ${missLp} | ${short} | HELD for review (not paid) |`); continue; }
     people++; grand += total;
     out.push(`| ${String(r.username || d.id).replace(/\|/g, "/")} | ${r.lp || 0} | ${miss.join(", ") || "-"} | ${missLp} | ${short} (marked ${marked}, paid ${paid}) | ${total} |`);
     if (apply) await db.runTransaction(async (tx) => {

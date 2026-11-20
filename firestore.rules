@@ -339,6 +339,11 @@ service cloud.firestore {
       allow delete: if isArcadeAdmin();
     }
 
+    // Staff gifts (e.g. in-game cash). Written by staff tooling (admin SDK) only.
+    match /arcadeGrants/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
     // Which tab/device is live for this player (one game earning at a time). Owner only.
     match /arcadeLive/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
@@ -380,7 +385,10 @@ service cloud.firestore {
         && request.resource.data.major is int
         && (!('minor' in request.resource.data) || request.resource.data.minor is int)
         && (!('progress' in request.resource.data) || request.resource.data.progress is number)
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        // only the player's live tab may write saves (frozen/old tabs can't clobber or duplicate progress)
+        && exists(/databases/$(database)/documents/arcadeLive/$(uid))
+        && request.resource.data.get('liveTab', '') == get(/databases/$(database)/documents/arcadeLive/$(uid)).data.tab;
       allow delete: if arcadeAccount() && request.auth.uid == uid;
     }
 
