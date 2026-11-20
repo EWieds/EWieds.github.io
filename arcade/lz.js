@@ -745,7 +745,7 @@ function openAccount(mode, lead) {
   return modal(`
     <div class="cz">${CZ_MARK}<div><b>Carzzy Apps</b><span>Account</span></div></div>
     <h2>${mode === "signup" ? "Create your Carzzy Apps account" : "Sign in with Carzzy Apps"}</h2>
-    <p class="sub">${esc(lead || "Lazer Arcade uses your Carzzy Apps account. It's the same login across carzzyapps.com, so signing in on either side signs you in on both.")}</p>
+    <p class="sub">${esc(lead || "Sign in to save your progress and Lazer Points to your account and pick them up on any device.")}</p>
     <ul class="perks"><li>Your game progress saves to your account and follows you to any device</li><li>Anything you've played on this device comes with you${p ? ` (${fmt(p)} LP waiting)` : ""}</li><li>Your scores count on the leaderboards</li></ul>
     <button class="btn cz-btn" data-in>${CZ_MARK}<span>Sign in with Carzzy Apps</span></button>
     <button class="btn alt" data-up>Create a Carzzy Apps account</button>

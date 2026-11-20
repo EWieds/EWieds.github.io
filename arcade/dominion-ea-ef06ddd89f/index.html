@@ -2265,7 +2265,7 @@ function netInit(){
   if(!netReady()){if(NET.unsub){try{NET.unsub();}catch(e){}NET.unsub=null;}NET.on=false;return;}
   if(NET.on&&NET.uid===LZ.user.uid)return;
   NET.on=true;NET.uid=LZ.user.uid;NET.pubT=0;
-  try{var rl=LZ.roles&&LZ.roles();if(rl&&rl.then)rl.then(function(r){NET.admin=!!(r&&r[String(LZ.username||"").toLowerCase()]);});}catch(e){}
+  try{var rl=LZ.roles&&LZ.roles();if(rl&&rl.then)rl.then(function(r){NET.admin=!!(r&&["admin","creator"].indexOf(r[String(LZ.username||"").toLowerCase()])>=0);});}catch(e){}
   netPublish();netInbox();netRivals();netTop();netChatSub();
 }
 function netCol(){return FS.collection.apply(null,[LZ.db].concat([].slice.call(arguments)));}

@@ -54,10 +54,21 @@ export const ENGINES = {
   },
   custom: {
     id: "custom", name: "Your own code", status: "ready", icon: "🧩",
-    tag: "Upload or paste a complete HTML game. Report scores with LZScore(points). Needs staff approval before it goes public.",
+    tag: "Upload or paste a complete HTML game. Scores are picked up automatically from your game — or call LZScore(points) for exact control. Needs staff approval before it goes public.",
     play(host, project, opts) {
       opts = opts || {};
-      const helper = '<script>window.LZScore=function(n){parent.postMessage({type:"lz-score",score:+n||0},"*")};window.LZEnd=function(n,won){parent.postMessage({type:"lz-end",score:+n||0,won:!!won},"*")};<\/script>';
+      // LZScore/LZEnd report precisely. If the game never calls them, an auto-detector
+      // looks for the game's own score (a score/points global or on-screen number) and
+      // reports the best it sees. No score found → the game just has no leaderboard.
+      const helper = '<script>(function(){'
+        + 'window.LZScore=function(n){window.__lzX=1;parent.postMessage({type:"lz-score",score:+n||0},"*")};'
+        + 'window.LZEnd=function(n,won){window.__lzX=1;parent.postMessage({type:"lz-end",score:+n||0,won:!!won},"*")};'
+        + 'var K=["score","points","pts","highScore","highscore","hiScore","hiscore","bestScore","best","currentScore","curScore","playerScore","totalScore","totalPoints"];'
+        + 'function toNum(v){if(v==null)return null;v=parseFloat(String(v).replace(/[^0-9.\\-]/g,""));return isFinite(v)?v:null;}'
+        + 'function fromGlobals(){var b=null;for(var i=0;i<K.length;i++){var v=window[K[i]];if(typeof v==="number"&&isFinite(v))b=(b==null?v:Math.max(b,v));}return b;}'
+        + 'function fromDom(){var b=null;try{var els=document.querySelectorAll(\'[data-score],[id*="score" i],[class*="score" i],[id*="point" i],[class*="point" i]\');for(var i=0;i<els.length;i++){var el=els[i],t=el.getAttribute("data-score");if(t==null)t=el.textContent||"";var n=toNum(t);if(n!=null)b=(b==null?n:Math.max(b,n));}}catch(e){}return b;}'
+        + 'var seen=null;setInterval(function(){if(window.__lzX)return;var vs=[fromGlobals(),fromDom()].filter(function(x){return x!=null});if(!vs.length)return;var v=Math.max.apply(null,vs);if(seen==null||v>seen){seen=v;parent.postMessage({type:"lz-score",score:v},"*");}},1500);'
+        + '})();<\/script>';
       let html = String(project.html || ""); html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + helper) : helper + html;
       const f = frame(host, project.title, null, html), rep = reporter(opts, 5000);
       const onMsg = (e) => { if (e.source !== f.contentWindow || !e.data) return; if (e.data.type === "lz-score") rep(e.data.score); if (e.data.type === "lz-end" && opts.onEnd) opts.onEnd({ score: clampScore(e.data.score), won: !!e.data.won, time: 0 }); };

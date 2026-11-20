@@ -368,7 +368,7 @@ function rScript(b) {
   $("#ex", b).onclick = () => { const it = Object.values(P.objects).find((o) => o.kind === "item"); const ex = `// Every 10 seconds, a bonus ${it ? it.name : "Coin"} appears near the player.\napi.on("start", () => api.text("Bonus every 10s!", 2));\nlet t = 0;\napi.on("tick", (dt) => {\n  t += dt;\n  if (t > 10) { t = 0; const p = api.player(); if (p) api.spawn("${it ? it.name : "Coin"}", p.x + 3, p.y - 2); }\n});\n`; ta.value = (ta.value ? ta.value + "\n" : "") + ex; P.script = ta.value; mark(); render(); };
   $("#clr", b).onclick = () => { if (!confirm("Remove the script?")) return; edit(() => { P.script = ""; }); };
 }
-function customValidate(p) { const e = []; if (!p.html || p.html.length < 40) e.push("Paste or upload your game's HTML."); if (p.html && p.html.length > 450000) e.push("The HTML is too big (max about 450 KB). Inline fewer images."); if (p.html && !/LZScore|LZEnd/.test(p.html)) e.push("Call LZScore(points) or LZEnd(points, won) somewhere so scores reach the leaderboard."); return e; }
+function customValidate(p) { const e = []; if (!p.html || p.html.length < 40) e.push("Paste or upload your game's HTML."); if (p.html && p.html.length > 450000) e.push("The HTML is too big (max about 450 KB). Inline fewer images."); return e; }
 function customEditor() {
   document.body.classList.add("ed");
   app.innerHTML = `<div class="ed-wrap"><div class="ed-top"><a class="ib sm" href="/arcade/studio/" title="Back">◀</a><input class="ttl" id="ttl" maxlength="60" value="${esc(P.title)}" aria-label="Game title"><span class="stat" id="stat">Saved</span><button class="ib go" id="test">▶ Test</button><button class="ib pri" id="pub">Publish</button></div>
@@ -376,12 +376,15 @@ function customEditor() {
       <p class="hint">A complete, single-file HTML game. Inline your scripts, styles and images (data URLs). It runs in a sandbox with no access to storage or the player's account, and staff review it before it goes public.</p>
       <div class="row2" style="margin-bottom:8px"><label class="ib sm" style="cursor:pointer">Upload .html<input type="file" id="file" accept=".html,.htm,text/html" hidden></label><span class="hint" id="size" style="margin:0;align-self:center"></span></div>
       <textarea id="code" spellcheck="false" style="width:100%;min-height:420px;font:500 12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;background:#0c0921;color:#e9e4ff;border:1px solid var(--line2);border-radius:12px;padding:12px">${esc(P.html || "")}</textarea></div>
-      <div class="card2"><h3>Scores</h3><pre style="white-space:pre-wrap;font:500 12px/1.5 ui-monospace,monospace;color:var(--tx2);margin:0">LZScore(points)
-  Saves a score to your game's leaderboard
-  (call it whenever a round ends).
+      <div class="card2"><h3>Scores</h3><pre style="white-space:pre-wrap;font:500 12px/1.5 ui-monospace,monospace;color:var(--tx2);margin:0">Scores are automatic. Your game's
+own score (a "score"/"points" value
+or on-screen number) is picked up and
+sent to its leaderboard. No score in
+your game → no leaderboard, that's fine.
 
-LZEnd(points, won)
-  Same, and shows the game-over screen.
+Want exact control? Call either:
+LZScore(points)  — save a score
+LZEnd(points, won) — save + game-over
 
 Scores are capped and rate-limited.</pre>
       <div class="fld" style="margin-top:14px"><label>Description</label><textarea id="desc" maxlength="300">${esc(P.desc || "")}</textarea></div>

@@ -44,6 +44,7 @@
 .list{overflow:hidden}
 .badge{display:inline-block;margin-left:8px;border-radius:999px;padding:2px 8px;font:800 10px var(--display);letter-spacing:.08em;vertical-align:2px}
 .badge.creator{background:var(--grad);color:#fff}.badge.admin{background:rgba(34,228,255,.16);color:var(--cyan);border:1px solid rgba(34,228,255,.4)}
+.badge.mythic{background:linear-gradient(90deg,#ffd54a,#ff9f1c 45%,#ff5e9c);color:#2a1500;box-shadow:0 0 10px rgba(255,159,28,.45)}
 .pod .badge{margin:0 0 6px}
 .hdr{display:grid;grid-template-columns:44px 1fr auto;gap:12px;padding:12px 16px;font:800 11px var(--display);letter-spacing:.12em;color:var(--mut);border-bottom:1px solid var(--line)}
 @media (max-width:560px){.podium{gap:8px}.pod{padding:16px 6px 12px}.pod .av{width:42px;height:42px;font-size:17px}.pod.p1 .av{width:50px;height:50px}}
@@ -54,7 +55,7 @@
   <a class="logo" href="/arcade/" data-logo><b>LAZER <span>ARCADE</span></b></a>
   <div class="links"><a href="/arcade/#games">Games</a><a href="/arcade/community/">Community</a><a href="/arcade/leaderboard/" class="on">Leaderboard</a><a href="/arcade/#soon">Coming soon</a><a href="#" data-feedback>Feedback</a></div>
   <div class="sp"></div>
-  <a class="back" href="/">← Carzzy Apps</a>
+  <a class="back" href="https://www.carzzyapps.com/">← Carzzy Apps</a>
   <button class="acct out" id="acct" type="button">Sign in</button>
 </div></nav>
 
@@ -71,7 +72,7 @@
   <div class="panel list"><div class="hdr"><span>#</span><span>PLAYER</span><span id="col">LP</span></div><div class="rows" id="rows"><div class="lr"><div class="skel" style="height:18px;grid-column:1/-1"></div></div><div class="lr"><div class="skel" style="height:18px;grid-column:1/-1"></div></div></div></div>
 </main>
 
-<footer><div class="wrap"><span><b>Lazer Arcade</b> by Lazer Yudel · part of <a href="/">Carzzy Apps</a></span><span><a href="/arcade/">All games</a> · <a href="/Leaderboards/">Other Carzzy leaderboards</a></span></div></footer>
+<footer><div class="wrap"><span><b>Lazer Arcade</b> by Lazer Yudel · part of <a href="https://www.carzzyapps.com/">Carzzy Apps</a></span><span><a href="/arcade/">All games</a> · <a href="https://www.carzzyapps.com/Leaderboards/">Other Carzzy leaderboards</a></span></div></footer>
 
 <script type="module">
 import LZ, { mountShell } from "/arcade/shell.js";
@@ -86,7 +87,8 @@ let metric = "lp", unwatch = null;
 const roles = await LZ.roles();
 const [TIERS, ACH] = await Promise.all([loadTiers(), loadAch()]);
 injectCss();
-const badge = (u) => { const r = roles[String(u || "").toLowerCase()]; return r ? `<span class="badge ${r}">${r === "creator" ? "CREATOR" : "ADMIN"}</span>` : ""; };
+const BADGE_LABELS = { creator: "CREATOR", admin: "ADMIN", mythic: "MYTHIC" };
+const badge = (u) => { const r = roles[String(u || "").toLowerCase()]; return r ? `<span class="badge ${esc(r)}">${esc(BADGE_LABELS[r] || r.toUpperCase())}</span>` : ""; };
 
 function field() { return tab === "time" ? (metric === "best" ? "timeBest" : "timeTotal") : tab === "all" ? (metric === "best" ? "bestRound" : "lp") : `games.${tab}.${metric}`; }
 function val(r) { return tab === "time" ? (metric === "best" ? r.timeBest || 0 : r.timeTotal || 0) : tab === "all" ? (metric === "best" ? r.bestRound || 0 : r.lp) : ((r.games || {})[tab] || {})[metric] || 0; }

@@ -43,6 +43,7 @@
 .board{padding:6px 4px}
 .lr .badge{display:inline-block;margin-left:8px;border-radius:999px;padding:2px 8px;font:800 10px var(--display);letter-spacing:.08em;vertical-align:2px}
 .badge.creator{background:var(--grad);color:#fff}.badge.admin{background:rgba(34,228,255,.16);color:var(--cyan);border:1px solid rgba(34,228,255,.4)}
+.badge.mythic{background:linear-gradient(90deg,#ffd54a,#ff9f1c 45%,#ff5e9c);color:#2a1500;box-shadow:0 0 10px rgba(255,159,28,.45)}
 .board .bh{display:flex;align-items:center;justify-content:space-between;padding:0 16px 10px}
 .board .bh h3{font-size:16px}
 .board .bh a{font-weight:800;font-size:13px;color:var(--cyan);text-decoration:none}
@@ -201,7 +202,7 @@
   <a class="logo" href="/arcade/" data-logo><b>LAZER <span>ARCADE</span></b></a>
   <div class="links"><a href="#games" class="on">Games</a><a href="#today">Events</a><a href="/arcade/community/">Community</a><a href="/arcade/leaderboard/">Leaderboard</a><a href="#soon">Coming soon</a><a href="#" data-feedback>Feedback</a></div>
   <div class="sp"></div>
-  <a class="back" href="/">← Carzzy Apps</a>
+  <a class="back" href="https://www.carzzyapps.com/">← Carzzy Apps</a>
   <button class="acct out" id="acct" type="button">Sign in</button>
 </div></nav>
 
@@ -279,7 +280,7 @@
   </section>
 </main>
 
-<footer><div class="wrap"><span><b>Lazer Arcade</b> by Lazer Yudel · part of <a href="/">Carzzy Apps</a></span><span><a href="/arcade/leaderboard/">Leaderboard</a> · <a href="/arcade/credits/">Credits</a> · <a href="#" data-feedback>Feedback</a></span></div></footer>
+<footer><div class="wrap"><span><b>Lazer Arcade</b> by Lazer Yudel · part of <a href="https://www.carzzyapps.com/">Carzzy Apps</a></span><span><a href="/arcade/leaderboard/">Leaderboard</a> · <a href="/arcade/credits/">Credits</a> · <a href="#" data-feedback>Feedback</a></span></div></footer>
 
 <script type="module">
 import LZ, { mountShell } from "/arcade/shell.js";
@@ -362,7 +363,8 @@ const roles = await LZ.roles();
 const [TIERS, ACH] = await Promise.all([loadTiers(), loadAch()]);
 injectCss();
 let myRow = null, myVotes = { counts: {}, mine: null };
-const badge = (u) => { const r = roles[String(u || "").toLowerCase()]; return r ? `<span class="badge ${r}">${r === "creator" ? "CREATOR" : "ADMIN"}</span>` : ""; };
+const BADGE_LABELS = { creator: "CREATOR", admin: "ADMIN", mythic: "MYTHIC" };
+const badge = (u) => { const r = roles[String(u || "").toLowerCase()]; return r ? `<span class="badge ${r}">${BADGE_LABELS[r] || r.toUpperCase()}</span>` : ""; };
 let unwatch = null;
 function board() {
   if (unwatch) unwatch();

@@ -23,7 +23,7 @@ export async function getGame(id) {
   try { const s = await getDoc(doc(db, "communityGames", id)); if (s.exists()) return Object.assign({ id }, BUILTIN[id] ? { data: BUILTIN[id].data, thumb: BUILTIN[id].thumb } : {}, s.data()); } catch (e) { if (!BUILTIN[id]) throw e; }
   return BUILTIN[id] ? Object.assign({}, BUILTIN[id]) : null;
 }
-export async function isStaff() { if (!LZ.signedIn()) return false; const r = await LZ.roles(); return !!r[(LZ.username || "").toLowerCase()]; }
+export async function isStaff() { if (!LZ.signedIn()) return false; const r = await LZ.roles(); return ["admin", "creator"].includes(r[(LZ.username || "").toLowerCase()]); }
 export function projectHasCode(p) { return !!(p && (p.engine === "custom" || (p.script && String(p.script).trim()))); }
 // Games with creator code go to the staff review queue ("pending") unless a staff member publishes them.
 export async function publish(project, thumb, existingId) {

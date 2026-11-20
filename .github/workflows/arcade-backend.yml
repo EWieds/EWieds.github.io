@@ -64,6 +64,12 @@ jobs:
         run: |
           cd "$RUNNER_TEMP" && npm i firebase-admin@13 >/dev/null
           NODE_PATH="$RUNNER_TEMP/node_modules" node "$GITHUB_WORKSPACE/.github/scripts/sync-arcade-roles.js" "$GITHUB_WORKSPACE/arcade/roles.json"
+      - name: Prune test data
+        if: steps.s.outputs.ok == '1'
+        env: { SA: "${{ secrets.FB_NEW_SA }}" }
+        run: |
+          cd "$RUNNER_TEMP" && npm i firebase-admin@13 >/dev/null
+          NODE_PATH="$RUNNER_TEMP/node_modules" node "$GITHUB_WORKSPACE/.github/scripts/arcade-prune-tests.js"
 
   tickets:
     runs-on: ubuntu-latest
