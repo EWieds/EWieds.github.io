@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+<head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Runner | Carzzy Apps</title>
+
+    <meta name="description" content="Run to the music in this endless runner: jump over spikes and duck under drones.">
+    <meta name="keywords" content="Rhythm Runner, endless runner, music game, browser game">
+    <meta name="author" content="Avis, DeBus">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="color-scheme" content="dark">
+    <meta name="application-name" content="Carzzy Apps">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Carzzy Apps">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Rhythm Runner | Carzzy Apps">
+    <meta property="og:description" content="Run to the music in this endless runner: jump over spikes and duck under drones.">
+    <meta property="og:url" content="https://www.carzzyapps.com/Rhythm-Runner/">
+    <meta property="og:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta property="og:image:alt" content="Carzzy Apps logo">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Rhythm Runner | Carzzy Apps">
+    <meta name="twitter:description" content="Run to the music in this endless runner: jump over spikes and duck under drones.">
+    <meta name="twitter:image" content="https://www.carzzyapps.com/Carzzy%20Apps%20Logo.png">
+    <meta name="twitter:image:alt" content="Carzzy Apps logo">
+    <link rel="canonical" href="https://www.carzzyapps.com/Rhythm-Runner/">
+
+    <link rel="icon" type="image/x-icon" href="/m/favicon.ico">
+
+  <!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VD38580YSL"></script>	
+	<script>
+  		window.dataLayer = window.dataLayer || [];
+  		function gtag(){dataLayer.push(arguments);}
+  		gtag('js', new Date());
+  		gtag('config', 'G-VD38580YSL');
+	</script>
+
+  <style>
+    body {
+      background: #0a0a0a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      overflow: hidden;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h2 {
+      font-size: 32px;
+    }
+
+    #ui-layer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 15, 15, 0.95);
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid #00d1b2;
+    }
+
+    .menu-btn {
+      padding: 12px 30px;
+      background: #00d1b2;
+      border: none;
+      border-radius: 30px;
+      color: white;
+      font-weight: bold;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .username-notice {
+      max-width: 310px;
+      margin: 0 auto 10px;
+      color: #b4bfbb;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    #usernamePrompt {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #111;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #00d1b2;
+      width: 260px;
+    }
+
+    #usernamePrompt .username-disclaimer {
+      color: #d3d8d6;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    #usernameInput {
+      width: 90%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #00d1b2;
+      background: #0a0a0a;
+      color: white;
+      text-align: center;
+    }
+
+    #usernameDisplay {
+      position: absolute;
+      top: 100px;
+      left: 20px;
+      color: #00d1b2;
+      font-size: 16px;
+    }
+
+    #changeUsernameBtn {
+      display: none;
+
+    }
+
+    canvas {
+      background: #050505;
+      width: 100%;
+      max-width: 800px;
+      border-bottom: 4px solid #00d1b2;
+    }
+
+    .stats {
+      position: absolute;
+      top: 100px;
+      right: 20px;
+      color: #00d1b2;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #best-label {
+      color: #ffd700;
+      font-size: 14px;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 30px;
+      display: none;
+      gap: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .action-btn {
+      width: 95px;
+      height: 95px;
+      background: rgba(0, 209, 178, 0.2);
+      border: 3px solid #00d1b2;
+      border-radius: 50%;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <script src="/m/nav-bar.js"></script>
+
+  <div class="stats">
+    SCORE: <span id="score">0</span><br>
+    <div id="best-label">BEST: <span id="best-score">0</span>
+      <span title="Not based on highest score of user.&#10;Based on highest score saved in the browsing data."> ⓘ</span>
+    </div>
+  </div>
+
+  <div id="usernameDisplay"></div>
+
+  <div id="ui-layer">
+    <img src="https://carzzyapps.github.io/Rhythm-Runner/rhythm-dj.png" style="width: 60px;" alt="Rhythm Runner Icon">
+    <h2 id="title">RHYTHM RUNNER</h2>
+    <p><b>JUMP</b> spikes | <b>DUCK</b> drones</p>
+    <p class="username-notice">Inappropriate or invalid usernames will be replaced with a randomly generated name. Scores are saved and appear on the leaderboard.</p>
+
+    <button id="startBtn" class="menu-btn">START GAME</button><br>
+    <button id="changeUsernameBtn" class="menu-btn">CHANGE USERNAME</button>
+  </div>
+
+  <!-- USERNAME PROMPT -->
+  <div id="usernamePrompt">
+    <h3>ENTER USERNAME</h3>
+    <p class="username-disclaimer">Use 2–20 letters, numbers, or underscores. Do not use your real name or claim someone else's username. Inappropriate or invalid usernames will be replaced with a randomly generated username. Your scores are saved and shown on the <a href="https://www.carzzyapps.com/Leaderboards/RR/" style="color: #00d1b2" target="_blank" rel="noopener" title="Opens in a new tab">leaderboard</a>.</p>
+    <input id="usernameInput" type="text" maxlength="20" placeholder="Do not use your real name">
+    <button id="saveUsernameBtn" class="menu-btn">SAVE</button>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="controls" id="controls">
+    <button class="action-btn" id="jumpBtn">JUMP</button>
+    <button class="action-btn" id="duckBtn">DUCK</button>
+  </div>
+
+   <script src="/m/firebase-config.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+
+    if (!window.CARZZY_FIREBASE_CONFIG) {
+      throw new Error("Rhythm Runner Firebase configuration is unavailable.");
+    }
+
+    const app = initializeApp(window.CARZZY_FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const submitRhythmRunnerScore = httpsCallable(getFunctions(app), "submitRhythmRunnerScore");
+
+    const LEGACY_SCORE_URL = "https://script.google.com/macros/s/AKfycbyUqQ31FsONw4J5ibyvLFzIoSMvcd8qfkFwbc_j-BXEO0S3pTiqARVZ4mOm5C3rI-7sIA/exec";
+    const RR_USERNAME_KEY = "rr_username";
+    const RR_LEGACY_IMPORT_KEY = "rr_legacy_imported";
+
+    let username = localStorage.getItem(RR_USERNAME_KEY) || null;
+    let currentAuthUser = null;
+
+    function normalizeLegacyUsername(value) {
+      return String(value || "").trim().replace(/m/\s+/g, " ").toLowerCase();
+    }
+
+    function updateUsernameDisplay() {
+      if (username) {
+        document.getElementById("usernameDisplay").innerText = "USER: " + username;
+        document.getElementById("changeUsernameBtn").style.display = "inline";
+      } else {
+        document.getElementById("usernameDisplay").innerText = "";
+        document.getElementById("changeUsernameBtn").style.display = "none";
+      }
+    }
+
+    function askForUsername() {
+      document.getElementById("usernamePrompt").style.display = "block";
+      document.getElementById("usernameInput").value = username || "";
+    }
+
+    async function loadAuthUsername() {
+      if (!auth.currentUser) return null;
+      try {
+        const profileSnap = await getDoc(doc(db, "usernames", auth.currentUser.uid));
+        const profile = profileSnap.data();
+        if (profile && typeof profile.username === "string" && profile.username.trim()) {
+          username = profile.username.trim();
+          localStorage.setItem(RR_USERNAME_KEY, username);
+          return username;
+        }
+      } catch (error) {
+        console.error("Could not read the signed-in username.", error);
+      }
+      if (auth.currentUser.displayName) {
+        username = auth.currentUser.displayName.trim();
+        localStorage.setItem(RR_USERNAME_KEY, username);
+      }
+      return username;
+    }
+
+    async function importLegacyScoresForUser() {
+      if (sessionStorage.getItem(RR_LEGACY_IMPORT_KEY) === "1") return;
+      if (!username) return;
+
+      try {
+        const response = await fetch(`${LEGACY_SCORE_URL}?action=getScores`, { cache: "no-store" });
+        if (!response.ok) return;
+        const rows = await response.json();
+        const normalizedCurrent = normalizeLegacyUsername(username);
+
+        for (const row of Array.isArray(rows) ? rows : []) {
+          const legacyName = String(row && row.username || "").trim();
+          if (!legacyName || !Number.isFinite(Number(row.score))) continue;
+          if (normalizeLegacyUsername(legacyName) !== normalizedCurrent) continue;
+
+          const score = Number(row.score);
+          if (!Number.isFinite(score) || score <= 0) continue;
+          await submitScore(username, score);
+        }
+
+        sessionStorage.setItem(RR_LEGACY_IMPORT_KEY, "1");
+      } catch (error) {
+        console.warn("Could not import legacy Rhythm Runner scores.", error);
+      }
+    }
+
+    async function saveUsernameInAuthSystem(value) {
+      const nextUsername = value.trim();
+      if (!nextUsername) return null;
+
+      if (auth.currentUser) {
+        const usernamesRef = collection(db, "usernames");
+        const lower = nextUsername.toLowerCase();
+        const nameQuery = query(usernamesRef, where("usernameLower", "==", lower));
+        const matches = await getDocs(nameQuery);
+        const isTakenByAnotherUser = matches.docs.some((docSnap) => docSnap.id !== auth.currentUser.uid && docSnap.data().uid !== auth.currentUser.uid);
+
+        if (isTakenByAnotherUser) {
+          throw new Error("taken");
+        }
+
+        await setDoc(doc(db, "usernames", auth.currentUser.uid), {
+          uid: auth.currentUser.uid,
+          guest: false,
+          username: nextUsername,
+          usernameLower: lower
+        }, { merge: true });
+
+        await updateProfile(auth.currentUser, { displayName: nextUsername });
+      }
+
+      username = nextUsername;
+      localStorage.setItem(RR_USERNAME_KEY, username);
+      return username;
+    }
+
+    document.getElementById("saveUsernameBtn").onclick = async () => {
+      const input = document.getElementById("usernameInput").value.trim();
+
+      if (input.toUpperCase() === "RR") {
+        username = null;
+        localStorage.removeItem(RR_USERNAME_KEY);
+        localStorage.removeItem("game_token");
+        document.getElementById("usernamePrompt").style.display = "none";
+        updateUsernameDisplay();
+        return;
+      }
+
+      try {
+        const saved = await saveUsernameInAuthSystem(input);
+        if (!saved) {
+          throw new Error("Username cannot be empty.");
+        }
+
+        document.getElementById("usernamePrompt").style.display = "none";
+        updateUsernameDisplay();
+        await importLegacyScoresForUser();
+
+        if (input && input.toUpperCase() !== saved.toUpperCase()) {
+          alert("That username could not be used. Your randomly generated username is " + saved + ".");
+        }
+      } catch (error) {
+        const message = error && error.message === "taken"
+          ? "That username is already taken. Please choose another one."
+          : "Your username could not be saved. Check your connection and try again.";
+        console.error("Could not save the Rhythm Runner username.", error);
+        alert(message);
+      }
+    };
+
+    document.getElementById("changeUsernameBtn").onclick = () => {
+      askForUsername();
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      currentAuthUser = user;
+      if (user) {
+        await loadAuthUsername();
+        await importLegacyScoresForUser();
+      } else {
+        username = localStorage.getItem(RR_USERNAME_KEY) || null;
+        await importLegacyScoresForUser();
+      }
+      updateUsernameDisplay();
+    });
+
+    updateUsernameDisplay();
+
+    async function submitScore(name, score) {
+      let playerToken = currentAuthUser ? currentAuthUser.uid : localStorage.getItem("game_token");
+      if (!playerToken) {
+        playerToken = `rr-${crypto.randomUUID().replaceAll("-", "")}`;
+        localStorage.setItem("game_token", playerToken);
+      }
+
+      const result = await submitRhythmRunnerScore({
+        playerId: playerToken,
+        username: name,
+        score
+      });
+      return result.data;
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const controls = document.getElementById('controls');
+
+    const playlist = [
+      'https://github.com/CARZZYAPPS/music/raw/refs/heads/main/Arcade.mp3'
+    ];
+
+    function shufflePlaylist(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    let currentTrackIndex = 0;
+    const bgMusic = new Audio(playlist[currentTrackIndex]);
+    bgMusic.volume = 1.0;
+
+    bgMusic.addEventListener('ended', () => {
+      currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+      bgMusic.src = playlist[currentTrackIndex];
+      bgMusic.play();
+    });
+
+    let ghostMode = false;
+    let inputBuffer = "";
+    const cheatCode = "sgdufbkhfdvjfdrfrbvforhfkjfifkkjghkdjhkhkjhjkjjjjjjjjjjjjjjjkkkkkkkkkkkkkkkkkkkklllllllllllllgdhgjgytfhgrjgfdhgjfdfjkfjhfdhgfgfggfhggfhydhfgffyfhtfthllllllllgffytgcghfddsghnbvftjkjuh215465446354685764646734670624121edd5d55d5d5d54f54f8f157ce5dd44484t8fvefiefo8ryeiluwy9eyr48rk8f4r9r3r4ru983roi48ur4iruo4ru984r4r9847r98r749r489r0328734347928343928740234873409832474533633543154053335763216574";
+
+    let gameActive = false, score = 0, bestScore = localStorage.getItem('rr_best_pro') || 0;
+    document.getElementById('best-score').innerText = bestScore;
+
+    let player = { x: 60, y: 0, w: 35, h: 45, baseH: 45, dy: 0, jumpPower: -15, grounded: true, isDucking: false };
+    let obstacles = [], gravity = 0.8, groundY = 0;
+    let gameSpeed = 10, spawnTimer = 0;
+    let isJumpKeyPressed = false;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = 350;
+      groundY = canvas.height - 50;
+      player.y = groundY - player.h;
+    }
+    window.onresize = resize;
+    resize();
+
+    function jump() {
+      if (player.grounded && gameActive && !player.isDucking && !isJumpKeyPressed) {
+        player.dy = player.jumpPower;
+        player.grounded = false;
+        isJumpKeyPressed = true;
+      }
+    }
+
+    function toggleDuck(ducking) {
+      if (!player.grounded && ducking) return;
+      player.isDucking = ducking;
+      player.h = ducking ? 22 : player.baseH;
+      player.y = groundY - player.h;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'Space') jump();
+      if (e.code === 'ArrowDown') toggleDuck(true);
+
+      inputBuffer += e.key.toUpperCase();
+      if (inputBuffer.includes(cheatCode)) {
+        ghostMode = !ghostMode;
+        inputBuffer = "";
+        document.getElementById('cheat-indicator').style.display = ghostMode ? 'block' : 'none';
+      }
+      if (inputBuffer.length > 5) inputBuffer = inputBuffer.substring(1);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'Space') isJumpKeyPressed = false;
+      if (e.code === 'ArrowDown') toggleDuck(false);
+    });
+
+    document.getElementById('jumpBtn').ontouchstart = (e) => { e.preventDefault(); jump(); };
+    document.getElementById('jumpBtn').ontouchend = (e) => { e.preventDefault(); isJumpKeyPressed = false; };
+    document.getElementById('duckBtn').ontouchstart = (e) => { e.preventDefault(); toggleDuck(true); };
+    document.getElementById('duckBtn').ontouchend = (e) => { e.preventDefault(); toggleDuck(false); };
+
+    // FRAMERATE INDEPENDENCE LOGIC [1.1.1]
+    let lastTime = 0;
+    let accumulator = 0;
+    const timestep = 1000 / 90; // stable timestep 60Hz (~16.67ms) [1.2.1]
+
+    function update(timestamp) {
+      if (!gameActive) return;
+
+      if (!lastTime) lastTime = timestamp;
+      let elapsed = timestamp - lastTime;
+      lastTime = timestamp;
+
+      // Prevent "spiral of death" during lag spikes [1.1.1]
+      if (elapsed > 100) elapsed = 100;
+
+      accumulator += elapsed;
+
+      // Run fixed timestep steps for accurate physics regardless of monitor [1.2.1]
+      while (accumulator >= timestep) {
+        updatePhysics();
+        accumulator -= timestep;
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    function updatePhysics() {
+      spawnTimer++;
+      let nextSpawn = Math.floor(Math.random() * (85 - 35) + 35);
+      if (spawnTimer > Math.max(nextSpawn, 75 - gameSpeed)) {
+        const isDrone = Math.random() > 0.8;
+        obstacles.push({
+          x: canvas.width, w: 30,
+          h: isDrone ? 1000 : 45,
+          y: isDrone ? groundY - 1030 : groundY - 45,
+          visualY: isDrone ? groundY - 55 : groundY - 45,
+          type: isDrone ? 'drone' : 'spike',
+          passed: false
+        });
+        spawnTimer = 0;
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let o = obstacles[i];
+        o.x -= gameSpeed;
+
+        if (!ghostMode) {
+          if (o.x < player.x + player.w && o.x + o.w > player.x &&
+            player.y < o.y + o.h && player.y + player.h > o.y) {
+            gameOver();
+            return;
+          }
+        }
+
+        if (o.x + o.w < player.x && !o.passed) {
+          o.passed = true;
+          score += 10;
+          document.getElementById('score').innerText = score;
+          gameSpeed += 0.12;
+        }
+        if (o.x < -50) obstacles.splice(i, 1);
+      }
+
+      if (!player.grounded) {
+        player.dy += gravity;
+        player.y += player.dy;
+      }
+      if (player.y > groundY - player.h) {
+        player.y = groundY - player.h;
+        player.dy = 0;
+        player.grounded = true;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(0, 209, 178, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+
+      for (let o of obstacles) {
+        ctx.fillStyle = o.type === 'drone' ? "#ff0077" : "#00d1b2";
+        if (o.type === 'drone') {
+          ctx.fillRect(o.x, o.visualY, o.w, 15);
+          ctx.fillStyle = "rgba(255, 0, 119, 0.3)";
+          ctx.fillRect(o.x - 10, o.visualY + 5, o.w + 20, 5);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(o.x, groundY);
+          ctx.lineTo(o.x + o.w / 2, groundY - o.h);
+          ctx.lineTo(o.x + o.w, groundY);
+          ctx.fill();
+        }
+      }
+
+      ctx.globalAlpha = ghostMode ? 0.4 : 1.0;
+      ctx.shadowBlur = 10; ctx.shadowColor = "#00d1b2";
+      ctx.fillStyle = player.isDucking ? "#008a76" : "#111";
+      ctx.strokeStyle = "#00d1b2";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(player.x, player.y, player.w, player.h, 5);
+      ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1.0;
+    }
+
+    function gameOver() {
+      gameActive = false;
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('rr_best_pro', bestScore);
+        document.getElementById('best-score').innerText = bestScore;
+      }
+      if (username) {
+        submitScore(username, score)
+          .then((saved) => {
+            username = saved.username;
+            localStorage.setItem("rr_username", username);
+            updateUsernameDisplay();
+          })
+          .catch((error) => {
+            console.error("Could not save the Rhythm Runner score.", error);
+            alert("Your score could not be saved. Check your connection and try again.");
+          });
+      }
+
+      document.getElementById('ui-layer').style.display = 'block';
+      document.getElementById('title').innerText = "SYSTEM CRASH";
+      controls.style.display = 'none';
+    }
+
+    document.getElementById('startBtn').onclick = () => {
+      if (!username) {
+        askForUsername();
+        return;
+      }
+      shufflePlaylist(playlist);
+      currentTrackIndex = 0;
+      bgMusic.src = playlist[currentTrackIndex];
+      score = 0;
+      obstacles = [];
+      gameSpeed = 10;
+      spawnTimer = 0;
+      
+      // Reset loops [1.1.1, 1.2.1]
+      lastTime = 0;
+      accumulator = 0;
+
+      document.getElementById('score').innerText = "0";
+      document.getElementById('ui-layer').style.display = 'none';
+      controls.style.display = 'flex';
+
+      gameActive = true;
+      bgMusic.play().catch(e => { });
+      requestAnimationFrame(update);
+    };
+
+    document.getElementById("usernamePrompt").addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('saveUsernameBtn').click();
+      }
+    });
+  </script>
+
+</body>
+<script data-goatcounter="https://carzzyapps.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+</html>

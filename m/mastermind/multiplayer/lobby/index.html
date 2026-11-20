@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mastermind Multiplayer Lobby | Carzzy Apps</title>
+  <style>
+    body { background: #0a0a0a; color: #eee; font-family: "segoe ui", sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    #lobby-container { text-align: center; width: 100%; max-width: 420px; padding: 20px; }
+    h2 { font-size: 32px; color: #00d1b2; letter-spacing: 3px; margin: 0 0 10px; text-transform: uppercase; font-weight: 800; text-shadow: 0 0 20px rgba(0, 209, 178, 0.25); }
+    h3 { color: #888; font-size: 16px; font-weight: 400; margin: 0 0 30px; line-height: 1.5; }
+    
+    .card {
+      background: #121212;
+      border: 1px solid #222;
+      border-top: 3px solid #00d1b2;
+      border-radius: 12px;
+      padding: 40px 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(0, 209, 178, 0.12);
+    }
+    
+    button {
+      background: #00d1b2;
+      color: #0a0a0a;
+      border: none;
+      padding: 16px 40px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 209, 178, 0.3);
+      width: 100%;
+    }
+    button:hover {
+      background: #00b59b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 209, 178, 0.5);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    button:disabled {
+      background: #333;
+      color: #777;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <script src="/m/nav-bar.js"></script>
+  <div id="lobby-container">
+    <h2>Multiplayer Mastermind</h2>
+    <h3>Play Mastermind online against other players!</h3>
+    <div class="card">
+      <button id="play-btn">Join Lobby</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, push, set, get, query, orderByChild, equalTo, limitToFirst, runTransaction } 
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgu1uiobgixRWcvIja6bI1l6M2KQ36FL4",
+      authDomain: "carzzy-apps.firebaseapp.com",
+      projectId: "carzzy-apps",
+      databaseURL: "https://carzzy-apps-default-rtdb.firebaseio.com",
+      appId: "1:716862658931:web:2d987c92c3021837dc0d06"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const playBtn = document.getElementById('play-btn');
+
+    playBtn.addEventListener('click', async () => {
+      try {
+        playBtn.disabled = true;
+        playBtn.innerText = "Searching...";
+
+        const cred = await signInAnonymously(auth);
+        const lobbyId = await findOrHostMatch(cred.user.uid);
+
+        window.location.href = `/mastermind/multiplayer?lobbyId=${lobbyId}`;
+      } catch (error) {
+        console.error("Matchmaking failed:", error);
+        playBtn.disabled = false;
+        playBtn.innerText = "Join Lobby";
+        alert("Failed to join game. Please try again!");
+      }
+    });
+
+    async function findOrHostMatch(playerId) {
+      const lobbiesRef = ref(db, 'lobbies');
+      const waitingQuery = query(lobbiesRef, orderByChild('status'), equalTo('waiting'), limitToFirst(5));
+      const snapshot = await get(waitingQuery);
+      const lobbies = snapshot.val();
+
+      if (lobbies) {
+        for (const lobbyId of Object.keys(lobbies)) {
+          const result = await runTransaction(ref(db, `lobbies/${lobbyId}/players`), (players) => {
+            if (!players) return { [playerId]: true };
+            if (Object.keys(players).length >= 2) return;
+            players[playerId] = true;
+            return players;
+          });
+
+          if (result.committed) {
+            await set(ref(db, `lobbies/${lobbyId}/status`), 'playing');
+            return lobbyId;
+          }
+        }
+      }
+
+      const newLobbyRef = push(lobbiesRef);
+      await set(newLobbyRef, {
+        host: playerId,
+        status: 'waiting',
+        players: { [playerId]: true }
+      });
+      return newLobbyRef.key;
+    }
+  </script>
+</body>
+</html>

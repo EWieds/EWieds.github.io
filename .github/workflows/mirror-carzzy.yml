@@ -1,0 +1,36 @@
+name: Mirror Carzzy Apps to /m
+
+# Keeps /m/ a live, self-contained mirror of carzzyapps.github.io (paths rewritten
+# to /m/...). Runs a few times a day and can be run on demand.
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mirror-carzzy
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone carzzyapps
+        run: git clone --depth 1 https://github.com/CARZZYAPPS/carzzyapps.github.io carzzy
+      - name: Rebuild /m mirror
+        run: node .github/scripts/mirror-carzzy-to-m.js carzzy .
+      - name: Commit if changed
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          rm -rf carzzy
+          git config user.name "carzzy-mirror"; git config user.email "actions@github.com"
+          git add m
+          if git diff --cached --quiet; then echo "mirror already up to date"; exit 0; fi
+          git commit -m "Mirror carzzyapps -> /m [skip ci]"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" HEAD:main
