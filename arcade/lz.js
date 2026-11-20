@@ -114,7 +114,7 @@ async function cloudSave(id) {
   try { const s = await within(getDoc(doc(db, "arcadeSaves", state.user.uid, "games", id)), 4000, null); return s && s.exists() ? s.data() : null; } catch (e) { console.warn("cloud load", e.code || e); return null; }
 }
 async function writeCloud(id) {
-  const g = games[id]; if (!g || !signedIn()) return false;
+  const g = games[id]; if (!g || !signedIn() || !lockOk()) return false;
   const data = ls.raw(g.localKey); if (!data) return false;
   try {
     await setDoc(doc(db, "arcadeSaves", state.user.uid, "games", id), {
@@ -156,17 +156,87 @@ async function reconcile(id) {
   return { changed };
 }
 
+
+/* ---------------- one live game at a time ----------------
+   Points, playtime and saves only count in the tab (and on the device) that most recently opened a game.
+   Any older game tab is frozen behind a "playing somewhere else" screen: it can't earn, and it can't
+   overwrite the live tab's save. Taking it back reloads it with the latest save. */
+const TAB = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const lock = { game: null, held: true, unsub: null, confirmed: false, keys: new Set() };
+let bc = null; try { bc = new BroadcastChannel("lz-play"); } catch (e) {}
+function lockOk() { return !lock.game || lock.held; }
+// Frozen tabs must not write game saves (they share localStorage with the live tab).
+try {
+  const realSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    if (this === window.localStorage && !lockOk() && (lock.keys.has(k) || String(k).startsWith("lz.prog."))) return;
+    return realSet.call(this, k, v);
+  };
+} catch (e) {}
+function claimLock(game) {
+  lock.game = game; lock.held = true; lock.confirmed = false; hideLockScreen();
+  const msg = { t: "claim", tab: TAB, game, at: Date.now() };
+  try { if (bc) bc.postMessage(msg); } catch (e) {}
+  ls.set("lz.play", msg);
+  if (signedIn()) watchLive(game);
+}
+function loseLock() {
+  if (!lock.game || !lock.held) return;
+  try { flushTime(); } catch (e) {}
+  lock.held = false;
+  showLockScreen();
+}
+if (bc) bc.onmessage = (e) => { const m = e.data || {}; if (m.t === "claim" && m.tab !== TAB) loseLock(); };
+window.addEventListener("storage", (e) => {
+  if (e.key !== "lz.play" || !e.newValue) return;
+  try { const m = JSON.parse(e.newValue); if (m.tab && m.tab !== TAB) loseLock(); } catch (_) {}
+});
+function watchLive(game) {
+  if (lock.unsub) { try { lock.unsub(); } catch (e) {} lock.unsub = null; }
+  const ref = doc(db, "arcadeLive", state.user.uid);
+  setDoc(ref, { tab: TAB, game: String(game).slice(0, 24), at: serverTimestamp() })
+    .then(() => { lock.confirmed = true; }).catch(() => { lock.confirmed = false; });
+  try {
+    lock.unsub = onSnapshot(ref, (snap) => {
+      if (!lock.confirmed || snap.metadata.hasPendingWrites) return;
+      const d = snap.data(); if (d && d.tab && d.tab !== TAB) loseLock();
+    }, () => {});
+  } catch (e) {}
+}
+function showLockScreen() {
+  let el = document.getElementById("lz-lock");
+  if (!el) {
+    el = document.createElement("div"); el.id = "lz-lock";
+    el.style.cssText = "position:fixed;inset:0;z-index:2147483600;background:rgba(4,8,18,.94);display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#eef4ff;text-align:center";
+    el.innerHTML = '<div style="max-width:380px"><div style="font:800 22px system-ui;letter-spacing:.5px;margin-bottom:8px">Playing somewhere else</div>' +
+      '<div style="font:500 15px/1.5 system-ui;color:#b9c8e6;margin-bottom:18px">This game is open in another tab or on another device. Lazer Points and saves only count in one place at a time.</div>' +
+      '<button id="lz-lock-go" style="font:700 16px system-ui;padding:13px 22px;border-radius:12px;border:0;background:#35e0ff;color:#03202c;cursor:pointer">Play here instead</button></div>';
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach((t) => el.addEventListener(t, (e) => e.stopPropagation(), true));
+    document.body.appendChild(el);
+    el.querySelector("#lz-lock-go").onclick = () => { const g = lock.game; claimLock(g); location.reload(); };
+  }
+  el.style.display = "flex";
+  try { document.activeElement && document.activeElement.blur(); } catch (e) {}
+}
+function hideLockScreen() { const el = document.getElementById("lz-lock"); if (el) el.style.display = "none"; }
+// Swallow game input while frozen (capture phase, before the game's own handlers).
+["keydown", "keyup", "pointerdown", "mousedown", "touchstart"].forEach((t) => window.addEventListener(t, (e) => {
+  if (!lockOk() && !(e.target && e.target.closest && e.target.closest("#lz-lock"))) { e.stopImmediatePropagation(); e.preventDefault && t !== "touchstart" && e.preventDefault(); }
+}, true));
+
 async function boot(id, opts) {
   games[id] = Object.assign({ localKey: id, major: 1, minor: 0, progressOf: () => 0, dirty: false, timer: null }, opts || {});
   await Promise.race([readyP, sleep(3000)]);
   countPlay(id);
+  lock.keys.add(games[id].localKey);
   try { await within(reconcile(id), 6000, null); } catch (e) { console.warn("reconcile", e); }
+  claimLock(id);
   if (signedIn()) syncPending().catch(() => {});
   return { user: state.user, username: state.username };
 }
 
 function save(id) {
-  const g = games[id]; if (!g) return;
+  const g = games[id]; if (!g || !lockOk()) return;
   g.dirty = true;
   if (!signedIn() || g.timer) return;
   g.timer = setTimeout(() => { g.timer = null; if (g.dirty) writeCloud(id); }, 12000);
@@ -227,12 +297,56 @@ function mergeProg(a, b) {
   });
   return out;
 }
+/* ---------------- achievement ledger ----------------
+   The account's cloud prog.ach is the record of what has been PAID. Any unlock this device knows about
+   that the cloud doesn't have yet is paid exactly once, inside the same write that records it.
+   Bonuses bigger than one write's LP cap are paid in parts (prog.achPart) over several writes. */
+let bonusMapP = null;
+function bonusMap() {
+  if (!bonusMapP) bonusMapP = extras().then((x) => {
+    const m = {};
+    x.achievements.forEach((a) => { m[a.id] = a.bonus || 0; });
+    x.events.forEach((e) => (e.missions || []).forEach((mm) => { m["ev:" + e.id + ":" + mm.id] = mm.bonus || 0; }));
+    return m;
+  }).catch(() => { bonusMapP = null; return null; });
+  return bonusMapP;
+}
+// Build the prog to write and how much achievement LP to pay now (never more than budget).
+function ledger(cur, local, map, budget) {
+  const cp = cur.prog || {}, prog = mergeProg(cp, local);
+  const ach = Object.assign({}, cp.ach || {}), part = Object.assign({}, cp.achPart || {});
+  let pay = 0, owe = 0; const paid = [];
+  if (map) Object.keys(local.ach || {}).sort().forEach((k) => {
+    if (ach[k] || !(k in map)) return;
+    const need = Math.max(0, (map[k] || 0) - (part[k] || 0)), take = Math.min(need, Math.max(0, budget - pay));
+    pay += take;
+    if (take >= need) { ach[k] = local.ach[k]; delete part[k]; paid.push(k); } else { part[k] = (part[k] || 0) + take; owe += need - take; }
+  });
+  prog.ach = ach;
+  if (Object.keys(part).length) prog.achPart = part;
+  return { prog, pay, owe, paid };
+}
+function unpaidCount(row) {
+  const have = (row && row.prog && row.prog.ach) || {}, loc = getProg().ach || {};
+  return Object.keys(loc).filter((k) => !have[k]).length;
+}
+// Lifetime floors from the account row, so milestones count everything a player did before
+// achievements (or this device) started tracking: total games finished, LP earned, games played.
+function floors(ids) {
+  const r = state.row; if (!r || !r.games) return {};
+  let plays = 0, distinct = 0;
+  Object.entries(r.games).forEach(([k, v]) => { if (k === "bonus" || !v) return; plays += v.plays || 0; if ((v.plays || 0) > 0 && (!ids || ids.has(k))) distinct++; });
+  const bonus = (r.games.bonus && r.games.bonus.lp) || 0;
+  return { sessions: plays, lpEarned: Math.max(0, (r.lp || 0) - bonus), allGames: distinct };
+}
+function measureF(type, days, target, n, ids) { return Math.max(measure(type, days, target, n), floors(ids)[type] || 0); }
+
 // Pull the account's progress down (and fold in any guest progress from this device) once signed in.
 async function syncProg() {
   if (!signedIn()) return getProg();
   const guest = ls.get("lz.prog.guest", null);
   let cloud = null;
-  try { const s = await within(getDoc(doc(db, "arcadePlayers", state.user.uid)), 4000, null); cloud = s && s.exists() ? s.data().prog : null; } catch (e) {}
+  try { const s = await within(getDoc(doc(db, "arcadePlayers", state.user.uid)), 4000, null); if (s && s.exists()) { state.row = s.data(); cloud = state.row.prog; } } catch (e) {}
   const merged = mergeProg(mergeProg(getProg(), cloud), guest);
   setProg(merged); if (guest) ls.del("lz.prog.guest");
   return merged;
@@ -261,9 +375,9 @@ function measure(type, days, target, gameCount) {
 function windowDays(days, start, end) { const o = {}; Object.entries(days).forEach(([d, v]) => { if (d >= start && d <= end) o[d] = v; }); return o; }
 async function progress() {
   const [x, c] = await Promise.all([extras(), catalog()]);
-  const p = getProg(), n = c.games.length;
+  const p = getProg(), n = c.games.length, ids = new Set(c.games.map((g) => g.id));
   const ach = x.achievements.map((a) => {
-    const target = a.type === "allGames" ? n : a.target, have = measure(a.type, p.days, target, n);
+    const target = a.type === "allGames" ? n : a.target, have = measureF(a.type, p.days, target, n, ids);
     return Object.assign({}, a, { target, have: Math.min(have, target), done: !!p.ach[a.id], when: p.ach[a.id] || null });
   });
   const day = today();
@@ -280,13 +394,14 @@ async function progress() {
 // Record a finished session and return any newly completed achievements and missions.
 async function recordSession(id, lp, isGotd) {
   const [x, c] = await Promise.all([extras(), catalog()]);
-  const p = getProg(), d = today(), n = c.games.length;
+  if (signedIn() && !state.row) await within(syncProg(), 4000, null).catch(() => {});
+  const p = getProg(), d = today(), n = c.games.length, ids = new Set(c.games.map((g) => g.id));
   const o = p.days[d] || { g: [], n: 0, lp: 0, t: 0 };
   p.days[d] = { g: Array.from(new Set(o.g.concat(id))), n: o.n + 1, lp: o.lp + lp, t: o.t || (isGotd ? 1 : 0), sec: o.sec || 0 };
   const won = [];
   x.achievements.forEach((a) => {
     const target = a.type === "allGames" ? n : a.target;
-    if (!p.ach[a.id] && measure(a.type, p.days, target, n) >= target) { p.ach[a.id] = d; won.push({ kind: "Achievement", name: a.name, bonus: a.bonus }); }
+    if (!p.ach[a.id] && measureF(a.type, p.days, target, n, ids) >= target) { p.ach[a.id] = d; won.push({ kind: "Achievement", name: a.name, bonus: a.bonus }); }
   });
   activeEvents(x, d).forEach((e) => (e.missions || []).forEach((m) => {
     const k = "ev:" + e.id + ":" + m.id;
@@ -313,7 +428,8 @@ async function creditBonus(lp) {
 /* ---------------- Lazer Points ---------------- */
 async function addToAccount(entries) {
   // entries: { gameId: { lp, best, plays, last } }
-  const uid = state.user.uid, ref = doc(db, "arcadePlayers", uid);
+  const uid = state.user.uid, ref = doc(db, "arcadePlayers", uid), map = await bonusMap();
+  let res = null;
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     const cur = snap.exists() ? snap.data() : { lp: 0, games: {} };
@@ -330,11 +446,44 @@ async function addToAccount(entries) {
       if (o.eaPaid && !row.eaPaid) row.eaPaid = o.eaPaid;
       gm[k] = row;
     });
-    const out = keepExtras(cur, { username: state.username, lp: Math.min((cur.lp || 0) + add, (cur.lp || 0) + SESSION_LP_CAP), games: gm, prog: mergeProg(cur.prog, getProg()), updatedAt: serverTimestamp() });
+    add = Math.min(add, SESSION_LP_CAP);
+    const L = ledger(cur, getProg(), map, SESSION_LP_CAP - add);
+    if (L.pay) { const b = Object.assign({ lp: 0, best: 0, plays: 0, last: 0 }, gm.bonus || {}); b.lp += L.pay; gm.bonus = b; add += L.pay; }
+    const out = keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + add, games: gm, prog: L.prog, updatedAt: serverTimestamp() });
     if (br) { out.bestRound = br; out.bestRoundGame = brg.slice(0, 24); }
     out.timeTotal = progSeconds(out.prog); out.timeBest = Math.round((out.prog && out.prog.tBest) || 0);
     tx.set(ref, out);
+    res = { pay: L.pay, owe: L.owe, paid: L.paid, row: out };
   });
+  if (res) { state.row = res.row; if (res.owe > 0 || unpaidCount(res.row) > 0) scheduleOwed(); }
+  return res;
+}
+// Keep paying an owed achievement backlog in capped chunks.
+let owedT = null, owedN = 0;
+function scheduleOwed() {
+  if (owedT || owedN > 40) return;
+  owedT = setTimeout(async () => { owedT = null; owedN++; try { if (signedIn() && lockOk()) await addToAccount({}); } catch (e) { console.warn("ach pay", e.code || e); } }, 1500);
+}
+// On sign-in: unlock anything already earned (lifetime totals count) and pay anything unpaid.
+async function catchUp() {
+  if (!signedIn()) return;
+  try {
+    await syncProg();
+    const [x, c] = await Promise.all([extras(), catalog()]);
+    const p = getProg(), d = today(), n = c.games.length, ids = new Set(c.games.map((g) => g.id)), won = [];
+    x.achievements.forEach((a) => {
+      const target = a.type === "allGames" ? n : a.target;
+      if (!p.ach[a.id] && measureF(a.type, p.days, target, n, ids) >= target) { p.ach[a.id] = d; won.push(a); }
+    });
+    setProg(p);
+    if (!unpaidCount(state.row)) return;
+    let total = 0;
+    for (let i = 0; i < 30; i++) {
+      const r = await addToAccount({}); if (!r) break; total += r.pay;
+      if (!r.owe && !unpaidCount(r.row)) break;
+    }
+    if (total) toast(`Achievement bonuses paid: +${fmt(total)} Lazer Points`);
+  } catch (e) { console.warn("catch-up", e.code || e); }
 }
 async function settleEarly() {
   if (!signedIn()) return 0;
@@ -390,6 +539,7 @@ async function syncPending() {
 
 let askedThisPage = false;
 async function endSession(id, raw, info) {
+  if (!lockOk()) { toast("Points paused: this game is live in another tab or device."); return 0; }
   const early = await inEarlyAccess(id), mult = early ? 1 : await multiplier(id), base = await toLP(id, raw), lp = Math.round(base * mult);
   const won = early ? [] : await recordSession(id, lp, mult > 1);
   const entry = early ? { lp: 0, eaLp: lp, best: raw, plays: 1, last: raw, round: lp } : { lp, best: raw, plays: 1, last: raw, round: lp };
@@ -402,10 +552,8 @@ async function endSession(id, raw, info) {
     return lp;
   }
   if (won.length) {
-    const b = won.reduce((a, w) => a + (w.bonus || 0), 0);
-    if (signedIn()) { try { await addToAccount({ bonus: { lp: b, best: 0, plays: 0, last: 0 } }); } catch (e) { stash("bonus", { lp: b, best: 0, plays: 0, last: 0 }); } }
-    else stash("bonus", { lp: b, best: 0, plays: 0, last: 0 });
-    setTimeout(() => won.forEach((w, i) => setTimeout(() => toast(`${w.kind} unlocked: ${w.name} · +${fmt(w.bonus)} LP`), i * 3800)), 3900);
+    // Paid by the ledger inside the account write below (guests: on first sign-in).
+    setTimeout(() => won.forEach((w, i) => setTimeout(() => toast(`${w.kind} unlocked: ${w.name} · +${fmt(w.bonus)} LP${signedIn() ? "" : " when you sign in"}`), i * 3800)), 3900);
   }
   if (signedIn()) {
     try { await addToAccount({ [id]: entry }); toast(`+${fmt(lp)} Lazer Points saved${mult > 1 ? ` (${mult}× Game of the Day)` : ""}`); }
@@ -443,10 +591,10 @@ function keepExtras(cur, out) {
 }
 async function editRow(fn) {
   if (!signedIn()) throw new Error("signed-out");
-  const ref = doc(db, "arcadePlayers", state.user.uid);
+  const ref = doc(db, "arcadePlayers", state.user.uid), map = await bonusMap();
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref); const cur = snap.exists() ? snap.data() : { lp: 0, games: {} };
-    const out = keepExtras(cur, { username: state.username, lp: cur.lp || 0, games: cur.games || {}, prog: mergeProg(cur.prog, getProg()), updatedAt: serverTimestamp() });
+    const out = keepExtras(cur, { username: state.username, lp: cur.lp || 0, games: cur.games || {}, prog: ledger(cur, getProg(), map, 0).prog, updatedAt: serverTimestamp() });
     fn(out); tx.set(ref, out);
   });
 }
@@ -512,7 +660,7 @@ onChange(() => {
   wasSignedIn = signedIn();
 });
 async function logout() { flush(); await sleep(300); ls.del("signIn"); await signOut(auth); }
-readyP.then(() => { if (signedIn()) { ls.del("lz.returnTo"); syncProg(); setTimeout(() => settleEarly().catch(() => {}), 2500); syncPending().then((n) => n && toast(`${fmt(n)} Lazer Points moved to your account`)).catch(() => {}); } });
+readyP.then(() => { if (signedIn()) { ls.del("lz.returnTo"); setTimeout(() => catchUp(), 1200); if (lock.game && lock.held) watchLive(lock.game); setTimeout(() => settleEarly().catch(() => {}), 2500); syncPending().then((n) => n && toast(`${fmt(n)} Lazer Points moved to your account`)).catch(() => {}); } });
 
 /* ================= UI (shadow DOM so it never clashes with a game's styles) ================= */
 const host = document.createElement("div");
@@ -722,6 +870,7 @@ function startTime() {
   window.addEventListener("beforeunload", () => flushTime());
 }
 async function flushTime() {
+  if (!lockOk()) { tPend = 0; tRun = 0; return; }
   const delta = Math.floor(tPend), run = Math.floor(tRun);
   if (delta < 1 && run <= tBestSeen) return;
   if (delta >= 1) tPend -= delta;
@@ -733,7 +882,7 @@ async function flushTime() {
   try {
     const x = await extras(), won = [];
     x.achievements.forEach((a) => { if (a.type === "playHours" && !p.ach[a.id] && measure(a.type, p.days, a.target) >= a.target) { p.ach[a.id] = d; won.push(a); } });
-    if (won.length) { setProg(p); const b = won.reduce((a, w) => a + (w.bonus || 0), 0); creditBonus(b).catch(() => {}); won.forEach((w, i) => setTimeout(() => toast(`Achievement unlocked: ${w.name} · +${fmt(w.bonus)} LP`), i * 3800)); }
+    if (won.length) { setProg(p); if (signedIn()) addToAccount({}).catch(() => {}); won.forEach((w, i) => setTimeout(() => toast(`Achievement unlocked: ${w.name} · +${fmt(w.bonus)} LP`), i * 3800)); }
   } catch (e) {}
   if (signedIn() && !tBusy && (delta >= 1 || newBest)) {
     tBusy = true;
@@ -741,12 +890,13 @@ async function flushTime() {
   }
 }
 async function addTime() {
-  const uid = state.user.uid, ref = doc(db, "arcadePlayers", uid);
+  const uid = state.user.uid, ref = doc(db, "arcadePlayers", uid), map = await bonusMap();
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref); if (!snap.exists()) return; // row is created on first LP; until then time stays local
     const cur = snap.data();
-    const merged = mergeProg(cur.prog, getProg());
-    const out = keepExtras(cur, { username: state.username, lp: cur.lp || 0, games: cur.games || {}, prog: merged, updatedAt: serverTimestamp() });
+    const L = ledger(cur, getProg(), map, SESSION_LP_CAP), merged = L.prog, gm = Object.assign({}, cur.games || {});
+    if (L.pay) { const b = Object.assign({ lp: 0, best: 0, plays: 0, last: 0 }, gm.bonus || {}); b.lp += L.pay; gm.bonus = b; }
+    const out = keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + L.pay, games: gm, prog: merged, updatedAt: serverTimestamp() });
     out.timeTotal = progSeconds(merged); out.timeBest = Math.round(merged.tBest || 0);
     tx.set(ref, out);
   });

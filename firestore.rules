@@ -328,6 +328,17 @@ service cloud.firestore {
       allow delete: if isArcadeAdmin();
     }
 
+    // Which tab/device is live for this player (one game earning at a time). Owner only.
+    match /arcadeLive/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['tab', 'game', 'at'])
+        && request.resource.data.tab is string && request.resource.data.tab.size() <= 40
+        && request.resource.data.game is string && request.resource.data.game.size() <= 24
+        && request.resource.data.at == request.time;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Gold and up: one vote per player for the next game to ship.
     match /arcadeVotes/{uid} {
       allow read: if true;
