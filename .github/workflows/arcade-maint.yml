@@ -1,0 +1,35 @@
+name: Lazer Arcade maintenance
+
+# Runs .github/scripts/arcade-maint.js whenever .github/maint/task.json changes,
+# then commits the report next to it (no log access needed).
+on:
+  push:
+    branches: [main]
+    paths: [".github/maint/task.json", ".github/workflows/arcade-maint.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arcade-maint
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install
+        run: cd "$RUNNER_TEMP" && npm init -y >/dev/null && npm i firebase-admin@13 >/dev/null
+      - name: Run
+        env: { SA: "${{ secrets.FB_NEW_SA }}" }
+        run: NODE_PATH="$RUNNER_TEMP/node_modules" node .github/scripts/arcade-maint.js
+      - name: Commit report
+        if: always()
+        run: |
+          git config user.name "lazer-arcade-bot"; git config user.email "actions@users.noreply.github.com"
+          git add .github/maint/report-*.md 2>/dev/null || true
+          git diff --cached --quiet || { git commit -m "Maintenance report [skip ci]"; git pull --rebase -q origin main; git push -q origin HEAD:main; }
