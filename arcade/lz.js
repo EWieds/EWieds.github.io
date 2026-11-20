@@ -162,7 +162,13 @@ async function reconcile(id) {
    Any older game tab is frozen behind a "playing somewhere else" screen: it can't earn, and it can't
    overwrite the live tab's save. Taking it back reloads it with the latest save. */
 const TAB = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-const lock = { game: null, held: true, unsub: null, confirmed: false, keys: new Set() };
+const lock = { game: null, held: true, unsub: null, confirmed: false, keys: new Set(), ackP: null };
+// Game-point writes carry this tab's id; the database only accepts them from the live tab.
+function liveStamp(out) { if (lock.game && lock.held) out.liveTab = TAB; return out; }
+let bootedRes = null; const bootedP = new Promise((r) => { bootedRes = r; });
+// On a game page, point-moving writes wait until this tab has claimed the live slot.
+async function afterBoot() { if (window.LZ_GAME) await within(bootedP, 15000, null).catch(() => {}); }
+async function liveReady() { if (lock.game && lock.ackP) await within(lock.ackP, 6000, null).catch(() => {}); }
 let bc = null; try { bc = new BroadcastChannel("lz-play"); } catch (e) {}
 function lockOk() { return !lock.game || lock.held; }
 // Frozen tabs must not write game saves (they share localStorage with the live tab).
@@ -194,7 +200,7 @@ window.addEventListener("storage", (e) => {
 function watchLive(game) {
   if (lock.unsub) { try { lock.unsub(); } catch (e) {} lock.unsub = null; }
   const ref = doc(db, "arcadeLive", state.user.uid);
-  setDoc(ref, { tab: TAB, game: String(game).slice(0, 24), at: serverTimestamp() })
+  lock.ackP = setDoc(ref, { tab: TAB, game: String(game).slice(0, 24), at: serverTimestamp() })
     .then(() => { lock.confirmed = true; }).catch(() => { lock.confirmed = false; });
   try {
     lock.unsub = onSnapshot(ref, (snap) => {
@@ -231,6 +237,8 @@ async function boot(id, opts) {
   lock.keys.add(games[id].localKey);
   try { await within(reconcile(id), 6000, null); } catch (e) { console.warn("reconcile", e); }
   claimLock(id);
+  await liveReady();
+  bootedRes();
   if (signedIn()) syncPending().catch(() => {});
   return { user: state.user, username: state.username };
 }
@@ -428,6 +436,7 @@ async function creditBonus(lp) {
 /* ---------------- Lazer Points ---------------- */
 async function addToAccount(entries) {
   // entries: { gameId: { lp, best, plays, last } }
+  await liveReady();
   const uid = state.user.uid, ref = doc(db, "arcadePlayers", uid), map = await bonusMap();
   let res = null;
   await runTransaction(db, async (tx) => {
@@ -449,7 +458,7 @@ async function addToAccount(entries) {
     add = Math.min(add, SESSION_LP_CAP);
     const L = ledger(cur, getProg(), map, SESSION_LP_CAP - add);
     if (L.pay) { const b = Object.assign({ lp: 0, best: 0, plays: 0, last: 0 }, gm.bonus || {}); b.lp += L.pay; gm.bonus = b; add += L.pay; }
-    const out = keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + add, games: gm, prog: L.prog, updatedAt: serverTimestamp() });
+    const out = liveStamp(keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + add, games: gm, prog: L.prog, updatedAt: serverTimestamp() }));
     if (br) { out.bestRound = br; out.bestRoundGame = brg.slice(0, 24); }
     out.timeTotal = progSeconds(out.prog); out.timeBest = Math.round((out.prog && out.prog.tBest) || 0);
     tx.set(ref, out);
@@ -487,6 +496,7 @@ async function catchUp() {
 }
 async function settleEarly() {
   if (!signedIn()) return 0;
+  await afterBoot();
   const c = await catalog(), m = await me();
   if (!m || !m.games) return 0;
   let t = 0;
@@ -510,6 +520,7 @@ let syncing = null;
 async function syncPending() {
   if (syncing) return syncing;
   syncing = (async () => {
+    await afterBoot();
     const p = pendingAll(); if (!Object.keys(p).length || !signedIn()) return 0;
     let moved = 0, first = true;
     while (Object.keys(p).length) {
@@ -595,7 +606,7 @@ async function editRow(fn) {
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref); const cur = snap.exists() ? snap.data() : { lp: 0, games: {} };
     const out = keepExtras(cur, { username: state.username, lp: cur.lp || 0, games: cur.games || {}, prog: ledger(cur, getProg(), map, 0).prog, updatedAt: serverTimestamp() });
-    fn(out); tx.set(ref, out);
+    liveStamp(out); fn(out); tx.set(ref, out);
   });
 }
 // Silver and up: pin up to 3 earned achievements to your leaderboard row.
@@ -896,7 +907,7 @@ async function addTime() {
     const cur = snap.data();
     const L = ledger(cur, getProg(), map, SESSION_LP_CAP), merged = L.prog, gm = Object.assign({}, cur.games || {});
     if (L.pay) { const b = Object.assign({ lp: 0, best: 0, plays: 0, last: 0 }, gm.bonus || {}); b.lp += L.pay; gm.bonus = b; }
-    const out = keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + L.pay, games: gm, prog: merged, updatedAt: serverTimestamp() });
+    const out = liveStamp(keepExtras(cur, { username: state.username, lp: (cur.lp || 0) + L.pay, games: gm, prog: merged, updatedAt: serverTimestamp() }));
     out.timeTotal = progSeconds(merged); out.timeBest = Math.round(merged.tBest || 0);
     tx.set(ref, out);
   });

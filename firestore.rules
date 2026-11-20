@@ -317,10 +317,21 @@ service cloud.firestore {
       allow create: if arcadeAccount() && request.auth.uid == uid
         && validPlayer(request.resource.data)
         && request.resource.data.lp <= 20000;
+      // Game points only from the player's live tab (arcadeLive): stops farming with several
+      // tabs/devices at once. Writes that leave LP unchanged, or only pay achievement bonuses, are always OK.
+      function liveOk() {
+        return exists(/databases/$(database)/documents/arcadeLive/$(uid))
+          && request.resource.data.get('liveTab', '') == get(/databases/$(database)/documents/arcadeLive/$(uid)).data.tab;
+      }
+      function noGamePoints() {
+        return request.resource.data.lp == resource.data.lp
+          || request.resource.data.games.diff(resource.data.games).affectedKeys().hasOnly(['bonus']);
+      }
       allow update: if arcadeAccount() && request.auth.uid == uid
         && validPlayer(request.resource.data)
         && request.resource.data.lp >= resource.data.lp
-        && request.resource.data.lp <= resource.data.lp + 20000;
+        && request.resource.data.lp <= resource.data.lp + 20000
+        && (noGamePoints() || liveOk());
       // Staff can correct or remove rows (cheating, offensive names).
       allow update: if isArcadeAdmin()
         && request.resource.data.keys().hasAll(['username', 'lp', 'games', 'updatedAt'])
