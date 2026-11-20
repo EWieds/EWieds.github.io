@@ -29,16 +29,17 @@ export function projectHasCode(p) { return !!(p && (p.engine === "custom" || (p.
 export async function publish(project, thumb, existingId) {
   if (!LZ.signedIn()) throw Object.assign(new Error("signin"), { code: "signin" });
   const data = JSON.stringify(project); if (data.length > MAX_DATA) throw Object.assign(new Error("too big"), { code: "size" });
-  const engine = project.engine || "studio2d", code = projectHasCode(project), staff = await isStaff();
+  const engine = project.engine || "studio2d", code = projectHasCode(project);
   if (existingId) {
     const ref = doc(db, "communityGames", existingId), cur = await getDoc(ref);
     if (cur.exists() && cur.data().ownerUid === uid()) {
-      const was = cur.data().status || "live", status = code && !staff ? "pending" : was === "hidden" ? "hidden" : (was === "pending" || was === "rejected") ? (staff || !code ? "live" : "pending") : "live";
+      // Anyone can publish/update their own game live. Only a staff-hidden game stays hidden.
+      const was = cur.data().status || "live", status = was === "hidden" ? "hidden" : "live";
       await setDoc(ref, Object.assign({}, cur.data(), { ownerName: LZ.username, title: project.title.slice(0, 60), desc: (project.desc || "").slice(0, 300), data, thumb, engine, hasCode: code, status, updatedAt: serverTimestamp() }));
       return { id: existingId, status };
     }
   }
-  const id = newId(), status = code && !staff ? "pending" : "live";
+  const id = newId(), status = "live";
   await setDoc(doc(db, "communityGames", id), { ownerUid: uid(), ownerName: LZ.username, title: project.title.slice(0, 60), desc: (project.desc || "").slice(0, 300), data, thumb, engine, hasCode: code, status, plays: 0, likes: 0, remixOf: project.remixOf || "", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   return { id, status };
 }

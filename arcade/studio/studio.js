@@ -361,7 +361,7 @@ function rScript(b) {
   b.innerHTML = `<div class="pane"><div class="grid2" style="grid-template-columns:minmax(0,1fr) minmax(240px,360px)"><div class="card2"><h3>Script</h3>
     <p class="hint">Optional JavaScript that runs alongside your rules. Games with a script are reviewed by staff before they go public, and scripts always run in a locked-down sandbox.</p>
     <textarea id="code" spellcheck="false" style="width:100%;min-height:360px;font:500 13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#0c0921;color:#e9e4ff;border:1px solid var(--line2);border-radius:12px;padding:12px;tab-size:2">${esc(P.script || "")}</textarea>
-    <div class="row2" style="margin-top:10px"><button class="ib sm" id="ex">Insert example</button><button class="ib sm dang" id="clr">Remove script</button><span class="hint" style="margin:0;align-self:center">${(P.script || "").trim() ? "This game will need review when you publish." : "No script: publishes instantly."}</span></div></div>
+    <div class="row2" style="margin-top:10px"><button class="ib sm" id="ex">Insert example</button><button class="ib sm dang" id="clr">Remove script</button><span class="hint" style="margin:0;align-self:center">${(P.script || "").trim() ? "Your script runs sandboxed. Publishes live right away." : "Publishes live right away."}</span></div></div>
     <div class="card2"><h3>API</h3><pre style="white-space:pre-wrap;font:500 12px/1.5 ui-monospace,Menlo,monospace;color:var(--tx2);margin:0">${esc(API_2D)}</pre></div></div></div>`;
   const ta = $("#code", b); ta.oninput = () => { P.script = ta.value; mark(); };
   ta.onkeydown = (e) => { if (e.key === "Tab") { e.preventDefault(); const s0 = ta.selectionStart; ta.setRangeText("  ", s0, ta.selectionEnd, "end"); P.script = ta.value; mark(); } };
@@ -373,7 +373,7 @@ function customEditor() {
   document.body.classList.add("ed");
   app.innerHTML = `<div class="ed-wrap"><div class="ed-top"><a class="ib sm" href="/arcade/studio/" title="Back">◀</a><input class="ttl" id="ttl" maxlength="60" value="${esc(P.title)}" aria-label="Game title"><span class="stat" id="stat">Saved</span><button class="ib go" id="test">▶ Test</button><button class="ib pri" id="pub">Publish</button></div>
     <div class="ed-body"><div class="pane"><div class="grid2" style="grid-template-columns:minmax(0,1fr) minmax(240px,360px)"><div class="card2"><h3>Your game's HTML</h3>
-      <p class="hint">A complete, single-file HTML game. Inline your scripts, styles and images (data URLs). It runs in a sandbox with no access to storage or the player's account, and staff review it before it goes public.</p>
+      <p class="hint">A complete, single-file HTML game. Inline your scripts, styles and images (data URLs). It runs in a sandbox with no access to storage or the player's account, and publishes live right away.</p>
       <div class="row2" style="margin-bottom:8px"><label class="ib sm" style="cursor:pointer">Upload .html<input type="file" id="file" accept=".html,.htm,text/html" hidden></label><span class="hint" id="size" style="margin:0;align-self:center"></span></div>
       <textarea id="code" spellcheck="false" style="width:100%;min-height:420px;font:500 12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;background:#0c0921;color:#e9e4ff;border:1px solid var(--line2);border-radius:12px;padding:12px">${esc(P.html || "")}</textarea></div>
       <div class="card2"><h3>Scores</h3><pre style="white-space:pre-wrap;font:500 12px/1.5 ui-monospace,monospace;color:var(--tx2);margin:0">Scores are automatic. Your game's

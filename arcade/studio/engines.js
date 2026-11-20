@@ -54,7 +54,7 @@ export const ENGINES = {
   },
   custom: {
     id: "custom", name: "Your own code", status: "ready", icon: "🧩",
-    tag: "Upload or paste a complete HTML game. Scores are picked up automatically from your game — or call LZScore(points) for exact control. Needs staff approval before it goes public.",
+    tag: "Upload or paste a complete HTML game. Scores are picked up automatically from your game — or call LZScore(points) for exact control. Runs sandboxed and publishes live right away.",
     play(host, project, opts) {
       opts = opts || {};
       // LZScore/LZEnd report precisely. If the game never calls them, an auto-detector

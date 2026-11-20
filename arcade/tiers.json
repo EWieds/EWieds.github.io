@@ -6,6 +6,9 @@
     { "id": "gold", "name": "Gold", "lp": 100000, "color": "#ffd23f", "perk": "Vote on which queued game ships next" },
     { "id": "platinum", "name": "Platinum", "lp": 250000, "color": "#7df9ff", "perk": "Early access to every new game" },
     { "id": "diamond", "name": "Diamond", "lp": 500000, "color": "#a5b4ff", "perk": "Beta builds before early access, plus your name on the credits wall" },
-    { "id": "legend", "name": "Legend", "lp": 1000000, "color": "#ff5fd8", "perk": "Founding Player frame on every leaderboard, plus everything above" }
+    { "id": "legend", "name": "Legend", "lp": 1000000, "color": "#ff5fd8", "perk": "Founding Player frame on every leaderboard, plus everything above" },
+    { "id": "ascendant", "name": "Ascendant", "lp": 2000000, "color": "#7c9bff", "perk": "Animated glow on your name across the arcade" },
+    { "id": "eternal", "name": "Eternal", "lp": 5000000, "color": "#ffd23f", "perk": "Choose a custom name color of your own" },
+    { "id": "transcendent", "name": "Transcendent", "lp": 12000000, "color": "#ff4df0", "perk": "A one-of-a-kind frame and a permanent spot in the Hall of Fame" }
   ]
 }

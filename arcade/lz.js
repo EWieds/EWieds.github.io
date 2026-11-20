@@ -17,6 +17,9 @@ const CONFIG = {
 const BASE = "/arcade/";
 const USERNAME_RE = /^[^\/]{1,30}$/;
 const SESSION_LP_CAP = 20000;
+// Site-wide LP difficulty knob. Every game's LP is multiplied by this, so lower =
+// harder to earn across the whole arcade. 1 = original rates; 0.6 ≈ 40% harder.
+const LP_SCALE = 0.6;
 
 const app = getApps().length ? getApp() : initializeApp(CONFIG);
 const auth = getAuth(app);
@@ -53,7 +56,7 @@ function catalog() {
 }
 async function gameInfo(id) { const c = await catalog(); return c.all.find((g) => g.id === id) || { id, name: id, ratio: 0.04 }; }
 async function inEarlyAccess(id) { const g = await gameInfo(id); return !!(g.released && today() < g.released); }
-async function toLP(id, raw) { const g = await gameInfo(id); return Math.max(0, Math.round((raw || 0) * (g.ratio || 0))); }
+async function toLP(id, raw) { const g = await gameInfo(id); return Math.max(0, Math.round((raw || 0) * (g.ratio || 0) * LP_SCALE)); }
 
 /* ---------------- auth state ---------------- */
 const state = { user: null, username: "", ready: false, listeners: new Set() };

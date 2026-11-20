@@ -44,6 +44,9 @@ export const TIER_CSS = `
 .pb{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);font-size:11px;line-height:1}
 .un.fp{background:linear-gradient(90deg,#ff5fd8,#a78bfa,#22e4ff);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 0 8px rgba(255,95,216,.45));font-weight:900}
 .lr.tier-legend{box-shadow:inset 3px 0 0 #ff5fd8}
+.lr.tier-ascendant{box-shadow:inset 3px 0 0 #7c9bff}
+.lr.tier-eternal{box-shadow:inset 3px 0 0 #ffd23f}
+.lr.tier-transcendent{box-shadow:inset 3px 0 0 #ff4df0,0 0 14px rgba(255,77,240,.35)}
 .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
 .tiers .tc{border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;background:rgba(7,5,26,.45)}
 .tiers .tc b{display:block;font:800 13px var(--display,sans-serif);letter-spacing:.06em}
