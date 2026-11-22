@@ -114,3 +114,14 @@ body.bird #o-acts,body.bird #o-goal,body.bird #o-mini,body.bird #o-in,body.bird 
   body.navon #o-goal{display:none}#o-bird span{display:none}}
 
 body.incut #o-acts,body.incut #o-goal,body.incut #o-mini,body.incut #o-in,body.incut #o-where,body.incut #o-nav,body.incut #o-lbls,body.incut #o-phb,body.incut #o-birdb,body.incut #o-notes,body.incut #o-joy{display:none!important}
+.pp-you{margin:8px 0 0 auto;width:fit-content;max-width:85%;background:#2f8fd0;color:#fff;border-radius:14px 14px 4px 14px;padding:7px 11px;font-weight:700;font-size:14px}
+.pp-say{display:flex;gap:6px;margin-top:10px}
+.pp-say input{flex:1;min-width:0;border:2px solid #2a1a12;border-radius:12px;padding:10px 12px;font:600 16px system-ui,sans-serif;background:#fff;color:#2a1a12}
+.pp-say input:focus{outline:3px solid #46a9e6;outline-offset:1px}
+.pp-say button{border:2px solid #2a1a12;border-radius:12px;background:#2a1a12;color:#ffc63d;font-weight:800;padding:0 14px;cursor:pointer}
+#o-do{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 206px);width:52px;height:52px;border-radius:16px;border:3px solid #2a1a12;background:#fff6e6;color:#2a1a12;display:grid;place-items:center;box-shadow:0 4px 0 #2a1a12;cursor:pointer;pointer-events:auto}
+#o-do svg{width:26px;height:26px}
+.bl.myhome{background:#2fa860;color:#fff}.bl.homesale{background:#fff;color:#c8443a}
+body.incut #o-do,body.bird #o-do{display:none}
+#o-ui #o-notes{right:78px}
+@media (max-width:640px){#o-do{right:12px;top:calc(env(safe-area-inset-top) + 172px);width:46px;height:46px}#o-ui #o-notes{right:66px;width:calc(100% - 176px)}}

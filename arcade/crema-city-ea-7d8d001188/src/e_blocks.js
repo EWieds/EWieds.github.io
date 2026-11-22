@@ -53,7 +53,9 @@ function dressing(b,r){
   if(w==='old'){[1,-1].forEach(function(s){for(var i=0;i<NL;i++){var x=b.x-INW/2+LOTW/2+i*(LOTW+LGAP)+2.6;rb(1.6,.4,.4,.06,toon(0x8a5a3a),x,3.6,b.z+s*(BD/2-WALK)+s*.3,g);for(var k=0;k<4;k++)sp(.12,toon([0xff6b8f,0xffc63d,0xffffff,0xb39ddb][k]),x-.6+k*.4,3.85,b.z+s*(BD/2-WALK)+s*.3,g,6);}});}
 }
 function homesBlock(b,r){
-  lotsOf(b).forEach(function(lot){apartment(lot,b,seeded(b.seed*13+lot.s*5+lot.i));});
+  var firstSale=true;lotsOf(b).forEach(function(lot){var r2=seeded(b.seed*13+lot.s*5+lot.i),hr=seeded(hashS(lot.key+'kind'));
+    if(hr()<.6){var dw=L2W(lot,0,.9),h={key:lot.key,big:hr()<.35,sale:hr()<.18};if(firstSale&&!(W4().biz[lot.key]||{}).own){h.sale=true;firstSale=false;}h.num=homeAddr(lot,b,dw).split(' ')[0];houseModel(lot,b,r2,h);regHome(lot,b,'house',{dx:h.dx,f:h.f,big:h.big,sale:h.sale,num:h.num,addr:homeAddr(lot,b,dw)});}
+    else{var fl=apartment(lot,b,r2);regHome(lot,b,'apt',{units:fl*2,addr:homeAddr(lot,b,L2W(lot,0,.9))});}});
   [1,-1].forEach(function(s){for(var i=0;i<3;i++)if(r()<.7){var c=carModel(pick(['sedan','hatch','van']),pick(CARC));c.position.set(b.x-BW/2+9+i*14+r()*4,0,b.z+s*(BD/2+1.15));c.rotation.y=s>0?-Math.PI/2:Math.PI/2;stat.add(c);
     cols.push({x0:c.position.x-2.2,x1:c.position.x+2.2,z0:c.position.z-1,z1:c.position.z+1,area:curArea,car:1});}});
 }

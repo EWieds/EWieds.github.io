@@ -1,6 +1,7 @@
 
 /* ---------- every business is its own building, and every business has an owner you can deal with ---------- */
 var BT={
+  home:{base:1,arch:'cottage',prop:'',what:'a house'},apt:{base:1,arch:'brick',prop:'',what:'an apartment building'},
   grocery:{base:6,arch:'market',prop:'produce',what:'a grocery store'},books:{base:1,arch:'brick',prop:'cart',what:'a bookshop'},florist:{base:.9,arch:'cottage',prop:'flowers',what:'a flower shop'},
   pizza:{base:1.3,arch:'classic',prop:'bench',what:'a pizza place'},deli:{base:1.2,arch:'classic',prop:'bench',what:'a deli'},records:{base:.8,arch:'brick',prop:'cart',what:'a record store'},
   toys:{base:.9,arch:'classic',prop:'balloons',what:'a toy shop'},barber:{base:.8,arch:'brick',prop:'pole',what:'a barbershop'},nails:{base:.8,arch:'modern',prop:'plant',what:'a nail salon'},
@@ -23,8 +24,8 @@ var PERS={tired:{ask:1.3,floor:1.08,pat:5},practical:{ask:1.5,floor:1.2,pat:4},s
 var BUS=[];
 function hashS(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function bizOf(key){for(var i=0;i<BUS.length;i++)if(BUS[i].key===key)return BUS[i];return null;}
-function bizRev(b){if(b.revv)return Math.round(b.revv*(1+.3*((W4().biz[b.key]||{}).ren||0)));var D=b.D||{cost:1500};return Math.round((18+Math.sqrt(D.cost||0)/4)*BT[b.type].base*TM(b.city).pm*(1+.3*((W4().biz[b.key]||{}).ren||0)));}
-function bizValue(b){var D=b.D||{cost:1500};return Math.round((18+Math.sqrt(D.cost||0)/4)*BT[b.type].base*TM(b.city).pm*95);}
+function bizRev(b){if(b.revv)return Math.round(b.revv*(1+.3*((W4().biz[b.key]||{}).ren||0)));var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*(1+.3*((W4().biz[b.key]||{}).ren||0)));}
+function bizValue(b){var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*95);}
 
 /* building styles: classic, brick, modern, cottage, diner, warehouse/market, tower */
 function genBuilding(lot,b,r,opt){

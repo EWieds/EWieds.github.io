@@ -59,7 +59,7 @@ function birdOn(){if(BIRD)return;closePhone();O.cam.far=3000;O.cam.updateProject
   if(P.area!=='city'){P.area='city';}document.body.classList.add('bird');$('#o-bird').hidden=false;
   var box=$('#o-blbl');box.innerHTML='';birdLbl=[];
   plan.blocks.forEach(function(b){addBL(blockName(b),b.x,b.z,'dist',null);});
-  places.forEach(function(p){if(areaOfX(p.x))return;if(['shop','supply','civic','airport','motors','biz','site','land'].indexOf(p.kind)<0)return;if(p.kind==='biz'&&!(W4().biz[p.id.slice(4)]||{}).own)return;addBL(p.name.replace(/^Crema /,''),p.x,p.z,p.kind,p);});
+  places.forEach(function(p){if(areaOfX(p.x))return;if(['shop','supply','civic','airport','motors','biz','site','land','myhome','homesale'].indexOf(p.kind)<0)return;if(p.kind==='biz'&&!(W4().biz[p.id.slice(4)]||{}).own)return;addBL(p.kind==='myhome'?(W4().home&&p.id==='home:'+W4().home?'🏠 Home':'🏠 '+p.name):p.kind==='homesale'?'🏠 For sale':p.name.replace(/^Crema /,''),p.x,p.z,p.kind,p);});
   zones.forEach(function(z){addBL('🚚',z.x,z.z,'zone',{x:z.x,z:z.z,name:'Food truck zone · '+z.name});});
   addBL(plan.name+' International',plan.AX,plan.AZ,'airport',placeById('airport'));if(plan.mtn)addBL('Mountains',(plan.xs[0]+plan.xs[plan.C])/2,plan.zs[0]-110,'dist',null);if(plan.sea)addBL('Ocean',(plan.xs[0]+plan.xs[plan.C])/2,plan.zs[plan.R]+80,'dist',null);
   O.scene.fog.far=2000;O.scene.fog.near=1500;}
@@ -77,16 +77,18 @@ function birdFrame(dt){var b=BIRD;b.x+=(joy.x+((keys.d||keys.arrowright)?1:0)-((
 var MIS=[
   {ch:'Street smarts',t:'Buy supplies at Crema Supply Co.',h:'Walk in, grab a crate or two off the shelves.',p:'supply',ok:function(w){return P.carry.length||w.trunk.length||w.f.stocked;}},
   {ch:'Street smarts',t:'Stock your storeroom',h:'Carry the crates into your shop door, or load them in the pickup and drive.',p:function(){return placeById('shop:'+curLoc().id);},ok:function(w){return w.f.stocked;}},
-  {ch:'Street smarts',t:'Talk to someone on the street',h:'Walk up to anyone. Locals hear things.',ok:function(w){return w.f.talked;}},
+  {ch:'Street smarts',t:'Talk to someone on the street',h:'Walk up to anyone and type anything. Locals hear things.',ok:function(w){return w.f.talked;}},
   {ch:'Street smarts',t:'Work a shift with stocked supplies',h:'Ingredients cost half while the storeroom has stock.',p:function(){return placeById('shop:'+curLoc().id);},ok:function(w){return w.f.stockShift;}},
   {ch:'Putting down roots',t:'Buy a lot',h:'Look for a FOR SALE sign, or call Dana.',p:function(){var s=places.filter(function(q){return q.kind==='sale';}).sort(function(a,b){return Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z);});return s[0];},ok:function(w){return Object.keys(w.land).length||w.f.built;}},
   {ch:'Putting down roots',t:'Have Bob build on your land',h:'Walk to your lot or call Bob from your phone.',p:function(){var k=Object.keys(W4().land)[0];return k?placeById('land:'+k):null;},ok:function(w){return w.f.built;}},
   {ch:'Putting down roots',t:'Register at City Hall',h:'Visit the Taxes window so you can pay by phone.',p:'hall',ok:function(w){return w.tax.visited;}},
+  {ch:'Putting down roots',t:'Buy a house',h:'Knock on any door in a residential block. FOR SALE signs mean they\'re ready; everyone else can be talked into it.',p:function(){var h=homesForSale()[0];return h?placeById('home:'+h.key):null;},ok:function(){return ownedHomes().length>0;}},
+  {ch:'Putting down roots',t:'Move in, or rent it out',h:'Walk up to your house: live there, or find a tenant and collect rent.',p:function(){var k=ownedHomes()[0];return k?placeById('home:'+k):null;},ok:function(w){return !!w.home||ownedHomes().some(function(k){return w.biz[k].tenant||w.biz[k].rentOut;});}},
   {ch:'Hit the road',t:'Get a street vending permit',h:'Permits window, City Hall.',p:'hall',ok:function(w){return Object.keys(w.civ).some(function(c){return w.civ[c].permits.vend;});}},
   {ch:'Hit the road',t:'Buy a food truck',h:'Crema Motors on Motor Row.',p:'motors',ok:function(w){return w.trucks.length;}},
   {ch:'Hit the road',t:'Sell from a food truck zone',h:'Drive your truck to a striped zone and get out. Central Park has three.',p:function(){return nearestZone(P.x,P.z);},ok:function(w){return w.f.zoned;}},
   {ch:'Taking over',t:'Find out who supplies FreshMart',h:'The invoices are on the desk in FreshMart\'s back office.',p:'biz:grocery',ok:function(w){return w.found.valley;}},
-  {ch:'Taking over',t:'Buy a business',h:'Walk into any shop and make the owner an offer. Bring the briefcase from the bank for better deals.',ok:function(w){return ownedBiz().length;}},
+  {ch:'Taking over',t:'Buy a business',h:'Walk into any shop and make the owner an offer. Type what you\'d say, haggle, bring the briefcase from the bank for better deals.',ok:function(w){return ownedBiz().length;}},
   {ch:'Taking over',t:'Buy FreshMart',h:'Owning the grocery store makes your ingredients 8% cheaper.',p:'biz:grocery',ok:function(w){return Object.keys(w.biz).some(function(k){return w.biz[k].own&&w.biz[k].grocery;});}},
   {ch:'Taking over',t:'Make a deal with Valley Farms',h:'Call Earl: a supply contract, or buy the company.',ok:function(w){return w.contract||(w.biz.valley||{}).own;}},
   {ch:'Big time',t:'Build the Crema Superstore',h:'Get a commercial permit at City Hall, then build on Market Square.',p:'supersite',ok:function(w){return Object.keys(w.supers).length;}},

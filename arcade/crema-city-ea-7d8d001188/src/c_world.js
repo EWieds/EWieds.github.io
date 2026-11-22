@@ -164,5 +164,5 @@ function apartment(lot,b,r){
   rb(w,h,d,.12,toon(col),0,h/2,-d/2,g);planeR(w-.8,fl*3.1,Math.round(w/4.2),fl,facadeMat(col,'apt'),0,1+fl*3.1/2,.02,g);
   for(var f=1;f<fl;f++)for(var i=-1;i<=1;i+=2){var bal=bx(2.4,.12,.9,toon(0xffffff),i*(w/4),f*3.1+.9,.45,g);bx(2.4,.7,.06,toon(0x6a7480),i*(w/4),f*3.1+1.3,.88,g);if(r()<.3)sp(.25,toon(0x5fb35a),i*(w/4)+.8,f*3.1+1.25,.5,g,8);}
   rb(w+.3,.4,d+.3,.08,toon(0xffffff),0,h+.1,-d/2,g);bx(1.6,2.4,.2,toon(0x5a3a28),0,1.2,.1,g);bx(2.4,.15,1.3,toon(0xffffff),0,2.6,.6,g);
-  rectCol(lot,-w/2,w/2,-d,.1).h=h;
+  rectCol(lot,-w/2,w/2,-d,.1).h=h;return fl;
 }

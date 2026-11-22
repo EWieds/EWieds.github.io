@@ -1,22 +1,23 @@
 
 /* ---------- talking to people on the street: opinions, rumors that are true, job seekers, coupons ---------- */
+function pedName(p){if(!p.name){var r=seeded(hashS(String(p.me.root.id)));p.name=FIRST[Math.floor(r()*FIRST.length)];p.job=r()<.12;p.said={};p.likes=r();}}
 function pedActs(){
   if(drv||P.area!=='city')return [];var best=null,bd=1.9;
   peds.forEach(function(p){if(p.mode==='cross')return;var d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;best=p;}});
-  if(!best)return [];var p=best;if(!p.name){var r=seeded(hashS(String(p.me.root.id)));p.name=FIRST[Math.floor(r()*FIRST.length)];p.job=r()<.12;p.said={};p.likes=r();}
+  if(!best)return [];var p=best;pedName(p);
   return [{x:p.x,z:p.z,r:2,label:'Talk to '+p.name,sub:p.job?'Looks like they\'re job hunting':p.me.cup.visible?'Holding a Crema cup':'Passer-by',fn:function(){talkPed(p);}}];
 }
-function talkPed(p){
+function talkPed(p){pedName(p);
   W4().f.talked=1;p.stop=999;p.me.root.rotation.y=Math.atan2(P.x-p.x,P.z-p.z);var loc=nearestMine(p.x,p.z),opts=[];
   opts.push({t:'What do you think of Crema?',fn:function(){say(p,opinion(p,loc));}});
   opts.push({t:'Heard anything interesting?',fn:function(){say(p,rumor(p));}});
   if(p.job)opts.push({t:'Are you looking for work?',fn:function(){hirePed(p);}});
   if(loc)opts.push({t:'Here, a coupon for a free coffee',s:'$3 · they head to '+loc.name,fn:function(){if(!pay(3,'The coupon'))return;addFame(1);p.done=1;say(p,pick(['"Oh, nice! I\'ll go right now."','"Free coffee? You don\'t have to ask twice."']),function(){p.coupon=loc;});}});
   opts.push({t:'Bye!',cls:'sec',fn:function(){p.stop=rnd(.5,1.5);}});
-  popup(p.name,greet(p),opts,'',{who:p.name,role:p.me.cup.visible?'One of your regulars':'Local',col:'#46a9e6'});
+  popup(p.name,greet(p),opts,'',{who:p.name,role:p.me.cup.visible?'One of your regulars':'Local',col:'#46a9e6',say:{ph:pick(['Say anything… "Where\'s the bank?"','Say anything… "Heard any news?"','Say anything… "Need a job?"']),fn:function(t){pedSay(p,t);}}});
   setTimeout(function(){if(!popOpen()&&p.stop>100)p.stop=1;},50);
 }
-function say(p,t,after){popup(p.name,t,[{t:'Thanks!',fn:function(){p.stop=rnd(.5,1.2);if(after)after();}}],'',{who:p.name,role:'Local',col:'#46a9e6'});bubble(p.x,2.4,p.z,t.replace(/"/g,'').slice(0,28)+(t.length>30?'…':''),'');}
+function say(p,t,after){var you=YOU;YOU=null;p.stop=Math.max(p.stop,999);popup(p.name,t,[{t:after?'Thanks!':'OK, thanks',fn:function(){p.stop=rnd(.5,1.2);if(after)after();}}],'',{who:p.name,role:'Local',col:'#46a9e6',you:you,say:{fn:function(x){if(after)after();pedSay(p,x);}}});bubble(p.x,2.4,p.z,t.replace(/"/g,'').slice(0,28)+(t.length>30?'…':''),'');}
 function nearestMine(x,z){var best=null,bd=1e9;shopV.forEach(function(v){if(v.rival||v.super)return;var d=Math.hypot(v.door.x-x,v.door.z-z);if(d<bd){bd=d;best=v.loc;}});return best;}
 function greet(p){var h=clockH;return pick([h<11?'"Morning!"':h<17?'"Hi there!"':'"Evening!"','"Hey! You\'re the coffee person, right?"','"Oh, hello."'])+(rain.on?' "Can you believe this rain?"':'');}
 function opinion(p,loc){if(!loc)return '"Crema? Never been. Is there one around here?"';var rep=loc.rep||3,pm=loc.price||1,c=loc.comp;
@@ -28,7 +29,8 @@ function opinion(p,loc){if(!loc)return '"Crema? Never been. Is there one around 
   return pick(['"'+loc.name+' is solid. Friendly staff."','"I like it! The pastries are great."','"Pretty good. I\'d go more if it was open later."']);}
 function rumor(p){
   var said=p.said||(p.said={}),list=[];
-  BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own)return;if(b.pers==='tired')list.push(['tired'+b.key,'"I heard '+b.owner+' at '+b.name+' wants to retire. Says they\'re exhausted."']);if(b.pers==='sentimental')list.push(['sent'+b.key,'"'+b.owner+' at '+b.name+' would only sell to someone who keeps the staff on. Family business."']);
+  homesForSale().slice(0,2).forEach(function(h){list.push(['hs'+h.key,'"'+h.owner+' over at '+h.name+' is trying to sell. Sign\'s been up for weeks."']);});
+  BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own||b.home)return;if(b.pers==='tired')list.push(['tired'+b.key,'"I heard '+b.owner+' at '+b.name+' wants to retire. Says they\'re exhausted."']);if(b.pers==='sentimental')list.push(['sent'+b.key,'"'+b.owner+' at '+b.name+' would only sell to someone who keeps the staff on. Family business."']);
     if(b.pers==='proud')list.push(['proud'+b.key,'"Don\'t lowball '+b.owner+' at '+b.name+'. They\'ll throw you out."']);});
   if(!(W4().found&&W4().found.valley))list.push(['valley','"See those Valley Farms trucks at FreshMart every morning? They supply half the town."']);
   var sale=places.filter(function(q){return q.kind==='sale';});if(sale.length)list.push(['sale','"There\'s an empty lot over in '+sale[0].name.replace('Lot for sale · ','')+'. Somebody should build there."']);
