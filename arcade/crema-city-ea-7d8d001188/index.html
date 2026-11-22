@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="robots" content="noindex,nofollow">
+<title>Crema City · Crema Rush v4 (early access) | Lazer Arcade</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<script>window.LZ_GAME = "crema";</script>
+<script type="module" src="/arcade/lz.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--ink:#1d1410;--gold:#ffb83d;--cream:#fff4e2;--good:#3fe39a;--bad:#ff6b6b;--panel:rgba(22,16,12,.93);--disp:'Fredoka',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1730;color:var(--cream);font-family:var(--body);touch-action:none;user-select:none;-webkit-user-select:none}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.hide{display:none!important}
+#load{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#3a2418,#120c08);font:700 22px var(--disp);color:var(--gold);z-index:50;text-align:center;padding:20px}
+#load::before{content:"CREMA CITY";display:block;font-size:46px;letter-spacing:4px;color:#fff;margin-bottom:10px}
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#hud>*{pointer-events:auto}
+.card{background:var(--panel);border:1.5px solid rgba(255,184,61,.22);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#tl{position:absolute;left:10px;top:calc(env(safe-area-inset-top) + 10px);padding:8px 12px;min-width:190px}
+#hCash{font:700 26px var(--disp);color:var(--gold);line-height:1}
+#hInc{font:600 12.5px var(--body);color:var(--good)}
+#hTime,#hCity{font:600 11.5px var(--body);color:#d8c7ae;margin-top:2px}
+.lv{display:flex;align-items:center;gap:7px;margin-top:5px;font:700 12px var(--disp)}
+.bar{flex:1;height:6px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--gold);width:0}
+#mini{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 10px);width:132px;height:132px;border-radius:14px;border:2px solid rgba(255,184,61,.35)}
+#bPhone{position:absolute;right:150px;top:calc(env(safe-area-inset-top) + 10px);width:48px;height:48px;font:700 13px var(--disp);display:grid;place-items:center}
+#bPhone svg{width:22px;height:22px}
+#goal{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 10px);padding:7px 14px;max-width:min(440px,calc(100% - 420px));font:600 13px var(--body);text-align:center}
+#goal small{display:block;font:700 10px var(--disp);letter-spacing:1.5px;color:var(--gold);text-transform:uppercase}
+@media (max-width:760px){#goal{left:10px;transform:none;top:calc(env(safe-area-inset-top) + 124px);max-width:58%;text-align:left;padding:6px 10px;font-size:12px}#mini{width:96px;height:96px}#bPhone{right:114px}#tl{min-width:0;padding:7px 10px}#hCash{font-size:22px}#toasts{top:36%}}
+#joy{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom) + 22px);width:128px;height:128px;border-radius:50%;background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.18);touch-action:none}
+#joy i{position:absolute;left:39px;top:39px;width:50px;height:50px;border-radius:50%;background:rgba(255,184,61,.85);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+@media (hover:hover) and (pointer:fine){#joy{display:none}}
+#acts{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 22px);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.act{min-width:150px;max-width:290px;padding:12px 16px;border-radius:16px;background:var(--gold);color:var(--ink);text-align:left;box-shadow:0 4px 0 #b8841f,0 10px 24px rgba(0,0,0,.35)}
+.act b{display:block;font:700 15px var(--disp)}.act small{display:block;font:600 11.5px var(--body);opacity:.75}
+.act.two{background:#fff;box-shadow:0 4px 0 #bbb}
+.act::before{content:"E";float:right;margin-left:10px;font:700 11px var(--disp);background:rgba(0,0,0,.15);border-radius:6px;padding:2px 6px}
+.act.two::before{content:"F"}
+@media (hover:none){.act::before{display:none}}
+#hold{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 24px);padding:8px 14px;font:700 14px var(--disp);color:var(--gold)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 70px);z-index:30;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(520px,calc(100% - 20px))}
+.toast{background:var(--panel);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 14px;font:600 13.5px/1.35 var(--body);text-align:center;transition:opacity .4s,transform .4s}
+.toast.good{border-color:rgba(63,227,154,.6)}.toast.bad{border-color:rgba(255,107,107,.7)}.toast.out{opacity:0;transform:translateY(-8px)}
+.float{position:fixed;z-index:20;font:700 18px var(--disp);color:var(--gold);text-shadow:0 2px 6px rgba(0,0,0,.6);pointer-events:none;transform:translate(-50%,-50%);animation:fl 1.2s ease-out forwards}
+@keyframes fl{to{transform:translate(-50%,-160%);opacity:0}}
+/* panels & phone */
+#panel,#phone{position:fixed;z-index:40;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.35)}
+.sheet{width:min(460px,100%);max-height:min(640px,calc(100vh - 28px));overflow:auto;padding:18px;position:relative;touch-action:pan-y}
+.sheet h2{margin:0 0 4px;font:700 22px var(--disp);color:#fff;padding-right:36px}
+.sheet>p{margin:0 0 12px;font:500 13.5px/1.5 var(--body);color:#d8c7ae}
+.close{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);font:700 16px var(--disp)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt,.prow{text-align:left;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);width:100%}
+.opt b,.prow b{display:block;font:700 14.5px var(--disp);color:#fff}.opt small,.prow small{display:block;font:500 12px/1.4 var(--body);color:#c7b59a;margin-top:2px}
+.opt:not(:disabled):hover,.prow:hover{border-color:var(--gold)}
+.opt:disabled{opacity:.45}
+.empty{color:#a8957c;font-size:13px;padding:10px}
+#phone .sheet{width:min(420px,100%);height:min(720px,calc(100vh - 28px));border-radius:26px;border-width:3px;display:flex;flex-direction:column}
+.tabs{display:flex;gap:4px;margin:4px 0 10px;flex-wrap:wrap}.tabs button{padding:6px 10px;border-radius:9px;background:rgba(255,255,255,.06);font:700 12px var(--disp)}.tabs button.on{background:var(--gold);color:var(--ink)}
+.pbody{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.kv{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.07);font:500 13.5px var(--body)}.kv b{font:700 14px var(--disp);color:#fff}
+.note{font:500 12.5px/1.45 var(--body);color:#c7b59a}
+.nrow{font:500 13px/1.4 var(--body);padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.04)}.nrow small{display:block;color:var(--gold);font:700 10px var(--disp)}.nrow.good{border-left:3px solid var(--good)}.nrow.bad{border-left:3px solid var(--bad)}
+.goal{background:rgba(255,184,61,.1);border:1.5px solid rgba(255,184,61,.4);border-radius:12px;padding:10px 12px}.goal small{font:700 10px var(--disp);color:var(--gold);letter-spacing:1px}.goal b{display:block;font:700 16px var(--disp);color:#fff}.goal p{margin:4px 0 0;font-size:13px;color:#d8c7ae}
+.ideas{font:500 13px/1.5 var(--body);color:#d8c7ae}.ideas ul{padding-left:18px;margin:6px 0}
+#bigmap{width:100%;border-radius:14px}
+/* build bar */
+#build{position:fixed;left:0;right:0;bottom:0;z-index:12;padding:10px 10px calc(env(safe-area-inset-bottom) + 10px);background:linear-gradient(transparent,rgba(0,0,0,.6) 30%)}
+#buildItems{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;touch-action:pan-x}
+.bi{flex:none;min-width:112px;padding:8px 10px;border-radius:12px;background:var(--panel);border:1.5px solid rgba(255,255,255,.12);text-align:left}.bi b{display:block;font:700 13px var(--disp)}.bi small{font:600 11.5px var(--body);color:var(--gold)}
+.bi.on{border-color:var(--gold);background:#3a2a18}.bi.lock{opacity:.45}
+.brow{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}.brow button{padding:10px 18px;border-radius:12px;background:#fff;color:var(--ink);font:700 14px var(--disp)}.brow #bDone{background:var(--good)}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="load">Loading the city…</div>
+<div id="hud" class="hide">
+  <div id="tl" class="card"><div id="hCash">$0</div><div id="hInc"></div><div class="lv"><span id="hLvl">Lv 1</span><div class="bar"><i id="hXp"></i></div></div><div id="hTime"></div><div id="hCity"></div></div>
+  <button id="goal" class="card"></button>
+  <button id="bPhone" class="card" aria-label="Phone"><svg viewBox="0 0 24 24" fill="none" stroke="#ffb83d" stroke-width="2.2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></button>
+  <canvas id="mini" width="200" height="200"></canvas>
+  <div id="joy"><i></i></div>
+  <div id="acts"><button id="act2" class="act two hide"></button><button id="act" class="act hide"></button></div>
+  <div id="hold" class="card hide"></div>
+</div>
+<div id="toasts"></div>
+<div id="panel" class="hide"><div class="sheet card"><button class="close">✕</button><h2></h2><p></p><div class="opts"></div></div></div>
+<div id="phone" class="hide"><div class="sheet card"><button class="close">✕</button><h2>Phone</h2><div class="tabs"><button data-t="empire">Empire</button><button data-t="shops">Shops</button><button data-t="map">Map</button><button data-t="goals">Goals</button><button data-t="news">News</button><button data-t="settings">Settings</button></div><div class="pbody"></div></div></div>
+<div id="build" class="hide"><div id="buildItems"></div><div class="brow"><button id="bRot">Rotate (R)</button><button id="bDone">Done</button></div></div>
+<script src="data.js"></script>
+<script src="econ.js"></script>
+<script src="world.js"></script>
+<script src="game.js"></script>
+<script>CC.start().catch(function (e) { console.error(e); var l = document.getElementById("load"); if (l) l.textContent = "Something went wrong loading the city. Please refresh."; });</script>
+</body>
+</html>

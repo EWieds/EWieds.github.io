@@ -114,7 +114,8 @@ function setPending(p) { ls.set("lz.pending", p); }
 
 async function cloudSave(id) {
   if (!signedIn()) return null;
-  try { const s = await within(getDoc(doc(db, "arcadeSaves", state.user.uid, "games", id)), 4000, null); return s && s.exists() ? s.data() : null; } catch (e) { console.warn("cloud load", e.code || e); return null; }
+  const sid = (games[id] && games[id].saveId) || id;
+  try { const s = await within(getDoc(doc(db, "arcadeSaves", state.user.uid, "games", sid)), 4000, null); return s && s.exists() ? s.data() : null; } catch (e) { console.warn("cloud load", e.code || e); return null; }
 }
 async function writeCloud(id) {
   const g = games[id]; if (!g || !signedIn() || !lockOk()) return false;
@@ -122,7 +123,7 @@ async function writeCloud(id) {
   try {
     await liveReady();
     if (!lockOk()) return false;
-    await setDoc(doc(db, "arcadeSaves", state.user.uid, "games", id), {
+    await setDoc(doc(db, "arcadeSaves", state.user.uid, "games", g.saveId || id), {
       data, major: g.major, minor: g.minor || 0, progress: Number(g.progressOf(data)) || 0, liveTab: TAB, updatedAt: serverTimestamp()
     });
     g.dirty = false; return true;
@@ -864,6 +865,12 @@ async function openFeedback(gameId) {
   });
 }
 
+// Read another save slot (any version) without touching it, e.g. to import an older version's progress.
+async function peekSave(slot) {
+  if (!signedIn()) return null;
+  try { const s = await within(getDoc(doc(db, "arcadeSaves", state.user.uid, "games", slot)), 4000, null); return s && s.exists() ? s.data() : null; } catch (e) { return null; }
+}
+
 /* ---------------- staff grants ----------------
    arcadeGrants/{uid} = { items: [{ id, game, cash, note }] } written by staff tooling only.
    Games apply each item once and record its id in their own save. */
@@ -880,7 +887,7 @@ async function grants(game) {
 const LZ = {
   ready: readyP, auth, db, catalog, gameInfo, toLP, onChange, signedIn,
   get user() { return state.user; }, get username() { return state.username; },
-  boot, save, flush, endSession, grants, lockOk, inEarlyAccess, settleEarly, gameOfTheDay, multiplier, progress, claimDoor, syncProg, extras, today, pendingLP, playtime, plays, top, watchTop, me, rank, playerCount, goSignIn, goSignUp, roles, setPins, setHideCredits, vote, votes, access, credits,
+  boot, save, flush, endSession, grants, lockOk, peekSave, inEarlyAccess, settleEarly, gameOfTheDay, multiplier, progress, claimDoor, syncProg, extras, today, pendingLP, playtime, plays, top, watchTop, me, rank, playerCount, goSignIn, goSignUp, roles, setPins, setHideCredits, vote, votes, access, credits,
   openAccount, openFeedback, requestAccess, accountMenu, toast, logout, base: BASE, fmt, esc
 };
 window.LZ = LZ;
