@@ -4,7 +4,7 @@ function myLocIn(D){for(var i=0;i<G.locs.length;i++){var l=G.locs[i];if(l.city==
 function buildBlock(b){
   var keep=stat;stat=new T.Group();var r=seeded(b.seed);
   blockSlab(b,stat);if(b.t!=='park')furnish(b,stat,r);
-  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock})[b.t](b,r);
+  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock,uni:uniBlock})[b.t](b,r);
   O.scene.add(mergeGroup(stat));stat=keep;
 }
 function landUse(lot,b,D,key,own){
@@ -59,11 +59,11 @@ function homesBlock(b,r){
 }
 function civicBlock(b,r){
   var L=lotsOf(b);
-  genBuilding(L[0],b,r,{name:'Crema Realty · Dana',floors:2,style:'std'});
+  genBuilding(L[0],b,r,{name:'Crema Realty · Dana',floors:2,arch:'classic',nobiz:1});
   var rd=L2W(L[0],DOORX,.9);ACTS.city.push({x:rd.x,z:rd.z,r:1.8,door:true,dn:L[0],label:'Visit Crema Realty',sub:'Dana sells land and finds tenants',fn:function(){callDana(null,null,true);}});
   places.push({id:'realty',name:'Crema Realty',kind:'civic',x:rd.x,z:rd.z});
   hallFront(wideLot(b,1,1,2));bankFront(L[3]);
-  var police=genBuilding(L[4],b,r,{name:'City Police',floors:2,style:'std'}),post=genBuilding(L[5],b,r,{name:'Post Office',floors:2}),lib=genBuilding(L[6],b,r,{name:'Public Library',floors:3,style:'old'});
+  var police=genBuilding(L[4],b,r,{name:'City Police',floors:2,arch:'classic',nobiz:1}),post=genBuilding(L[5],b,r,{name:'Post Office',floors:2,arch:'brick',nobiz:1}),lib=genBuilding(L[6],b,r,{name:'Public Library',floors:3,arch:'brick',nobiz:1});
   fireStation(L[7]);
   var pc=carModel('police');pc.position.set(L[4].x,0,b.z-BD/2-1.15);pc.rotation.y=Math.PI/2;stat.add(pc);cols.push({x0:pc.position.x-2.2,x1:pc.position.x+2.2,z0:pc.position.z-1,z1:pc.position.z+1,area:curArea,car:1});
 }
@@ -105,12 +105,12 @@ function bankFront(lot){
   var atm=new T.Group();atm.position.set(2.8,.2,.12);g.add(atm);rb(1,1.9,.4,.06,toon(0x3a3f4b),0,.95,0,atm);bx(.6,.4,.02,toon(0x7fe3a2),0,1.4,.21,atm);bx(.5,.06,.05,toon(0x111111),0,1.05,.22,atm);
   rectCol(lot,-w/2,w/2,-d,1.2);
   var dw=L2W(lot,DOORX+.4,1.7);ACTS.city.push({x:dw.x,z:dw.z,r:1.6,door:true,dn:lot,label:'Enter the bank',sub:'Loans, savings and insurance',fn:function(){enterArea('bank');}});
-  var aw=L2W(lot,2.8,1.8);ACTS.city.push({x:aw.x,z:aw.z,r:1.2,label:'Use the ATM',sub:function(){var b=W4().bank;return 'Savings '+fmt(b.sav)+(b.loan?' · loan '+fmt(b.loan):'');},fn:function(){openPhone('bank');}});
+  var aw=L2W(lot,2.8,1.8);ACTS.city.push({x:aw.x,z:aw.z,r:1.2,label:'Use the ATM',sub:function(){var b=W4().bank;return 'Savings '+fmt(b.sav)+(b.loan?' · loan '+fmt(b.loan):'')+(caseAmt()?' · briefcase '+fmt(caseAmt()):'');},fn:function(){popup('ATM','Balance '+fmt(G.cash)+(caseAmt()?'\nBriefcase '+fmt(caseAmt()):''),[{t:'Fill a cash briefcase',fn:caseMenu},{t:'Bank app',fn:function(){openPhone('bank');}},{t:'Done',cls:'sec'}]);}});
   places.push({id:'bank',name:'Crema Savings & Loan',kind:'civic',x:dw.x,z:dw.z});
 }
 function marketBlock(b,r){
   var L=lotsOf(b);supplyFront(L[0]);superFront(wideLot(b,1,1,2));garageFront(L[3]);
-  genBuilding(L[4],b,r,{name:'FreshMart Grocery'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
+  genBuilding(L[4],b,r,{name:'FreshMart Grocery',grocery:true,arch:'market'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
 }
 function supplyFront(lot){
   var g=lotGroup(lot),dg=dynGroup(lot),w=lot.w-.3,d=BDEP-.4,h=7;
@@ -133,13 +133,15 @@ function superFront(lot){
     plane(5.5,1.5,flat(0xffffff,{map:signT('COMMERCIAL SITE',{bg:'#ffffff',fg:'#2f5f90',w:768,h:190,sub:'Zoned for a superstore · '+fmt(superCost())})}),0,2.2,-.4,g);cyB(.07,1.6,toon(0x3a3f4b),-2,.2,-.45,g,6);cyB(.07,1.6,toon(0x3a3f4b),2,.2,-.45,g,6);
     var p=L2W(lot,0,1.3);ACTS.city.push({x:p.x,z:p.z,r:4,label:'Build a Crema Superstore',sub:function(){return fmt(superCost())+' · needs a commercial permit from City Hall';},fn:function(){startSuper(lot);}});
     places.push({id:'supersite',name:'Superstore site',kind:'site',x:p.x,z:p.z});return;}
-  var g2=lotGroup(lot),w=lot.w-.3,d=BDEP-.2,h=10;
+  var ex=S.exp||0,g2=lotGroup(lot),w=lot.w-.3,d=BDEP-.2,h=10+Math.min(ex,8)*3.2;
+  for(var fl3=1;fl3<=Math.min(ex,8);fl3++)planeR(w-1,3,6,1,facadeMat(0xfff6e6,'glass'),0,10+fl3*3.2-1.5,.03,g2);
   rb(w,h,d,.2,toon(0xfff6e6),0,h/2,-d/2,g2);rb(w+.3,.6,d+.3,.1,toon(0x2a1a12),0,h+.2,-d/2,g2);
   bx(w-2,4.2,.15,glass(0xbfe6ff,.5),0,2.3,.1,g2);for(var k=-3;k<=3;k++)bx(.12,4.2,.2,toon(0x2a1a12),k*(w-2)/6,2.3,.12,g2);
-  plane(w-3,2,flat(0xffffff,{map:signT('CREMA SUPERSTORE',{bg:'#2a1a12',fg:'#ffc63d',w:1024,h:200,sub:'COFFEE · BAKERY · JUICE · ICE CREAM · KITCHEN'})}),0,7,.12,g2);
+  plane(w-3,2,flat(0xffffff,{map:signT('CREMA SUPERSTORE',{bg:'#2a1a12',fg:'#ffc63d',w:1024,h:200,sub:ex?'NOW '+(ex+1)+' FLOORS':'COFFEE · BAKERY · JUICE · ICE CREAM · KITCHEN'})}),0,7,.12,g2);
   var cv=bx(w-4,.25,3,toon(0x2a1a12),0,4.6,1.5,g2);[-1,1].forEach(function(e){cyB(.1,4.4,toon(0x2a1a12),e*(w/2-2.5),.2,2.8,g2,8);});
   for(var j=0;j<6;j++){var cart=new T.Group();cart.position.set(w/2-1.6,.2,.8+j*.35);g2.add(cart);bx(.6,.4,.8,toon(0xc8ccd2),0,.7,0,cart);}
-  rectCol(lot,-w/2,w/2,-d,.15);
+  rectCol(lot,-w/2,w/2,-d,.15).h=h;
+  var xp=L2W(lot,w/2-1.2,1.6);ACTS.city.push({x:xp.x,z:xp.z,r:1.8,label:function(){return 'Expand the superstore · '+fmt(superExpCost(S));},sub:function(){return 'Floor '+((S.exp||0)+2)+' · +40% to the whole store · no limit';},fn:function(){startExpand(lot);}});
   var dw=L2W(lot,0,.9);ACTS.city.push({x:dw.x,z:dw.z,r:2.4,door:true,dn:lot,label:'Enter the Crema Superstore',sub:function(){return fmt(superIncome())+'/min · '+Object.keys(S.depts).length+' departments';},fn:function(){enterArea('super');}});
   places.push({id:'super',name:'Crema Superstore',kind:'shop',x:dw.x,z:dw.z});
   var sv={super:true,lot:lot,door:L2W(lot,0,-.3),out:L2W(lot,0,1.4),flow:0};shopV.push(sv);
@@ -261,3 +263,35 @@ function buildOutskirts(){
   for(i=0;i<5;i++){var hx2=p.xs[0]-120+i*130,hl2=sp(50+r()*40,toon(0x86bf74),hx2,-28,p.zs[p.R]+190,g,14);hl2.scale.y=.6;}
   O.scene.add(mergeGroup(stat));stat=keep;
 }
+
+function uniBlock(b,r){
+  var g=stat,gr=planeR(BW-2*WALK,BD-2*WALK,12,6,toon(0xffffff,{map:grassT()}),b.x,.21,b.z,g);gr.rotation.x=-Math.PI/2;var brick=toon(0xb8573e),stone=toon(0xece4d6);
+  var pth=plane(BW-2*WALK,2,toon(0xd8c8a8),b.x,.215,b.z,g);pth.rotation.x=-Math.PI/2;var p2=plane(2,BD-2*WALK,toon(0xd8c8a8),b.x,.215,b.z,g);p2.rotation.x=-Math.PI/2;
+  // lecture hall (north) and library (south) face the quad
+  [[-1,'LECTURE HALL'],[1,'LIBRARY']].forEach(function(q){var hg=new T.Group();hg.position.set(b.x-12,0,b.z+q[0]*7.2);hg.rotation.y=q[0]>0?Math.PI:0;g.add(hg);rb(20,9,5,.1,brick,0,4.5,0,hg);
+    for(var i=0;i<6;i++){cyB(.3,6,stone,-6.5+i*2.6,.2,2.8,hg,10);}bx(17,1,1.2,stone,0,6.7,2.8,hg);var pd=prism(17.4,2,1.3,stone,0,7.2,2.8,hg);
+    plane(6,.7,flat(0xffffff,{map:signT(q[1],{bg:'#ece4d6',fg:'#6a3a2a',w:768,h:90})}),0,6.7,3.42,hg);for(var k=0;k<5;k++)bx(1.2,1.8,.1,toon(0x7fb4d8),-7+k*3.5,6.8,2.55,hg);
+    if(q[0]>0){var dm=sp(2.6,toon(0x8fc1b8),0,9.3,0,hg,16);dm.scale.y=.6;}
+    addCol(b.x-22,b.x-2,b.z+q[0]*7.2-2.5,b.z+q[0]*7.2+2.5).h=10;});
+  // clock tower and the statue of the founder
+  var tw=new T.Group();tw.position.set(b.x+12,0,b.z-5);g.add(tw);rb(3.4,15,3.4,.06,brick,0,7.5,0,tw);rb(3.8,.5,3.8,.05,stone,0,15.2,0,tw);var tp=cone(2.7,4,toon(0x4f6f5a),0,17.4,0,tw,4);tp.rotation.y=Math.PI/4;
+  [0,1,2,3].forEach(function(k){var f=new T.Mesh(new T.CircleGeometry(1,20),toon(0xfffaf0));f.position.set(Math.sin(k*Math.PI/2)*1.72,12.5,Math.cos(k*Math.PI/2)*1.72);f.rotation.y=k*Math.PI/2;tw.add(f);var hd=bx(.1,.75,.05,toon(0x2a1a12),Math.sin(k*Math.PI/2)*1.76,12.75,Math.cos(k*Math.PI/2)*1.76,tw);hd.rotation.y=k*Math.PI/2;});
+  addCol(b.x+10.3,b.x+13.7,b.z-6.7,b.z-3.3).h=20;
+  var stt=new T.Group();stt.position.set(b.x,0,b.z);g.add(stt);rb(1.6,1.6,1.6,.1,stone,0,1,0,stt);var fd=liteMe({shirt:0x8a9aa8,pant:0x8a9aa8});fd.root.position.set(0,1.8,0);fd.root.scale.setScalar(1.3);stt.add(fd.root);addCol(b.x-1,b.x+1,b.z-1,b.z+1);
+  plane(.9,.3,flat(0xffffff,{map:signT('Founder, 1891',{bg:'#ece4d6',fg:'#5a4a38',w:256,h:84})}),b.x,1.1,b.z+.81,g);
+  // students: on the grass, with backpacks, throwing a frisbee
+  for(var i=0;i<6;i++){var s=liteMe({shirt:pick(SHIRTC)});s.sit=true;s.root.position.set(b.x+rnd(-18,18),.25,b.z+rnd(-3,3)+(i%2?2.8:-2.8));s.root.rotation.y=rnd(0,6);bx(.35,.45,.2,toon(pick([0x2f5a46,0x2a3a6a,0xe2553f])),0,1,-.28,s.body);dyn.add(s.root);anim.push({me:s,sit:1});}
+  var f1=liteMe({shirt:0xffc63d}),f2=liteMe({shirt:0x46a9e6});f1.root.position.set(b.x+4,.2,b.z+2.5);f2.root.position.set(b.x+15,.2,b.z+2.5);f1.root.rotation.y=Math.PI/2;f2.root.rotation.y=-Math.PI/2;dyn.add(f1.root);dyn.add(f2.root);
+  var disc=cy(.22,.22,.04,toon(0xff79b4),b.x+4,1.4,b.z+2.5,dyn,14);anim.push({frisbee:disc,a:f1,b:f2,x0:b.x+4.6,x1:b.x+14.4,z:b.z+2.5});
+  for(var k2=0;k2<6;k2++){var bk=new T.Group();bk.position.set(b.x+BW/2-5-k2*1.1,.2,b.z+BD/2-WALK-.8);g.add(bk);[-.45,.45].forEach(function(q){tor(.3,.035,toon(0x2a2a30),0,.32,q,bk,null,10).rotation.y=Math.PI/2;});bx(.05,.05,.9,toon(pick(SHIRTC)),0,.55,0,bk);}
+  var sg=new T.Group();sg.position.set(b.x+BW/2-8,0,b.z+BD/2-WALK+.6);g.add(sg);rb(5,1.6,.5,.1,brick,0,.8,0,sg);plane(4.4,.9,flat(0xffffff,{map:signT(plan.name.toUpperCase()+' UNIVERSITY',{bg:'#6a2a2a',fg:'#ffe6b0',w:768,h:150,sub:'EST. 1891'})}),0,.95,.26,sg);
+  places.push({id:'uni',name:plan.name+' University',kind:'park',x:b.x,z:b.z+BD/2-2});
+  ACTS.city.push({x:b.x+.5,z:b.z+2.2,r:2.2,label:'Read the statue plaque',sub:'"Knowledge, and good coffee"',fn:function(){popup('The Founder','"Knowledge, and good coffee, are the only two things worth staying up for." — Founder, 1891\n\nStudents nearby keep Campus Corner busy: +10% customers there, and exam weeks bring late-night rushes.',[{t:'Inspiring',cls:'sec'}]);}});
+  var kp=L2W({x:b.x+BW/2-8,z:b.z+BD/2-WALK+.6,ry:0},0,1.4);var kw=W4();
+  ACTS.city.push({x:kp.x,z:kp.z,r:2.4,label:function(){return kw.kiosk&&kw.kiosk[O.city]?'Your campus coffee kiosks':'Pitch the university a coffee contract';},sub:function(){return kw.kiosk&&kw.kiosk[O.city]?fmt(kioskRate())+'/min from the campus':'Dean Okafor decides';},fn:deanTalk});
+}
+function kioskRate(){return Math.round(60*TM(O.city).pm*((W4().kiosk||{})[O.city]||0));}
+function deanTalk(){var w=W4();w.kiosk=w.kiosk||{};var lv=w.kiosk[O.city]||0,camp=G.locs.filter(function(l){return l.city===O.city&&distOf(l).win==='campus';})[0],cost=Math.round(15000*Math.pow(2,lv)*tierM()),who={who:'Dean Okafor',role:plan.name+' University',col:'#6a2a2a'};
+  if(!camp){popup('Dean Okafor','"The students are loyal to coffee they can see on the way to class. Open a shop on Campus Corner first, then we\'ll talk about kiosks."',[{t:'Fair enough',cls:'sec'}],'',who);return;}
+  var rep=camp.rep||3;if(rep<3.5&&!lv){popup('Dean Okafor','"Your Campus Corner shop has '+rep.toFixed(1)+' stars. Our students deserve 3.5 or better. Come back when the reviews improve."',[{t:'I\'ll fix it',cls:'sec'}],'',who);return;}
+  popup('Dean Okafor',lv?'"The kiosks are a hit. The library wants one too."':'"A coffee kiosk in every building? The students would riot with joy. The contract isn\'t cheap."',[{t:(lv?'Add kiosk #'+(lv+1):'Sign the contract')+' · '+fmt(cost),s:'+'+fmt(Math.round(60*TM(O.city).pm))+'/min · no limit on kiosks',fn:function(){if(!pay(cost,'The contract'))return;w.kiosk[O.city]=lv+1;note('Campus contract','Kiosk #'+(lv+1)+' is open. '+fmt(kioskRate())+'/min.','good');save();}},{t:'Not yet',cls:'sec'}],'',who);}

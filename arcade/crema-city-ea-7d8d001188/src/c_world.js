@@ -78,7 +78,9 @@ function buildSignals(){
       cyB(.09,4.6,pole,0,0,0,hg,8);bx(2.6,.12,.12,pole,-1.3,4.5,0,hg);
       var hd=new T.Group();hd.position.set(-2.5,4.05,0);hg.add(hd);rb(.42,1.15,.32,.06,box,0,0,0,hd);
       [0,1,2].forEach(function(n){sp(.13,MAT.tl[ax][n],0,.36-n*.36,.17,hd,10);});
-      cols.push({x0:px-.2,x1:px+.2,z0:pz-.2,z1:pz+.2,area:curArea});});}
+      cols.push({x0:px-.2,x1:px+.2,z0:pz-.2,z1:pz+.2,area:curArea});});
+    var sx=cx+(RH+.7),sz=cz+(RH+.7),hn=plan.hn[j],vn=plan.vn[i];
+    var s1=plane(1.5,.32,flat(0xffffff,{map:signT(hn,{bg:'#1f6a45',fg:'#ffffff',w:384,h:84}),ds:1}),sx,3.55,sz,g);var s2=plane(1.5,.32,flat(0xffffff,{map:signT(vn,{bg:'#1f6a45',fg:'#ffffff',w:384,h:84}),ds:1}),sx,3.9,sz,g);s2.rotation.y=Math.PI/2;}
   stat.add(mergeGroup(g));
 }
 var CYC=22;
@@ -114,7 +116,7 @@ function furnish(b,g,r){
     for(var i=0;i<=NL;i++){var gx=b.x-INW/2-LGAP/2+i*(LOTW+LGAP);lampPost(g,gx,zc,ry);cols.push({x0:gx-.15,x1:gx+.15,z0:zc-.15,z1:zc+.15,area:curArea});}
     for(i=0;i<NL;i++){var lx=b.x-INW/2+LOTW/2+i*(LOTW+LGAP)+(s>0?2.6:-2.6);if(b.t==='park')continue;tree(g,lx,zc-s*.2,pal.tree,kind,r);cols.push({x0:lx-.35,x1:lx+.35,z0:zc-.35,z1:zc+.35,area:curArea});
       if(r()<.25)hydrant(g,lx+(s>0?1.6:-1.6),zc+s*.1);else if(r()<.3)bin(g,lx+(s>0?1.6:-1.6),zc);}
-    if(b.t!=='park'&&r()<.5)newsBox(g,b.x+(s>0?-1:1)*(BW/2-2.2),b.z+s*(BD/2-1.3),ry);});
+    if(b.t!=='park'&&r()<.5){var nx=b.x+(s>0?-1:1)*(BW/2-2.2),nz=b.z+s*(BD/2-1.3);newsBox(g,nx,nz,ry);ACTS.city.push({x:nx,z:nz+s*.8,r:1.2,label:'Read the Crema Courier',sub:'50¢ · today\'s headlines',fn:function(){if(pay(.5,'The paper'))readCourier();}});}});
   // short ends of the block
   [-1,1].forEach(function(e){var x=b.x+e*(BW/2-.7);tree(g,x,b.z-4,pal.tree,kind,r);tree(g,x,b.z+4,pal.tree,kind,r);bench(g,b.x+e*(BW/2-1.9),b.z,e>0?-Math.PI/2:Math.PI/2);
     cols.push({x0:x-.35,x1:x+.35,z0:b.z-4.35,z1:b.z-3.65,area:curArea},{x0:x-.35,x1:x+.35,z0:b.z+3.65,z1:b.z+4.35,area:curArea});});
@@ -139,7 +141,7 @@ var BIZ={street:['Pixel Books','Bloom Florist','Slice Pizza','Thread & Co','Sunn
   harbor:['Fish Market','Ship Supply','Dockside Diner','Rope & Anchor','Ferry Tickets']};
 
 /* ---------- generic buildings ---------- */
-function genBuilding(lot,b,r,opt){
+function genBuildingV1(lot,b,r,opt){
   opt=opt||{};var pal=palette(b),g=lotGroup(lot),w=lot.w-.3,d=BDEP-.4,col=pal.cols[Math.floor(r()*pal.cols.length)],st=opt.style||pal.style;
   var fl=opt.floors||Math.max(1,Math.round((1.6+r()*2.2)*pal.tall)),fh=3.2,h=3.6+fl*fh;
   rb(w,h,d,.12,toon(col),0,h/2,-d/2,g);

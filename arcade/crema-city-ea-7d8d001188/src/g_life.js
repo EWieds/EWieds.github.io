@@ -12,9 +12,9 @@ function newPed(near){
   if(b.D&&b.D.win==='park'&&Math.random()<.4){p.v=rnd(2.4,3.1);p.jog=1;}
   var q=rectPos(b,p.t);p.x=q.x;p.z=q.z;p.seg=q.seg;return p;
 }
-function initPeds(){peds.forEach(function(p){poolPut(p.me);});peds=[];var n=lowEnd()?14:28;for(var i=0;i<n;i++)peds.push(newPed(false));}
+function initPeds(){peds.forEach(function(p){poolPut(p.me);});peds=[];var n=lowEnd()?12:22;for(var i=0;i<n;i++)peds.push(newPed(false));}
 function updPeds(dt,tl){
-  var ph=phase(tl),nP=lowEnd()?14:28,want=Math.round(nP*(rain.on?.6:1)*(clockH<6||clockH>22?.35:1));
+  var ph=phase(tl),nP=lowEnd()?12:22,want=Math.round(nP*(rain.on?.6:1)*(clockH<6||clockH>22?.35:1));
   for(var i=peds.length-1;i>=0;i--){var p=peds[i],me=p.me,mv=false;
     if(p.mode==='loop'){
       if(p.stop>0){p.stop-=dt;}
@@ -102,7 +102,7 @@ var SKY={day:new T.Color(0x8fd0f4),dusk:new T.Color(0xf6b98a),night:new T.Color(
 function updDaylight(){
   if(!lights.hemi)return;var h=clockH,day=h>=6.5&&h<18.5?1:h>=5.5&&h<6.5?h-5.5:h>=18.5&&h<19.5?19.5-h:0,dusk=Math.max(0,1-Math.abs(h-18.7)/1.3);
   if(P.area!=='city'){O.scene.background=AREAS[P.area].bgC;O.scene.fog.color.copy(AREAS[P.area].bgC);O.scene.fog.near=60;O.scene.fog.far=200;lights.hemi.intensity=.75;lights.sun.intensity=.45;return;}
-  _c.copy(SKY.night).lerp(SKY.day,day).lerp(SKY.dusk,dusk*.55).lerp(SKY.rain,rain.k*.6*day);O.scene.background=_c.clone();O.scene.fog.color.copy(_c);O.scene.fog.near=50;O.scene.fog.far=lowEnd()?140:190;
+  _c.copy(SKY.night).lerp(SKY.day,day).lerp(SKY.dusk,dusk*.55).lerp(SKY.rain,rain.k*.6*day);O.scene.background=_c.clone();O.scene.fog.color.copy(_c);if(!BIRD){O.scene.fog.near=60;O.scene.fog.far=lowEnd()?150:230;}
   lights.hemi.intensity=.32+.36*day-rain.k*.08;lights.sun.intensity=.12+.58*day*(1-rain.k*.5);lights.sun.color.setHex(dusk>.3?0xffc89a:0xffffff);
   var lit=day<.5?1:0;MAT.lamp.emissiveIntensity=lit?1.1:.12;MAT.head.color.setHex(lit?0xfff2b0:0xe8e8e0);MAT.glow.opacity=lit?.6:.3;
   if(lit!==lastLit){lastLit=lit;winMats.forEach(function(w){w.m.map=lit?w.night:w.day;w.m.needsUpdate=true;});}
@@ -124,6 +124,8 @@ function updAnim(dt,tl){
     else if(a.spin){a.spin.rotation.y+=dt*4;}
     else if(a.fork){a.t+=dt*.25;var k=(Math.sin(a.t)+1)/2;a.fork.position.x=a.x0+(a.x1-a.x0)*k;a.fork.rotation.y=Math.cos(a.t)>0?Math.PI/2:-Math.PI/2;}
     else if(a.slide){var d=Math.hypot(P.x-a.x,P.z-a.z),o=d<5&&P.area==='city'?.9:0;a.o=(a.o||0)+(o-(a.o||0))*Math.min(1,dt*6);a.slide[0].position.z=a.z-.8-a.o*1.5;a.slide[1].position.z=a.z+.8+a.o*1.5;}
+    else if(a.frisbee){var t=(tl*.45)%2,k=t<1?t:2-t;a.frisbee.position.set(a.x0+(a.x1-a.x0)*k,1.4+Math.sin(k*Math.PI)*1.6,a.z);a.frisbee.rotation.y+=dt*12;animLite(a.a,dt,false);animLite(a.b,dt,false);a.a.arms[1].rotation.x=k<.1?-1.8:-.3;a.b.arms[1].rotation.x=k>.9?-1.8:-.3;}
+    else if(a.bag){a.bag.position.x+=dt*.8;if(a.bag.position.x>a.x1)a.bag.position.x=a.x0;}
     else if(a.me){if(a.strum){a.me.arms[1].rotation.x=-1+Math.sin(tl*12)*.25;a.me.arms[0].rotation.x=-1.1;}animLite(a.me,dt,false);}
   });
   planes.forEach(function(p){p.t+=dt;var c=p.t%60,x=plan.AX+80,z,y=0,h=Math.PI;

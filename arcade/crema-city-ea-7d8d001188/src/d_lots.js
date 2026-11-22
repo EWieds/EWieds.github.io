@@ -140,7 +140,7 @@ function patioLot(lot,b,own,D){
 var TENANTS=[{n:'Pixel Books',c:0x46a9e6},{n:'Bloom Florist',c:0xef8fb0},{n:'Slice Pizza',c:0xe2553f},{n:'Fresh Cuts Barber',c:0x3a3f4b},{n:'Yoga Loft',c:0xb39ddb},{n:'Corner Pharmacy',c:0x2fa860},{n:'Sunny Laundry',c:0xf6d26b},{n:'Vinyl Vault',c:0x7a5ad8},{n:'Paws Pet Shop',c:0xff9b3d},{n:'Little Gym',c:0x21a98d}];
 function leaseLot(lot,b,own,D,key){
   var r=seeded(key.length*97+(own.tenant?own.tenant.n.length:3)),tn=own.tenant;
-  var bld=genBuilding(lot,b,r,{name:tn?tn.n:'For lease',floors:2});
+  var bld=genBuilding(lot,b,r,{name:tn?tn.n:'For lease',floors:2,nobiz:1});
   var p=L2W(lot,0,1.3);
   if(!tn)plane(4,1,flat(0xffffff,{map:signT('FOR LEASE · YOURS',{bg:'#2fa860',fg:'#fff',w:512,h:128})}),0,1.6,.3,bld.g);
   ACTS.city.push({x:p.x,z:p.z,r:3,label:tn?tn.n+' (your tenant)':'Your empty retail space',sub:tn?'Pays you '+fmt(leaseRate(D))+'/min':'Dana can find a tenant',fn:function(){if(!tn){callDana('lease',key);return;}popup(tn.n,'"Business is good! Rent goes out every minute, like clockwork."\n\nRent: '+fmt(leaseRate(D))+'/min',[{t:'Raise the rent 10%',s:'They might move out',fn:function(){if(Math.random()<.4){own.tenant=null;note('Tenant moved out',tn.n+' left over the rent hike. Call Dana to find someone new.','bad');rebuild();}else{own.bump=(own.bump||0)+1;toast('They grumbled, but they signed.','good');}save();}},{t:'Leave it',cls:'sec'}],'',{who:tn.n,role:'Tenant'});}});

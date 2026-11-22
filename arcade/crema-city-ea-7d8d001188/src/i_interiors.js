@@ -1,6 +1,6 @@
 
 /* ---------- interiors: real rooms you walk through ---------- */
-var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000};
+var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000,grocery:-4300};
 function floorT(a,b,s){return tx('fl'+a+b+s,128,128,function(g,w,h){var n=s||4,c=w/n;for(var y=0;y<n;y++)for(var x=0;x<n;x++){g.fillStyle=(x+y)%2?hexCss(a):hexCss(b);g.fillRect(x*c,y*c,c,c);}speck(g,w,h,200,.04);});}
 function room(id,o){
   var ox=IOX[id],w=o.w,d=o.d,g=new T.Group();g.position.set(ox,0,0);stat.add(g);curArea=id;ACTS[id]=[];
@@ -8,7 +8,7 @@ function room(id,o){
   var wm=toon(o.wall),hgt=o.h||5.2;bx(w,hgt,.3,wm,0,hgt/2,-d/2,g);bx(.3,hgt,d,wm,-w/2,hgt/2,0,g);bx(.3,hgt,d,o.eastGlass?glass(0x9fd2f2,.3):wm,w/2,hgt/2,0,g);
   bx(w,.4,.32,toon(o.trim||0xffffff),0,hgt,-d/2,g);
   var dx=o.doorX||0;bx((w/2+dx)-1.6,1.1,.3,wm,(-w/2+dx-1.6)/2,.55,d/2,g);bx((w/2-dx)-1.6,1.1,.3,wm,(w/2+dx+1.6)/2,.55,d/2,g);
-  bx(.3,3,.3,toon(o.trim||0xffffff),dx-1.6,1.5,d/2,g);bx(.3,3,.3,toon(o.trim||0xffffff),dx+1.6,1.5,d/2,g);bx(3.5,.35,.35,toon(o.trim||0xffffff),dx,3,d/2,g);
+  bx(.36,1.5,.36,toon(o.trim||0xffffff),dx-1.6,.75,d/2,g);bx(.36,1.5,.36,toon(o.trim||0xffffff),dx+1.6,.75,d/2,g);
   addCol(ox-w/2-1,ox-w/2+.25,-d/2,d/2);addCol(ox+w/2-.25,ox+w/2+1,-d/2,d/2);addCol(ox-w/2,ox+w/2,-d/2-1,-d/2+.25);addCol(ox-w/2,ox+dx-1.5,d/2-.2,d/2+1);addCol(ox+dx+1.5,ox+w/2,d/2-.2,d/2+1);
   AREAS[id]={id:id,name:o.name,ox:ox,w:w,d:d,bgC:new T.Color(o.bg||0x3a2a22),spawn:{x:ox+dx,z:d/2-1.6},b:{x0:ox-w/2+.5,x1:ox+w/2-.5,z0:-d/2+.5,z1:d/2+.4},cam:o.cam||{dist:10,pitch:.66}};
   ACTS[id].push({x:ox+dx,z:d/2-.3,r:1.6,door:true,out:true,label:'Go back outside',sub:o.name,fn:function(){leaveArea();}});
@@ -20,7 +20,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  supplyRoom();hallRoom();bankRoom();terminalRoom();if(superOf())superRoom();
+  supplyRoom();hallRoom();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){
@@ -35,7 +35,7 @@ function supplyRoom(){
     ACTS.supply.push({x:ox+sx,z:sz+1.2,r:1.5,label:function(){return P.carry.length>=2?'Your hands are full':'Grab '+SUP[k].name+' · '+fmt(supPrice(k));},sub:'+'+SUP[k].u+' supplies for '+SUP[k].inds.map(function(q){return IND[q].name.toLowerCase();}).join(', '),
       fn:function(){if(P.carry.length>=2){popup('Two crates at a time','Carry these out to your pickup (or straight to a shop or truck) first.',[{t:'OK'}]);return;}var c=supPrice(k);if(!pay(c,SUP[k].name))return;P.carry.push(k);carryView();save();}});});
   counterTop(g,5.5,4.3,3,0xe2553f);bx(.5,.35,.4,toon(0x3a3f4b),6,1.3,4.3,g);var ck=npc(g,5.5,3.6,0,{shirt:0x4f7fb0});addCol(ox+4,ox+7,3.8,4.8,'supply');
-  ACTS.supply.push({x:ox+5.5,z:5.4,r:1.6,label:'Talk to the clerk',sub:'Order a delivery to any shop',fn:function(){orderDelivery(null,true);}});
+  ACTS.supply.push({x:ox+5.5,z:5.4,r:1.6,label:'Talk to the clerk',sub:'Order a delivery to any shop',fn:function(){popup('Clerk','"What can I do for you?"',[{t:'Order a delivery',fn:function(){orderDelivery(null,true);}},{t:'Can I speak to the owner?',s:'Hank runs the place',fn:function(){bizTalk(SUPCO(),false);}},{t:'Never mind',cls:'sec'}],'',{who:'Clerk',role:'Crema Supply Co.',col:'#2f5f90'});}});
   for(var i=0;i<5;i++){var pl=bx(1.1,.15,1.1,toon(0xb88a5a),-7.5,.08,4.8-i*1.4,g);rb(.9,.9,.9,.05,toon(0xd9c39a),-7.5,.6,4.8-i*1.4,g);}addCol(ox-8.2,ox-6.8,-1,5.5,'supply');
 }
 function hallRoom(){
@@ -64,7 +64,7 @@ function bankRoom(){
   for(var k=0;k<4;k++){var sp2=bx(2.4,.12,.12,toon(0x8a8f99),0,0,.6,vt);sp2.rotation.z=k*Math.PI/4;}
   bx(2.6,1,1.3,toon(0x6b4a30),6,.5,1.5,g);npc(g,6,.4,Math.PI*0,{shirt:0x3a3f4b});bx(.6,.4,.5,toon(0x2a2a30),6,1.2,1.4,g);addCol(ox+4.7,ox+7.3,.8,2.2,'bank');
   for(k=0;k<5;k++){cyB(.06,1,toon(0xd4af37),-7+k*1.6,0,-1,g,8);sp(.09,toon(0xd4af37),-7+k*1.6,1,-1,g,8);}bx(6.4,.06,.06,toon(0xa82a3a),-3.8,.85,-1,g);
-  ACTS.bank.push({x:ox-2,z:-3.2,r:2.4,label:'Teller',sub:'Savings account',fn:function(){W4().bank.visited=true;bankWindow('sav');}});
+  ACTS.bank.push({x:ox-2,z:-3.2,r:2.4,label:'Teller',sub:'Savings · cash briefcase',fn:function(){W4().bank.visited=true;popup('Teller','"How can I help you today?"',[{t:'Savings account',fn:function(){bankWindow('sav');}},{t:'Fill a cash briefcase',s:'For buying businesses in person',fn:caseMenu},{t:'Never mind',cls:'sec'}],'',{who:'Teller',role:'Crema Savings & Loan',col:'#2f5a46'});}});
   ACTS.bank.push({x:ox+6,z:2.8,r:1.8,label:'Loan officer',sub:function(){return 'Borrow up to '+fmt(loanLimit());},fn:function(){W4().bank.visited=true;bankWindow('loan');}});
   ACTS.bank.push({x:ox+8,z:-5,r:1.8,label:'Look at the vault',sub:'Insurance desk is next to it',fn:function(){bankWindow('ins');}});
 }
@@ -109,6 +109,7 @@ function terminalRoom(){
       forSaleLot(lot,D,lot.key);});
     ACTS.city=keepA;}
   for(i=0;i<6;i++){var px=-6+i*1.5;cyB(.4,.8,toon(0x8a5a3a),px,0,15,g,10);sp(.6,toon(0x5fb35a),px,1.2,15,g,10);}
+  terminalDetail(g,ox);
   var cp=plane(24,14,toon(0x2f6f9f),18,.01,4,g);cp.rotation.x=-Math.PI/2;
   [-20,-8,8,20].forEach(function(cx){[-4,8].forEach(function(cz){cyB(.45,7,toon(0xffffff),cx,0,cz,g,12);addCol(ox+cx-.5,ox+cx+.5,cz-.5,cz+.5,'terminal');});});
   for(var lx2=-28;lx2<=28;lx2+=8){bx(5,.12,.6,MAT.lamp,lx2,6.8,-2,g);bx(5,.12,.6,MAT.lamp,lx2,6.8,9,g);}
@@ -154,5 +155,5 @@ function superRoom(){
 }
 var shoppers=[];
 function superShopper(){var A=AREAS.super;if(!A)return;var me=poolGet();var s={me:me,x:A.ox+rnd(-12,12),z:rnd(-6,6),tx:0,tz:0,w:0};s.tx=s.x;s.tz=s.z;me.root.position.set(s.x,0,s.z);shoppers.push(s);}
-function updShoppers(dt){shoppers.forEach(function(s){if(s.w>0){s.w-=dt;animLite(s.me,dt,false);return;}var dx=s.tx-s.x,dz=s.tz-s.z,d=Math.hypot(dx,dz);if(d<.2){s.w=rnd(1,4);var A=AREAS.super;s.tx=A.ox+rnd(-15,15);s.tz=rnd(-7,6);return;}
+function updShoppers(dt){shoppers.forEach(function(s){if(s.w>0){s.w-=dt;animLite(s.me,dt,false);return;}var dx=s.tx-s.x,dz=s.tz-s.z,d=Math.hypot(dx,dz);if(d<.2){s.w=rnd(1,4);var A=AREAS[s.area||'super'];if(s.area==='grocery'){s.tx=A.ox+pick([-9.5,-5.5,-1.5,2.5,6.5])+rnd(-.3,.3);s.tz=rnd(-4.5,3.5);}else{s.tx=A.ox+rnd(-15,15);s.tz=rnd(-7,6);}return;}
   s.x+=dx/d*1.2*dt;s.z+=dz/d*1.2*dt;s.me.root.position.set(s.x,0,s.z);s.me.root.rotation.y=Math.atan2(dx,dz);animLite(s.me,dt,true);});}

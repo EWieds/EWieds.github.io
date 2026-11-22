@@ -150,7 +150,7 @@ function exitVeh(){
   if(!drv)return true;var v=drv.v,g=v.g,h=g.rotation.y,c=Math.cos(h),s=Math.sin(h),cand=[[-1.9,0],[1.9,0],[0,-3.6],[0,3.6],[-1.9,1.5],[1.9,-1.5]];
   for(var i=0;i<cand.length;i++){var lx=cand[i][0],lz=cand[i][1],x=g.position.x+lx*c+lz*s,z=g.position.z-lx*s+lz*c;
     if(!blocked(x,z,.35)&&inBounds(x,z)){P.x=x;P.z=z;P.me.root.visible=true;drv=null;yaw=h+Math.PI;v.sv.x=g.position.x;v.sv.z=g.position.z;v.sv.ry=h;save();
-      if(v.kind==='truck'){var z2=truckZone(v);if(z2){note('Open for business',(v.truck.name||'Your truck')+' is selling at '+z2.name+'.','good');}else if(v.truck.stock>0)note('Not a vending zone','Park at a striped FOOD TRUCK zone to sell. Central Park has three.','info',{label:'Directions',fn:function(){navTo(nearestZone(g.position.x,g.position.z));}});}
+      if(v.kind==='truck'){var z2=truckZone(v);if(z2){W4().f.zoned=1;note('Open for business',(v.truck.name||'Your truck')+' is selling at '+z2.name+'.','good');}else if(v.truck.stock>0)note('Not a vending zone','Park at a striped FOOD TRUCK zone to sell. Central Park has three.','info',{label:'Directions',fn:function(){navTo(nearestZone(g.position.x,g.position.z));}});}
       return true;}}
   popup('Can\'t get out here','There is no room to open the door. Pull over next to a sidewalk first.',[{t:'OK'}],'bad');return false;
 }

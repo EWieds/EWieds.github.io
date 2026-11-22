@@ -9,16 +9,16 @@ var SUP={
   cream:{name:'Cream & cones',inds:['icecream'],u:36,price:15,col:0xffc8d8}
 };
 var SUP_ORDER=['beans','milk','cups','flour','fruit','cream'];
-function supPrice(k){var m=civ().policy==='supply'?.75:1;return Math.round(SUP[k].price*(1+G.lvl*.05)*Math.pow(1.8,O.city)*m);}
-O.costMult=function(loc){var w=G.w4;return w&&w.stock&&w.stock[loc.ind]>0&&SH&&SH.loc===loc?.5:1;};
+function supPrice(k){var m=(civ().policy==='supply'?.75:1)*((W4().biz['supco:'+O.city]||{}).own?.6:1);return Math.round(SUP[k].price*(1+G.lvl*.05)*Math.pow(1.8,O.city)*m);}
+O.costMult=function(loc){var w=G.w4;return (w&&w.stock&&w.stock[loc.ind]>0&&SH&&SH.loc===loc?.5:1)*ingredientMult(loc);};
 var outWarned={};
-O.use=function(loc,n){var w=G.w4;if(!w||!w.stock||!(w.stock[loc.ind]>0))return;w.stock[loc.ind]=Math.max(0,w.stock[loc.ind]-n);
+O.use=function(loc,n){var w=G.w4;if(!w||!w.stock||!(w.stock[loc.ind]>0))return;(w.f=w.f||{}).stockShift=1;w.stock[loc.ind]=Math.max(0,w.stock[loc.ind]-n);
   if(w.stock[loc.ind]===0&&!outWarned[loc.ind]){outWarned[loc.ind]=1;setTimeout(function(){outWarned[loc.ind]=0;},60000);
     var msg='Ingredient costs are back to full price. Pick up crates at Crema Supply Co., or call them for a delivery.';
     if(O.on)note('Out of '+IND[loc.ind].name.toLowerCase()+' supplies',msg,'bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});else{toast('Storeroom is out of supplies. Costs are back to full price.','bad');note('Out of supplies',msg,'bad');}}};
 function unload(list,loc){var w=W4(),add={};list.forEach(function(k){var s=SUP[k];s.inds.forEach(function(ik){var u=Math.round(s.u/s.inds.length*(s.inds.length>1?1.5:1));w.stock[ik]=(w.stock[ik]||0)+u;add[ik]=(add[ik]||0)+u;});});
   var txt=Object.keys(add).map(function(ik){return '+'+add[ik]+' '+IND[ik].name.toLowerCase();}).join(', ');
-  note('Storeroom stocked',txt+'. Ingredient costs are half price while it lasts.','good');addXP(list.length*6);try{sfx.load();}catch(e){}save();}
+  W4().f.stocked=1;note('Storeroom stocked',txt+'. Ingredient costs are half price while it lasts.','good');addXP(list.length*6);try{sfx.load();}catch(e){}save();}
 function loadTrunk(){var w=W4();var n=0;while(P.carry.length&&w.trunk.length<w.tcap){w.trunk.push(P.carry.shift());n++;}carryView();trunkView();if(P.carry.length)popup('The bed is full','Your pickup holds '+w.tcap+' crates. Drive these to a shop and unload, then come back.',[{t:'OK'}],'bad');else if(n)toast('Loaded '+n+' crate'+(n>1?'s':'')+'.','good');save();}
 
 /* ---------- construction: Bob's Builders ---------- */
@@ -46,7 +46,7 @@ function startBuild(key,D,o){
   var travel=O.on&&P.area==='city'?clamp(routeLen(route({x:plan.xs[0]-30,z:plan.AZ},crewTarget(key)))/9,10,30):12;
   if(o.kind==='dept'||o.kind==='decor'||o.kind==='size')travel=Math.min(travel,8);
   var b={key:key,d:D?D.id:null,kind:o.kind,ind:o.ind,loc:o.loc,dept:o.dept,sec:sec,arrive:now()+travel*1000,t0:now()+travel*1000};
-  W4().builds.push(b);save();note('Bob\'s Builders','"On our way! About '+Math.round(travel)+' seconds out." Then '+mmssS(sec)+' of work.','good');
+  W4().builds.push(b);if(['shop','patio','lease','billboard','parking'].indexOf(o.kind)>=0)W4().f.built=1;save();note('Bob\'s Builders','"On our way! About '+Math.round(travel)+' seconds out." Then '+mmssS(sec)+' of work.','good');
   if(O.on&&P.area==='city'&&o.kind!=='decor'&&o.kind!=='size'&&o.kind!=='dept'){crewTruck(crewTarget(key),travel);rebuild();}else if(O.on&&o.kind==='dept')rebuildArea();
 }
 function crewTarget(key){var s=null;ACTS.city.forEach(function(a){if(a.dn&&a.dn.key===key&&!s)s={x:a.x,z:a.z};});if(!s){var p=placeById(key.indexOf('shop:')===0?key:'land:'+key)||placeById('site:'+key);if(p)s={x:p.x,z:p.z};}return s||{x:P.x,z:P.z};}
@@ -63,6 +63,7 @@ function finishBuilds(){var w=W4(),changed=false,cityChanged=false;
     else if(b.kind==='parking'){if(land)land.use='parking';note('Parking lot open','Customers can park right outside now.','good');}
     else if(b.kind==='clear'){if(land){land.use=null;land.tenant=null;}note('Lot cleared','Ready for whatever you build next.','good');}
     else if(b.kind==='super'){var c=cityOfLot(b.key);w.supers[c]={depts:{},garage:0,at:now()};banner('Superstore built!','Walk in and add departments','good');note('Crema Superstore','The building is up. Walk in and pick your first departments.','good',{label:'Directions',fn:function(){navTo(placeById('super'));}});addXP(800);}
+    else if(b.kind==='expand'){var Sx=w.supers[cityOfLot(b.key)];if(Sx){Sx.exp=(Sx.exp||0)+1;note('Superstore floor '+(Sx.exp+1)+' open','Now '+fmt(superIncome(cityOfLot(b.key)))+'/min.','good');}}
     else if(b.kind==='garage'){var S=w.supers[cityOfLot(b.key)];if(S){S.garage=(S.garage||0)+1;note('Garage level '+S.garage,'+25% superstore sales per level.','good');}}
     else if(b.kind==='dept'){var S2=w.supers[cityOfLot(b.key)];if(S2){S2.depts[b.dept]=(S2.depts[b.dept]||0)+1;note(DEPTS[b.dept].n+(S2.depts[b.dept]>1?' level '+S2.depts[b.dept]:' is open'),'Superstore now makes '+fmt(superIncome(cityOfLot(b.key)))+'/min.','good');}}
     try{sfx.bell();}catch(e){}});
@@ -79,7 +80,9 @@ function garageCost(l){return Math.round(14000*Math.pow(1.9,l-1)*tierM());}
 function deptCost(k,lvl){var d=DEPTS[k];return Math.round((d.base||70)*30*Math.pow(1.75,lvl)*tierM());}
 function deptInc(k,lvl){var d=DEPTS[k];return d.base?d.base*Math.pow(1.45,lvl-1):0;}
 function superIncome(c){c=c==null?O.city:c;var S=superOf(c);if(!S)return 0;var base=0,bon=0;Object.keys(S.depts).forEach(function(k){var l=S.depts[k];if(!l)return;base+=deptInc(k,l);if(DEPTS[k].bonus)bon+=DEPTS[k].bonus*Math.min(3,l);});
-  return base*(1+.25*(S.garage||0))*(1+bon)*TM(c).pm*(civ(c).policy==='tourism'?1.15:1);}
+  return base*(1+.25*(S.garage||0))*(1+.4*(S.exp||0))*(1+bon)*TM(c).pm*(civ(c).policy==='tourism'?1.15:1);}
+function superExpCost(S){return Math.round(superCost()*.6*Math.pow(1.9,S.exp||0));}
+function startExpand(lot){var S=superOf(),c=superExpCost(S);popup('Add floor '+((S.exp||0)+2)+'?','+40% to everything the superstore sells. There\'s no height limit, but every floor costs more.\n'+fmt(c)+' · about '+mmssS(120+(S.exp||0)*30),[{t:'Call Bob · '+fmt(c),fn:function(){startBuild(O.city+':market:super',null,{kind:'expand',cost:c,sec:120+(S.exp||0)*30});}},{t:'Not now',cls:'sec'}]);}
 function startSuper(lot){
   if(G.lvl<12){popup('Not yet','A superstore needs level 12. You are level '+G.lvl+'.',[{t:'OK'}],'bad');return;}
   if(!hasPermit('comm')){popup('You need a commercial permit','The city zoned this lot for big retail. Apply for a commercial zoning permit at City Hall first.',[{t:'Directions to City Hall',fn:function(){navTo(placeById('hall'));}},{t:'OK',cls:'sec'}],'bad');return;}
@@ -120,10 +123,11 @@ function rivalTruckActs(){return rtrucks.map(function(r){var p=r.g.position;retu
 
 /* ---------- money on a timer: tenants, trucks, superstores, taxes, the bank ---------- */
 var econT=0,PERIOD=480;
-function ventureIncomeCity(c){var w=W4(),inc=superIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(c===O.city?1:1);});return inc;}
+function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){t+=60*TM(+c).pm*w.kiosk[c];});return t;}
+function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(c===O.city?1:1);});return inc;}
 function econTick(dt){
   if(!G||!G.w4)return;var w=W4(),inc=0;
-  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}
+  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll();
   w.trucks.forEach(function(t){if(t.city!==O.city)return;var v=veh.filter(function(x){return x.truck===t;})[0];if(!v||(drv&&drv.v===v))return;var z=truckZone(v);if(!z||t.stock<=0)return;
     var r=truckRate(t,z),sold=r*dt/60/Math.max(1,IND[t.ind].pm*TM(t.city).pm*4);t.stock=Math.max(0,t.stock-sold);var m=r*dt/60;inc+=m;t.earned=(t.earned||0)+m;
     if(t.stock<=0)note(t.name+' sold out','Load crates or restock at Crema Supply Co.','bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});
@@ -161,7 +165,7 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}

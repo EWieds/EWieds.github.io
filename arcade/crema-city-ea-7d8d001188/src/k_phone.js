@@ -2,7 +2,7 @@
 /* ---------- your phone ---------- */
 var PH={open:false,app:'home',call:null,ring:null};
 function phoneOpen(){return PH.open;}
-var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉']];
+var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉']];
 function openPhone(app){PH.open=true;PH.app=app||'home';$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');renderPhone();try{sfx.pick();}catch(e){}if(app==='msgs'){W4().unread=0;badge();}}
 O.openPhone=openPhone;
 function closePhone(){PH.open=false;$('#o-phone').classList.add('away');setTimeout(function(){if(!PH.open)$('#o-phone').hidden=true;},250);stopRing();}
@@ -17,12 +17,16 @@ function renderPhone(){
   else if(a==='bank'){var b=W4().bank;h=phTop('Crema Savings & Loan')+'<div class="ph-card"><small>Cash</small><b>'+fmt(G.cash)+'</b><small>Savings</small><b>'+fmt(b.sav)+'</b><small>Loan</small><b>'+fmt(b.loan)+'</b><small>Insurance</small><b>'+(b.ins?'Active':'None')+'</b></div>'+
     '<div class="ph-list"><button type="button" class="ph-row" data-bank="sav"><div><b>Savings</b><small>Earns 0.6% every 8 minutes</small></div></button><button type="button" class="ph-row" data-bank="loan"><div><b>Loans</b><small>Borrow up to '+fmt(loanLimit())+'</small></div></button><button type="button" class="ph-row" data-bank="ins"><div><b>Insurance</b><small>Covers most rival dirty tricks</small></div></button>'+
     (W4().tax.visited?'<button type="button" class="ph-row" data-bank="tax"><div><b>Pay city taxes</b><small>'+(unpaid().length?plural(unpaid().length,'bill')+' due':'Nothing due')+'</small></div></button>':'')+'</div>';}
+  else if(a==='goals'){var cur=misCur();h=phTop('Goals')+'<div class="ph-card gl"><small>NOW</small><b>'+esc(cur.t)+'</b></div><div class="ph-list">'+MIS.map(function(m,i){var d=i<W4().mis;return '<div class="ph-msg '+(d?'good':i===W4().mis?'info':'')+'"><b>'+(d?'✓ ':'')+esc(m.t)+'</b><span>'+esc(m.ch)+(i===W4().mis?' · '+esc(m.h):'')+'</span></div>';}).join('')+'</div>';}
+  else if(a==='hold'){var ob=ownedBiz();h=phTop('Holdings')+'<div class="ph-card"><small>Businesses</small><b>'+ob.length+'</b><small>Income</small><b>'+fmt(bizIncome(null)+kioskAll())+'/min</b></div><div class="ph-list">'+(ob.length?ob.map(function(k){var s=W4().biz[k];return '<div class="ph-msg good"><b>'+esc(s.name||k)+'</b><span>'+fmt(Math.round((s.rev||0)*(1+.3*(s.ren||0))))+'/min'+(s.ren?' · renovated '+s.ren+'×':'')+'</span></div>';}).join(''):'<p class="ph-empty">You don\'t own any businesses yet. Walk into a shop and make an offer.</p>')+'</div>';}
+  else if(a==='dir'){var bs=BUS.slice().sort(function(x,y){return Math.hypot(x.door.x-P.x,x.door.z-P.z)-Math.hypot(y.door.x-P.x,y.door.z-P.z);});PH.bs=bs;h=phTop('Directory · '+plan.name)+'<div class="ph-list">'+bs.map(function(b,i){var s=W4().biz[b.key]||{};return '<button type="button" class="ph-row" data-bz="'+i+'"><i style="background:'+(s.own?'#2fa860':'#8a5a3a')+'">'+esc(b.name.charAt(0))+'</i><div><b>'+esc(b.name)+'</b><small>'+(s.own?'Yours':b.owner+' · '+b.phone)+'</small></div><span>☎</span></button>';}).join('')+'</div>';}
   el.innerHTML=h;
+  el.querySelectorAll('[data-bz]').forEach(function(bt){bt.onclick=function(){var b=PH.bs[+bt.dataset.bz];dial({n:b.name,col:'#8a5a3a',fn:function(){bizTalk(b,true);}});};});
   el.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){var g=b.dataset.go;if(g==='fly'){closePhone();flightsDesk(false);return;}if(g==='emp'){closePhone();openEmpire();return;}if(g==='cam'){closePhone();photoMode(true);return;}PH.app=g;renderPhone();if(g==='maps')drawPhoneMap();};});
   el.querySelectorAll('[data-call]').forEach(function(b){b.onclick=function(){var c=contacts()[+b.dataset.call];dial(c);};});
   el.querySelectorAll('[data-pl]').forEach(function(b){b.onclick=function(){var p=PH.ps[+b.dataset.pl];closePhone();if(a==='cab')callCab(p);else navTo(p);};});
   el.querySelectorAll('[data-bank]').forEach(function(b){b.onclick=function(){closePhone();if(b.dataset.bank==='tax')payTaxes();else bankWindow(b.dataset.bank);};});
-  if(a==='maps')drawPhoneMap();
+  if(a==='maps'){drawPhoneMap();var bb=document.createElement('button');bb.type='button';bb.className='ph-bird';bb.textContent='Bird\'s-eye view of the city';bb.onclick=function(){birdOn();};var cv=$('#ph-map');if(cv)cv.after(bb);}
 }
 function ago(t){var s=(now()-t)/1000;return s<60?'just now':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago';}
 function placeCol(k){return {shop:'#e2553f',supply:'#2f5f90',civic:'#5a4a38',airport:'#7a5ad8',motors:'#e2553f',park:'#2fa860',land:'#2fa860',sale:'#c0392b',site:'#f2b632'}[k]||'#3a3f4b';}
@@ -38,8 +42,8 @@ function drawPhoneMap(){var cv=$('#ph-map');if(!cv)return;var g=cv.getContext('2
 function contacts(){
   var c=[{n:'Bob\'s Builders',r:'Construction · new shops, expansions',col:'#f2b632',fn:function(){callBob();}},{n:'Dana',r:'Crema Realty · land and tenants',col:'#2fa860',fn:function(){callDana();}},
     {n:'Crema Supply Co.',r:'Deliveries to your shops',col:'#2f5f90',fn:function(){orderDelivery();}},{n:'City Cab',r:'Rides anywhere in '+plan.name,col:'#ffc63d',fn:function(){PH.app='cab';openPhone('cab');return 'stay';}},
-    {n:'Air Crema',r:'Flights',col:'#7a5ad8',fn:function(){flightsDesk(false);}},{n:'City Hall',r:'Taxes and permits',col:'#5a4a38',fn:function(){cityHallCall();}},{n:'Mom',r:'Calls more when you\'re doing well',col:'#ff79b4',fn:function(){callMom();}}];
-  G.locs.forEach(function(l){if(hasMgr(l))c.push({n:staffName(l,'manager',0),r:'Manager · '+l.name+(l.city!==O.city?' ('+cityName(l.city)+')':''),col:'#7a5ad8',fn:function(){callManager(l);}});});
+    {n:'Air Crema',r:'Flights',col:'#7a5ad8',fn:function(){flightsDesk(false);}},W4().found.valley?{n:'Earl · Valley Farms',r:'555-0199 · the grocery supplier',col:'#6b8a3a',fn:function(){callValley();}}:null,{n:'City Hall',r:'Taxes and permits',col:'#5a4a38',fn:function(){cityHallCall();}},{n:'Mom',r:'Calls more when you\'re doing well',col:'#ff79b4',fn:function(){callMom();}}];
+  c=c.filter(Boolean);G.locs.forEach(function(l){if(hasMgr(l))c.push({n:staffName(l,'manager',0),r:'Manager · '+l.name+(l.city!==O.city?' ('+cityName(l.city)+')':''),col:'#7a5ad8',fn:function(){callManager(l);}});});
   return c;
 }
 function dial(c){PH.app='dial';var el=$('#ph-body');el.innerHTML='<div class="ph-dial"><i style="background:'+c.col+'">'+esc(c.n.charAt(0))+'</i><b>'+esc(c.n)+'</b><small>Calling…</small><button type="button" class="ph-end">End</button></div>';

@@ -25,7 +25,7 @@ function W4(){
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.patio&&!l.use){l.use='patio';l.loc=l.patio;delete l.patio;}});
   w.civ=w.civ||{};w.tax=w.tax||{bills:[],auto:false,last:now(),paid:0,visited:false};w.bank=w.bank||{loan:0,sav:0,ins:false,visited:false};
   w.trucks=w.trucks||[];w.supers=w.supers||{};w.notes=w.notes||[];w.unread=w.unread||0;w.tickets=w.tickets||[];w.rent=w.rent||{};
-  w.stats=w.stats||{trips:0,taxis:0,deliveries:0,flights:0};
+  w.stats=w.stats||{trips:0,taxis:0,deliveries:0,flights:0};w.biz=w.biz||{};w.found=w.found||{};w.case=w.case||0;
   return w;
 }
 O.W4=W4;
