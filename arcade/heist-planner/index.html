@@ -120,8 +120,15 @@ button:disabled{cursor:default}
 .lvb small{display:block;font:600 10.5px var(--body);color:var(--mut)}
 .lvb .s{display:flex;gap:2px;margin-top:4px}.lvb .s svg{width:12px;height:12px}.lvb .s path{fill:#2a4170}.lvb .s .lit path{fill:var(--gold)}
 .lvb.done{border-color:rgba(63,227,154,.35)}
+.lvb.akd{border-color:rgba(255,197,61,.4)}.lvb.akd .s path{fill:#4a3a16}.lvb.akd .s .lit path{fill:#c79a3a}
+.akt{color:var(--gold);font-weight:800}
 .lvb.cur{border-color:var(--cy);box-shadow:0 0 0 3px rgba(70,227,255,.12)}
 .lvb.lock{opacity:.35}
+.ghost.ak{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--gold);border-color:rgba(255,197,61,.3)}
+.ghost.ak svg{width:18px;height:18px;flex:none}
+.aklock{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(255,197,61,.08);border:1.5px solid rgba(255,197,61,.25);color:var(--gold);font:600 13px var(--body);line-height:1.35}
+.aklock svg{width:20px;height:20px;flex:none}
+#bnAK.ak{color:var(--gold)}
 .tot{display:flex;gap:8px;margin-top:4px}
 .tot div{flex:1;background:rgba(255,255,255,.04);border-radius:12px;padding:8px 10px;text-align:center}
 .tot b{display:block;font:700 20px var(--disp);color:var(--gold)}.tot small{font:600 11px var(--body);color:var(--mut)}
@@ -170,7 +177,7 @@ button:disabled{cursor:default}
   </div>
 </div>
 
-<div id="banner"><div class="bx"><b>SPOTTED</b><p></p><button id="bnFix">Rewind &amp; fix</button><button class="g" id="bnWatch">Watch again</button></div></div>
+<div id="banner"><div class="bx"><b>SPOTTED</b><p></p><button id="bnFix">Rewind &amp; fix</button><button class="g" id="bnWatch">Watch again</button><button class="g ak hide" id="bnAK">Answer key</button></div></div>
 <div id="toast"></div>
 
 <!-- title / level select -->
@@ -192,6 +199,17 @@ button:disabled{cursor:default}
   <div class="objs" id="brObj"></div>
   <div class="tipbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg><span id="brTip"></span></div>
   <button class="big" id="brGo">PLAN THE JOB</button>
+  <button class="ghost ak hide" id="brAK"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2 2M14 9l2 2"/></svg>Stuck? Reveal answer key</button>
+  <div class="aklock hide" id="brLocked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Answer key revealed — this heist is locked. Watch it, but it earns no points.</div>
+</div></div>
+
+<!-- answer-key confirm -->
+<div class="modal hide" id="mAK"><div class="card">
+  <div class="k" style="color:var(--gold)">Answer key</div>
+  <h1>Reveal the solution?</h1>
+  <p>This plays a verified clean getaway for this heist. The catch: once you use it, <b>this heist locks</b> — it counts as cleared and the next one opens, but you can't replay it for score or Lazer Points.</p>
+  <button class="big gold" id="akYes">Reveal &amp; lock this heist</button>
+  <button class="ghost" id="akNo">Keep trying on my own</button>
 </div></div>
 
 <!-- result -->
@@ -969,9 +987,35 @@ var TICK=0.3;                         // seconds per tick at 1×
 var SAVEKEY="heist-planner-v2";
 var LEVELS=HP_LEVELS;
 
+/* ---------------- answer keys ----------------
+   Verified winning plans (per crew), kept as compact URDLwa strings. Revealing
+   one locks that heist: it counts as cleared (unlocks what follows) but earns no
+   Lazer Points and its score is frozen at 0 — you can watch it, not farm it. */
+var HP_SOLUTIONS={
+  pawn1:["R8DL4D5wD2L4"],
+  pawn2:["R3D2LD5R6UwU6RD2LD5L8"],
+  pawn3:["R6D3LRDR4D"],
+  office1:["R4DUDUDUDUDUDUD4R3Uw3U3DRwDLD2L4D3L2DL"],
+  office2:["R4D4wD2w2D3L4"],
+  office3:["R5DLD2RDULU3R6","UL6a2U7R6"],
+  museum1:["R5LD3wD4L4"],
+  museum2:["R5D6L5"],
+  museum3:["R3D4R4U3R2a2URDL4DL3D2R2D3wD2L5","UD2L6UDL6"],
+  bank1:["R10DL3D2Lw3DLa3DLw2LD2L3"],
+  bank2:["R2wD2a2D6L2","R4D3RD3a3D2L11","DL2D7L10"],
+  bank3:["R8D4L2R6D4"],
+  casino1:["R12DUDL6DwD5R6D","DUDUDUDUDUDUDUDL6DwD5R6D"],
+  casino2:["R2D4a2U3L2","R6DUDUDUDUDL2D4L4D3a3U5L4U2L2","DL2D2RDLDUDL4D2w3DU5L4U2L2"],
+  casino3:["R7DLD3wD3wRD2L2U2RU2L5U4L","R2D2a2UR6","R3DL5D3wD3a3wL4w8D2L2","D"]
+};
+
 /* ---------------- save ---------------- */
 var G=load();
-function load(){try{var d=JSON.parse(localStorage.getItem(SAVEKEY));if(d&&d.v===2&&d.best)return d;}catch(e){}return {v:2,best:{},plans:{},total:0,mute:false,seenHelp:false};}
+G.ak=G.ak||{};G.plans=G.plans||{};
+function load(){try{var d=JSON.parse(localStorage.getItem(SAVEKEY));if(d&&d.v===2&&d.best){d.ak=d.ak||{};d.plans=d.plans||{};return d;}}catch(e){}return {v:2,best:{},plans:{},ak:{},total:0,mute:false,seenHelp:false};}
+function akUsed(id){return !!G.ak[id];}
+// answer key is offered only for heists that have a solution and haven't been cleared for real yet
+function akAvail(){return L&&HP_SOLUTIONS[L.id]&&!akUsed(L.id)&&!(G.best[L.id]&&!G.best[L.id].ak);}
 function totalOf(g){var t=0;for(var k in g.best)t+=g.best[k].score||0;return t;}
 function save(){G.total=totalOf(G);try{localStorage.setItem(SAVEKEY,JSON.stringify(G));}catch(e){}if(window.LZ&&window.LZ_GAME)try{LZ.save(LZ_GAME);}catch(e){}}
 
@@ -1150,6 +1194,7 @@ function failBanner(r){
   b.querySelector("b").textContent=d.t;b.querySelector("p").textContent=d.d;
   $("#bnFix").textContent=r.reason==="spotted"?"Rewind & fix":"Back to plan";
   show($("#bnWatch"),true);
+  show($("#bnAK"),akAvail());
   $("#banner").classList.add("on");layout();$("#hint").style.opacity=0;
   if(r.reason==="spotted"){SFX.alarm();shake=1;flash={t:performance.now(),by:r.by,c:r.ci};if(navigator.vibrate)try{navigator.vibrate([60,40,60]);}catch(e){}}
   else SFX.bad();
@@ -1167,6 +1212,8 @@ $("#bnWatch").onclick=function(){hideBanner();startPlay();};
 
 function celebrate(){
   var r=sim.result,sc=HE.score(L,M,r),prev=G.best[L.id];
+  // answer-key heists are locked: show the win, but pay nothing and freeze the score
+  if(akUsed(L.id)){SFX.win();setTimeout(function(){openEnd(r,sc,prev,0,false,true);},650);return;}
   var delta=Math.max(0,sc.total-(prev?prev.score:0));
   var isBest=!prev||sc.total>prev.score;
   if(isBest)G.best[L.id]={score:sc.total,stars:Math.max(sc.stars,prev?prev.stars:0),t:r.t};
@@ -1175,8 +1222,25 @@ function celebrate(){
   SFX.win();
   setTimeout(function(){openEnd(r,sc,prev,delta,isBest);},650);
 }
+/* reveal the solution for the current heist — locks it from here on */
+function revealAnswerKey(){
+  if(!akAvail())return;
+  var sol=HP_SOLUTIONS[L.id];
+  G.ak[L.id]=true;
+  // run it once to record stars (so the next heist unlocks) with a frozen 0 score
+  var pl=sol.map(function(s){return flat(parseLegs(s));});
+  var res=HE.simulate(M,pl,{cont:false,until:320}).result,sc=res.ok?HE.score(L,M,res):{stars:1};
+  G.best[L.id]={score:0,stars:sc.stars,t:res.ok?res.t:0,ak:true};
+  // load the solution onto the board and show it running
+  legs=M.starts.map(function(st,ci){return parseLegs(sol[ci]||"");});
+  sel=0;wsel=-1;undo=[];redo=[];
+  persistPlans();save();
+  show("#mAK",false);show("#mBrief",false);
+  recompute();refresh();
+  startPlay();
+}
 function starSVG(){return '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';}
-function openEnd(r,sc,prev,delta,isBest){
+function openEnd(r,sc,prev,delta,isBest,locked){
   var st=$("#enStars");st.innerHTML=starSVG()+starSVG()+starSVG();
   var svgs=st.querySelectorAll("svg");
   svgs.forEach(function(s,i){setTimeout(function(){s.classList.add("on");if(i<sc.stars){s.classList.add("lit");SFX.star(i);}},250+i*260);});
@@ -1187,11 +1251,12 @@ function openEnd(r,sc,prev,delta,isBest){
   if(M.bonus.length)h+='<div><span>Bonus loot × '+r.bonus+'</span><b>+'+sc.bonus+'</b></div>';
   h+='<div><span>'+(sc.under?"Under par ("+(L.par-r.t)+" ticks spare)":"Over par by "+(r.t-L.par))+'</span><b>+'+sc.speed+'</b></div>';
   if(r.kos)h+='<div><span>Takedowns × '+r.kos+'</span><b>−'+sc.ko+'</b></div>';
-  h+='<div class="tot"><span>'+(isBest?(prev?"New best!":"Score"):"Score (best "+prev.score+")")+'</span><b>'+sc.total+'</b></div>';
+  h+='<div class="tot"><span>'+(locked?"Score (answer key · locked)":(isBest?(prev?"New best!":"Score"):"Score (best "+prev.score+")"))+'</span><b>'+(locked?"—":sc.total)+'</b></div>';
   $("#enBrk").innerHTML=h;
   var lp=Math.round(delta*LZR);
-  $("#enLP").textContent=delta>0?("+"+lp+" Lazer Points"+(LZ_EA?" · held for launch, paid 1.5×":(LZM>1?" · "+LZM+"× Game of the Day":""))):(prev?"Beat your best of "+prev.score+" to earn more points.":"");
-  $("#enK").textContent=sc.stars===3?"Perfect heist":"Clean getaway";
+  $("#enLP").textContent=locked?"Answer key used · this heist is locked and earns no Lazer Points.":(delta>0?("+"+lp+" Lazer Points"+(LZ_EA?" · held for launch, paid 1.5×":(LZM>1?" · "+LZM+"× Game of the Day":""))):(prev?"Beat your best of "+prev.score+" to earn more points.":""));
+  $("#enK").textContent=locked?"Answer key":(sc.stars===3?"Perfect heist":"Clean getaway");
+  show($("#enBetter"),!locked);
   var next=LI+1<LEVELS.length;
   $("#enNext").textContent=next?"NEXT HEIST":"ALL HEISTS";
   show("#mEnd",true);
@@ -1216,18 +1281,25 @@ function openBrief(){
   if(M.bonus.length)o+='<span style="color:#ffe08a">'+ICON.bonus+M.bonus.length+" bonus</span>";
   o+='<span>'+ICON.time+"Par "+L.par+" ticks</span>";
   $("#brObj").innerHTML=o;
+  show($("#brAK"),akAvail());
+  show($("#brLocked"),akUsed(L.id));
   show("#mBrief",true);
 }
 $("#brGo").onclick=function(){show("#mBrief",false);SFX.click();if(!G.seenHelp&&LI===0){/* coached by hint line */}};
+$("#brAK").onclick=function(){SFX.click();show("#mAK",true);};
+$("#bnAK").onclick=function(){hideBanner();SFX.click();show("#mAK",true);};
+$("#akYes").onclick=function(){SFX.click();revealAnswerKey();};
+$("#akNo").onclick=function(){SFX.click();show("#mAK",false);};
 function unlocked(i){return i===0||!!G.best[LEVELS[i-1].id]||!!G.best[LEVELS[i].id];}
 function openMenu(){
   if(mode==="play")stopPlay();
   var locs={},order=[];LEVELS.forEach(function(l,i){if(!locs[l.loc]){locs[l.loc]=[];order.push(l.loc);}locs[l.loc].push(i);});
   var h="",stars=0,done=0;
   order.forEach(function(name){var ls=locs[name],ls_st=0;var inner="";
-    ls.forEach(function(i){var l=LEVELS[i],b=G.best[l.id],lk=!unlocked(i);if(b){stars+=b.stars;ls_st+=b.stars;done++;}
+    ls.forEach(function(i){var l=LEVELS[i],b=G.best[l.id],lk=!unlocked(i),ak=akUsed(l.id);if(b){stars+=b.stars;ls_st+=b.stars;done++;}
       var s="";for(var k=0;k<3;k++)s+='<span class="'+(b&&k<b.stars?"lit":"")+'">'+starSVG()+'</span>';
-      inner+='<button class="lvb'+(b?" done":"")+(i===LI?" cur":"")+(lk?" lock":"")+'" data-i="'+i+'"'+(lk?" disabled":"")+'><div><small>Heist '+(i+1)+'</small><b>'+(lk?"Locked":l.name)+'</b></div><div class="s">'+s+'</div></button>';});
+      var tag=ak?'<small>Heist '+(i+1)+' · <span class="akt">answer key</span></small>':'<small>Heist '+(i+1)+'</small>';
+      inner+='<button class="lvb'+(b?" done":"")+(ak?" akd":"")+(i===LI?" cur":"")+(lk?" lock":"")+'" data-i="'+i+'"'+(lk?" disabled":"")+'><div>'+tag+'<b>'+(lk?"Locked":l.name)+'</b></div><div class="s">'+s+'</div></button>';});
     h+='<div class="loc"><h3>'+name+'<span>'+ls_st+'/'+(ls.length*3)+' ★</span></h3><div class="lvs">'+inner+'</div></div>';});
   $("#locs").innerHTML=h;
   $("#locs").querySelectorAll(".lvb").forEach(function(b){b.onclick=function(){var i=+b.dataset.i;if(!unlocked(i))return;show("#mMenu",false);SFX.click();openLevel(i);};});
