@@ -1,0 +1,137 @@
+
+/* ---------- your phone ---------- */
+var PH={open:false,app:'home',call:null,ring:null};
+function phoneOpen(){return PH.open;}
+var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉']];
+function openPhone(app){PH.open=true;PH.app=app||'home';$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');renderPhone();try{sfx.pick();}catch(e){}if(app==='msgs'){W4().unread=0;badge();}}
+O.openPhone=openPhone;
+function closePhone(){PH.open=false;$('#o-phone').classList.add('away');setTimeout(function(){if(!PH.open)$('#o-phone').hidden=true;},250);stopRing();}
+function phTop(t){return '<div class="ph-hd">'+(PH.app!=='home'?'<button class="ph-back" type="button" data-go="home">‹</button>':'')+'<b>'+esc(t)+'</b></div>';}
+function renderPhone(){
+  var el=$('#ph-body'),a=PH.app,h='';$('#ph-time').textContent=clockStrH(clockH).replace(' ',' ');
+  if(a==='home'){h='<div class="ph-wall"><div class="ph-clock">'+esc(clockStrH(clockH))+'</div><div class="ph-date">'+esc(plan?plan.name:'')+' · '+(rain.on?'Rain':'Clear')+'</div></div><div class="ph-grid">'+
+    APPS.map(function(x){return '<button type="button" class="ph-app" data-go="'+x[0]+'"><i style="background:'+x[2]+'">'+x[3]+'</i><span>'+x[1]+'</span>'+(x[0]==='msgs'&&W4().unread?'<em>'+W4().unread+'</em>':'')+'</button>';}).join('')+'</div>';}
+  else if(a==='calls'){h=phTop('Contacts')+'<div class="ph-list">'+contacts().map(function(c,i){return '<button type="button" class="ph-row" data-call="'+i+'"><i style="background:'+c.col+'">'+esc(c.n.charAt(0))+'</i><div><b>'+esc(c.n)+'</b><small>'+esc(c.r)+'</small></div><span>☎</span></button>';}).join('')+'</div>';}
+  else if(a==='msgs'){var ns=W4().notes;h=phTop('Messages')+'<div class="ph-list">'+(ns.length?ns.slice(0,40).map(function(n){return '<div class="ph-msg '+(n.kind||'')+'"><b>'+esc(n.title)+'</b><span>'+esc(n.text)+'</span><small>'+ago(n.t)+'</small></div>';}).join(''):'<p class="ph-empty">No messages yet.</p>')+'</div>';W4().unread=0;badge();}
+  else if(a==='maps'||a==='cab'){var ps=placesSorted();h=phTop(a==='cab'?'City Cab · where to?':'Maps · '+plan.name)+(a==='maps'?'<canvas id="ph-map" width="300" height="220"></canvas>':'')+'<div class="ph-list">'+ps.map(function(p,i){return '<button type="button" class="ph-row" data-pl="'+i+'"><i style="background:'+placeCol(p.kind)+'">'+placeIc(p.kind)+'</i><div><b>'+esc(p.name)+'</b><small>'+Math.round(Math.hypot(p.x-P.x,p.z-P.z))+' m</small></div><span>'+(a==='cab'?'🚕':'➤')+'</span></button>';}).join('')+'</div>';PH.ps=ps;}
+  else if(a==='bank'){var b=W4().bank;h=phTop('Crema Savings & Loan')+'<div class="ph-card"><small>Cash</small><b>'+fmt(G.cash)+'</b><small>Savings</small><b>'+fmt(b.sav)+'</b><small>Loan</small><b>'+fmt(b.loan)+'</b><small>Insurance</small><b>'+(b.ins?'Active':'None')+'</b></div>'+
+    '<div class="ph-list"><button type="button" class="ph-row" data-bank="sav"><div><b>Savings</b><small>Earns 0.6% every 8 minutes</small></div></button><button type="button" class="ph-row" data-bank="loan"><div><b>Loans</b><small>Borrow up to '+fmt(loanLimit())+'</small></div></button><button type="button" class="ph-row" data-bank="ins"><div><b>Insurance</b><small>Covers most rival dirty tricks</small></div></button>'+
+    (W4().tax.visited?'<button type="button" class="ph-row" data-bank="tax"><div><b>Pay city taxes</b><small>'+(unpaid().length?plural(unpaid().length,'bill')+' due':'Nothing due')+'</small></div></button>':'')+'</div>';}
+  el.innerHTML=h;
+  el.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){var g=b.dataset.go;if(g==='fly'){closePhone();flightsDesk(false);return;}if(g==='emp'){closePhone();openEmpire();return;}if(g==='cam'){closePhone();photoMode(true);return;}PH.app=g;renderPhone();if(g==='maps')drawPhoneMap();};});
+  el.querySelectorAll('[data-call]').forEach(function(b){b.onclick=function(){var c=contacts()[+b.dataset.call];dial(c);};});
+  el.querySelectorAll('[data-pl]').forEach(function(b){b.onclick=function(){var p=PH.ps[+b.dataset.pl];closePhone();if(a==='cab')callCab(p);else navTo(p);};});
+  el.querySelectorAll('[data-bank]').forEach(function(b){b.onclick=function(){closePhone();if(b.dataset.bank==='tax')payTaxes();else bankWindow(b.dataset.bank);};});
+  if(a==='maps')drawPhoneMap();
+}
+function ago(t){var s=(now()-t)/1000;return s<60?'just now':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago';}
+function placeCol(k){return {shop:'#e2553f',supply:'#2f5f90',civic:'#5a4a38',airport:'#7a5ad8',motors:'#e2553f',park:'#2fa860',land:'#2fa860',sale:'#c0392b',site:'#f2b632'}[k]||'#3a3f4b';}
+function placeIc(k){return {shop:'☕',supply:'▦',civic:'⌂',airport:'✈',motors:'🚚',park:'♣',land:'▣',sale:'$',site:'⚒'}[k]||'•';}
+function placesSorted(){var seen={};return places.filter(function(p){if(seen[p.name]&&p.kind==='sale')return false;seen[p.name]=1;return areaOfX(p.x)==null||p.kind==='shop';}).sort(function(a,b){var o={shop:0,supply:1,civic:2,airport:3,motors:4,park:5,land:6,site:7,sale:8};return (o[a.kind]-o[b.kind])||(Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z));}).slice(0,24);}
+function drawPhoneMap(){var cv=$('#ph-map');if(!cv)return;var g=cv.getContext('2d'),W2=cv.width,H2=cv.height,minX=plan.xs[0]-10,maxX=plan.AX+24,minZ=plan.zs[0]-10,maxZ=plan.zs[plan.R]+10,sc=Math.min(W2/(maxX-minX),H2/(maxZ-minZ));
+  g.fillStyle='#9fd47f';g.fillRect(0,0,W2,H2);g.save();g.translate((W2-(maxX-minX)*sc)/2,(H2-(maxZ-minZ)*sc)/2);g.scale(sc,sc);g.translate(-minX,-minZ);
+  g.fillStyle='#6b6f78';roads.forEach(function(r){g.fillRect(r.x0,r.z0,r.x1-r.x0,r.z1-r.z0);});
+  plan.blocks.forEach(function(b){g.fillStyle=b.t==='park'?'#7cc864':b.t==='dist'&&myLocIn(b.D)?'#ffd98a':'#efe6d6';g.fillRect(b.x-BW/2,b.z-BD/2,BW,BD);g.fillStyle='#5a4a38';g.font='700 '+(7/sc*.9)+'px '+FB;g.textAlign='center';g.fillText(blockName(b),b.x,b.z+3);});
+  g.fillStyle='#d8dee6';g.fillRect(plan.AX-22,plan.AZ-40,44,80);g.fillStyle='#5a4a38';g.fillText('Airport',plan.AX,plan.AZ);
+  if(NAV&&NAV.pts){g.strokeStyle='#18c8f0';g.lineWidth=3/sc;g.beginPath();NAV.pts.forEach(function(p,i){if(i)g.lineTo(p.x,p.z);else g.moveTo(p.x,p.z);});g.stroke();}
+  var px=P.area==='city'?P.x:(placeById(ENTRANCE[P.area])||P).x,pz=P.area==='city'?P.z:(placeById(ENTRANCE[P.area])||P).z;g.fillStyle='#2f8fd0';g.beginPath();g.arc(px,pz,5/sc,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2/sc;g.stroke();g.restore();}
+function contacts(){
+  var c=[{n:'Bob\'s Builders',r:'Construction · new shops, expansions',col:'#f2b632',fn:function(){callBob();}},{n:'Dana',r:'Crema Realty · land and tenants',col:'#2fa860',fn:function(){callDana();}},
+    {n:'Crema Supply Co.',r:'Deliveries to your shops',col:'#2f5f90',fn:function(){orderDelivery();}},{n:'City Cab',r:'Rides anywhere in '+plan.name,col:'#ffc63d',fn:function(){PH.app='cab';openPhone('cab');return 'stay';}},
+    {n:'Air Crema',r:'Flights',col:'#7a5ad8',fn:function(){flightsDesk(false);}},{n:'City Hall',r:'Taxes and permits',col:'#5a4a38',fn:function(){cityHallCall();}},{n:'Mom',r:'Calls more when you\'re doing well',col:'#ff79b4',fn:function(){callMom();}}];
+  G.locs.forEach(function(l){if(hasMgr(l))c.push({n:staffName(l,'manager',0),r:'Manager · '+l.name+(l.city!==O.city?' ('+cityName(l.city)+')':''),col:'#7a5ad8',fn:function(){callManager(l);}});});
+  return c;
+}
+function dial(c){PH.app='dial';var el=$('#ph-body');el.innerHTML='<div class="ph-dial"><i style="background:'+c.col+'">'+esc(c.n.charAt(0))+'</i><b>'+esc(c.n)+'</b><small>Calling…</small><button type="button" class="ph-end">End</button></div>';
+  el.querySelector('.ph-end').onclick=function(){clearTimeout(PH.dt);closePhone();};P.onCall=true;
+  [0,1].forEach(function(i){try{tone(440,.4,'sine',.03,i*1.1);tone(480,.4,'sine',.03,i*1.1);}catch(e){}});
+  PH.dt=setTimeout(function(){var r=c.fn();if(r!=='stay')closePhone();},1500);}
+function stopRing(){if(PH.ring){clearInterval(PH.ring);PH.ring=null;}}
+var lastCall=0;
+function incoming(who,role,col,text,btns){
+  if(!O.on||PH.open||popOpen()||CUT||now()-lastCall<45000){note(who,text,'call');return;}lastCall=now();
+  PH.open=true;PH.app='ring';$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');var el=$('#ph-body');
+  $('#ph-time').textContent=clockStrH(clockH);el.innerHTML='<div class="ph-dial ringing"><i style="background:'+col+'">'+esc(who.charAt(0))+'</i><b>'+esc(who)+'</b><small>'+esc(role)+' · incoming call</small><div class="ph-ans"><button type="button" class="no">Decline</button><button type="button" class="yes">Answer</button></div></div>';
+  PH.ring=setInterval(function(){try{tone(660,.15,'sine',.03);tone(880,.15,'sine',.03,.18);}catch(e){}},1400);
+  el.querySelector('.no').onclick=function(){closePhone();note('Missed call: '+who,text,'call');};
+  el.querySelector('.yes').onclick=function(){closePhone();popup(who,text,btns||[{t:'Thanks'}],'',{who:who,role:role,col:col});};
+}
+/* ---------- the people you call ---------- */
+function callBob(key){
+  if(key){var jobs=jobsFor(key);if(!jobs.length){popup('Bob\'s Builders','"Nothing I can build there right now, boss."',[{t:'OK'}],'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632'});return;}
+    popup('Bob\'s Builders','"What are we building?"',jobs.concat([{t:'Never mind',cls:'sec'}]),'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632'});return;}
+  var w=W4(),opts=[];
+  Object.keys(w.land).forEach(function(k){if(cityOfLot(k)!==O.city)return;var l=w.land[k],D=district(O.city,l.d);opts.push({t:(l.use?({patio:'Patio',lease:'Rental',billboard:'Billboard',parking:'Parking lot'})[l.use]:'Empty lot')+' · '+D.name,s:l.use?'Demolish or rebuild':'Ready to build',fn:function(){callBob(k);}});});
+  G.locs.forEach(function(l){if(l.city===O.city)opts.push({t:'Crema '+IND[l.ind].name+' · '+l.name,s:'Expansions and storefront work',fn:function(){callBob('shop:'+l.id);}});});
+  w.builds.forEach(function(b){var c=rushCost(b);opts.push({t:'Rush a job in progress · '+fmt(c),s:Math.round(prog(b)*100)+'% done, '+mmssS(left(b))+' left',fn:function(){if(!pay(c,'Overtime'))return;b.arrive=Math.min(b.arrive||0,now());b.t0=now()-b.sec*1000;finishBuilds();}});});
+  if(!opts.length){popup('Bob\'s Builders','"You don\'t own any land in '+plan.name+' yet. Call Dana, she\'ll find you a lot. Then I\'ll build whatever you want on it."',[{t:'Call Dana',fn:function(){callDana();}},{t:'OK',cls:'sec'}],'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632'});return;}
+  popup('Bob\'s Builders','"Bob here. Which property?"',opts.concat([{t:'Never mind',cls:'sec'}]),'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632'});
+}
+function callDana(mode,key,inPerson){
+  var w=W4(),who={who:'Dana',role:'Crema Realty',col:'#2fa860'};
+  if(mode==='lease'&&key){var l=w.land[key],fee=Math.round(leaseRate(district(O.city,l.d))*6);popup('Dana','"I have two tenants interested. I can sign one today for a finder\'s fee, or you can wait and someone will turn up on their own."',[{t:'Sign one now · '+fmt(fee),fn:function(){if(!pay(fee,'The finder\'s fee'))return;l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'.','good');rebuild();}},{t:'I\'ll wait',cls:'sec'}],'',who);return;}
+  var sale=places.filter(function(p){return p.kind==='sale';}).sort(function(a,b){return Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z);});
+  var opts=sale.slice(0,6).map(function(p){var k=p.id.slice(5),own0=w.land[k],D=district(O.city,k.split(':')[1]),pr=landPrice(D);return {t:D.name+' · '+fmt(pr),s:G.lvl<D.lvl?'Opens at level '+D.lvl:Math.round(Math.hypot(p.x-P.x,p.z-P.z))+' m away · tap for directions, or buy now',fn:function(){popup(D.name+' lot','Price '+fmt(pr)+'.',[{t:'Directions',fn:function(){navTo(p);}},{t:'Buy it sight unseen · '+fmt(pr*1.05),s:'+5% fee',fn:function(){if(G.lvl<D.lvl){popup('Not yet',D.name+' opens at level '+D.lvl+'.',[{t:'OK'}],'bad');return;}if(!pay(pr*1.05,'The lot'))return;w.land[k]={d:D.id,at:now(),use:null};note('Land purchased',D.name+'. Call Bob when you\'re ready to build.','good',{label:'Call Bob',fn:function(){callBob(k);}});rebuild();}},{t:'Back',cls:'sec'}],'',who);}};});
+  var vac=Object.keys(w.land).filter(function(k){return cityOfLot(k)===O.city&&w.land[k].use==='lease'&&!w.land[k].tenant;});
+  vac.forEach(function(k){opts.push({t:'Find a tenant now',s:district(O.city,w.land[k].d).name,fn:function(){callDana('lease',k);}});});
+  var empty=Object.keys(w.land).filter(function(k){return cityOfLot(k)===O.city&&!w.land[k].use;});
+  empty.forEach(function(k){var D=district(O.city,w.land[k].d),back=Math.round(landPrice(D)*.8);opts.push({t:'Sell your empty lot · '+fmt(back),s:D.name+' · 80% of today\'s price',fn:function(){G.cash+=back;delete w.land[k];note('Lot sold',D.name+' · +'+fmt(back),'good');rebuild();}});});
+  popup('Dana',(inPerson?'"Come in, sit down! ':'"')+(sale.length?'Here\'s what\'s on the market in '+plan.name+' right now."':'Nothing for sale nearby. Try another district."'),opts.concat([{t:'Bye, Dana',cls:'sec'}]),'',who);
+}
+function orderDelivery(loc,inPerson){
+  var shops=G.locs.filter(function(l){return l.city===O.city;});if(!shops.length){popup('Crema Supply Co.','"We only deliver inside '+plan.name+'. You don\'t have a shop here yet."',[{t:'OK'}]);return;}
+  if(!loc&&shops.length>1){popup('Crema Supply Co.','"Which shop are we delivering to?"',shops.map(function(l){return {t:l.name,s:IND[l.ind].name+' · storeroom '+(W4().stock[l.ind]||0),fn:function(){orderDelivery(l,inPerson);}};}).concat([{t:'Never mind',cls:'sec'}]),'',{who:'Crema Supply Co.',role:'Dispatch',col:'#2f5f90'});return;}
+  loc=loc||shops[0];var ks=SUP_ORDER.filter(function(k){return SUP[k].inds.indexOf(loc.ind)>=0;}),free=civ().policy==='supply';
+  function pack(n){var c=0;for(var i=0;i<n;i++)c+=supPrice(ks[i%ks.length]);return Math.round(c*(inPerson?1.1:1.25)+(free?0:40*tierM()));}
+  popup('Crema Supply Co.','"Delivery to '+loc.name+'? Our van can be there in about 30 seconds."'+(inPerson?'':'\nPhone orders cost a bit more than shopping in person.'),[
+    {t:'4 crates · '+fmt(pack(4)),s:ks.map(function(k){return SUP[k].name;}).join(', '),fn:function(){deliver(loc,ks,4,pack(4));}},{t:'10 crates · '+fmt(pack(10)),s:'A full van',fn:function(){deliver(loc,ks,10,pack(10));}},{t:'Never mind',cls:'sec'}],'',{who:'Crema Supply Co.',role:'Dispatch',col:'#2f5f90'});}
+function deliver(loc,ks,n,c){if(!pay(c,'The delivery'))return;W4().stats.deliveries++;var list=[];for(var i=0;i<n;i++)list.push(ks[i%ks.length]);var p=placeById('shop:'+loc.id);
+  if(p)deliveryVan(p,30);setTimeout(function(){unload(list,loc);note('Delivery arrived',n+' crates for '+loc.name+'.','good');},30000);note('Delivery booked','The van is headed to '+loc.name+'.','info');}
+function callManager(loc){var e=locEcon(loc),nm=staffName(loc,'manager',0),st=W4().stock[loc.ind]||0,act=SH&&SH.loc===loc&&SH.phase!=='done';
+  var lines=['"Hi boss! '+loc.name+' here."',act?(hasMgr(loc)?'We\'re mid-shift and holding the fort.':''):e.open?'About '+Math.round(e.items)+' customers a minute, '+fmt(e.net)+'/min after costs.':'We can\'t open: we need '+e.bott+'.',st?'Storeroom has '+st+' servings of supplies.':'We\'re out of supplies, so ingredients cost full price.',loc.comp?loc.comp.name+' across the street is at strength '+Math.round(loc.comp.S)+'.':'No competition nearby.'];
+  popup(nm,lines.filter(Boolean).join('\n'),[{t:'Order supplies',fn:function(){orderDelivery(loc);}},{t:'Run a promotion',s:'Opens marketing',fn:function(){openShop(G.locs.indexOf(loc),'market');}},{t:'Keep it up!',cls:'sec'}],'',{who:nm,role:'Manager · '+loc.name,col:'#7a5ad8'});}
+function callMom(){var lines=['"Are you eating? You sound tired. Proud of you though."','"Your aunt saw your shop! She says the lattes are better than the place by her."','"I told everyone at the salon about your coffee. Everyone."','"Call your father, he wants to hear about the business."','"I made your favorite. Come by when you\'re not so busy, big shot."'];
+  popup('Mom',pick(lines),[{t:'Love you, Mom'}],'',{who:'Mom',role:'Mom',col:'#ff79b4'});}
+function cityHallCall(){var u=unpaid();popup('City Hall','"'+plan.name+' City Hall, how can I direct your call?"',[
+  {t:u.length?'Pay my taxes · '+fmt(u.reduce(function(s,b){return s+b.amt;},0)):'Taxes',s:W4().tax.visited?'':'Register in person first',off:!W4().tax.visited,why:'Register at the Taxes window in person first.',fn:payTaxes},
+  {t:'Permits',s:'Applications are in person only',fn:function(){popup('City Hall','"Permit applications are in person at the Permits window, second floor. Well, first floor. We only have one floor."',[{t:'Directions',fn:function(){navTo(placeById('hall'));}},{t:'OK',cls:'sec'}]);}},{t:'Never mind',cls:'sec'}],'',{who:'City Hall',role:'Front desk',col:'#5a4a38'});}
+function rivalTalk(loc){var c=loc.comp;if(!c){toast('They closed up shop.');return;}var pr=Math.round(c.S*600*TM(loc.city).pm*(1+G.lvl*.03)),who={who:'Marco',role:'Owner, '+c.name,col:'#3a3f4b'};
+  popup(c.name,'"Oh. It\'s you. Here to gloat, or here to buy a coffee?"',[
+    {t:'Make a buyout offer · '+fmt(pr),s:'They close for good; the building becomes your rental',fn:function(){popup(c.name,'"'+fmt(pr)+'? ...Fine. I was tired anyway. Take the keys."',[{t:'Shake on it · '+fmt(pr),fn:function(){if(!pay(pr,'The buyout'))return;
+      var v=shopV.filter(function(q){return q.rival&&q.loc===loc;})[0],key=v?v.lot.key:null;loc.comp=null;loc.cd.nocomp=now()+40*60000;if(key)W4().land[key]={d:loc.did,at:now(),use:'lease',tenant:null,vac:now()};
+      addFame(15);news('You bought out '+c.name+'. '+loc.name+' is yours now.','good',loc);banner('Bought out!',c.name+' is closed','good');rebuild();}},{t:'Let me think',cls:'sec'}],'',who);}},
+    {t:'Buy a coffee ($4)',s:'Taste the competition',fn:function(){if(pay(4,'A coffee'))popup(c.name,pick(['It\'s fine. Bitter. You\'ve got nothing to worry about.','Honestly... it\'s good. They\'re at strength '+Math.round(c.S)+'.','Burnt. Their regulars must be very loyal.']),[{t:'OK'}],'',who);}},
+    {t:'Leave',cls:'sec'}],'',who);}
+/* ---------- City Hall windows ---------- */
+function permitsWindow(){var v=civ(),m=v.policy==='permits'?.5:1,tm=tierM(),opts=[];
+  [['vend','Street vending permit',Math.round(2500*tm*m),'Lets your food trucks sell in '+plan.name+'.'],['comm','Commercial zoning permit',Math.round(18000*tm*m),'Required for the superstore on Market Square.']].forEach(function(q){
+    opts.push({t:(v.permits[q[0]]?'✓ ':'')+q[1]+(v.permits[q[0]]?'':' · '+fmt(q[2])),s:v.permits[q[0]]?'Issued':q[3],off:!!v.permits[q[0]],why:'You already have it.',fn:function(){if(!pay(q[2],'The permit'))return;v.permits[q[0]]=now();note('Permit issued',q[1]+' for '+plan.name+'.','good');save();}});});
+  var pc=Math.round(1500*tm*m),cd=(v.partyCD||0)-now();
+  opts.push({t:'Block party permit · '+fmt(pc),s:cd>0?'Next one in '+mmssS(cd/1000):'+40% customers in one district for 3 minutes, with a street full of people',off:cd>0,why:'One block party at a time.',fn:function(){
+    var ds=G.locs.filter(function(l){return l.city===O.city;});if(!ds.length){popup('Block party','You need a shop in '+plan.name+' first.',[{t:'OK'}]);return;}
+    popup('Which district?','',ds.map(function(l){return {t:distOf(l).name,fn:function(){if(!pay(pc,'The block party'))return;v.party={d:l.did,until:now()+180000};v.partyCD=now()+600000;news('Block party in '+distOf(l).name+'! Crowds are out.','good',l);save();}};}));}});
+  if(O.city>0&&(G.cities||1)<=O.city)opts.push({t:'Register a regional office',s:'Lets you open shops in '+plan.name+' (same as the Empire tab)',fn:function(){var r=act('city',O.city);if(r==='ok'){note('Regional office open','You can now buy land and open shops in '+plan.name+'.','good');banner('Welcome to '+plan.name,'Regional office registered','good');}else{var q=cityReq(O.city);popup('Not yet','You need level '+q.lvl+' and '+q.own+' shops in '+cityName(O.city-1)+'.',[{t:'OK'}],'bad');}}});
+  popup('Permits window','"Next! What can the city do for you today?"',opts.concat([{t:'That\'s all',cls:'sec'}]),'',{who:'Permits clerk',role:'City Hall',col:'#2f8fd0'});}
+function taxWindow(){var w=W4(),u=unpaid(),tot=u.reduce(function(s,b){return s+b.amt;},0),cr=taxCredits(O.city);
+  var txt='Bills come every 8 minutes, based on what your businesses take in.\n'+(u.length?plural(u.length,'unpaid bill')+': '+fmt(tot)+(liened()?'\nPermits are on hold until you pay.':''):'You\'re all paid up.')+'\nNext bill about '+fmt(cityTax(O.city))+' for '+plan.name+'.\n\nTax credits'+(cr.list.length?': '+cr.list.map(function(q){return q[0]+' −'+Math.round(q[1]*100)+'%';}).join(', '):': none yet. Hire 6+ staff here, add a patio, or win a council seat.');
+  popup('Taxes window',txt,[{t:'Pay '+fmt(tot),off:!tot,why:'Nothing to pay.',fn:payTaxes},{t:w.tax.auto?'Turn autopay off':'Turn on autopay',s:'Bills are paid the moment they arrive',fn:function(){w.tax.auto=!w.tax.auto;toast(w.tax.auto?'Autopay is on.':'Autopay is off.','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Tax clerk',role:'City Hall',col:'#2fa860'});}
+function electionsWindow(){var v=civ(),tm=tierM(),now2=now();
+  if(v.camp&&v.camp.until>now2){popup('Elections office','"Your campaign is running. Results in '+mmssS((v.camp.until-now2)/1000)+'."',[{t:'OK'}]);return;}
+  if(!v.council){var cc=Math.round(5000*tm);popup('Elections office','"A council seat opened up. You\'d need some name recognition (fame 250+) and a campaign budget."\n\nCouncil members get −15% taxes in '+plan.name+'.\nYour fame: '+Math.round(G.fame),[{t:'Run for council · '+fmt(cc),off:G.fame<250,why:'You need 250 fame.',fn:function(){if(!pay(cc,'The campaign'))return;v.camp={type:'council',until:now()+90000};note('Campaign launched','Your posters are going up all over '+plan.name+'. Results in 90 seconds.','good');save();}},{t:'Not now',cls:'sec'}],'',{who:'Clerk',role:'Elections office',col:'#7a5ad8'});return;}
+  if(!v.mayor){var mc=Math.round(40000*tm);popup('Elections office','"Mayor Rowe is retiring. With your fame you might just win."\n\nThe mayor sets city policy: tax holidays, tourism pushes, fast permits, cheaper supplies.\nYour fame: '+Math.round(G.fame)+' (900 needed)',[{t:'Run for mayor · '+fmt(mc),off:G.fame<900,why:'You need 900 fame.',fn:function(){if(!pay(mc,'The campaign'))return;v.camp={type:'mayor',until:now()+150000};note('Mayoral campaign launched','Debate tonight. Results in 2½ minutes.','good');save();}},{t:'Not now',cls:'sec'}],'',{who:'Clerk',role:'Elections office',col:'#7a5ad8'});return;}
+  policyDesk();}
+var POL={holiday:['Small business tax holiday','−40% city taxes for your businesses'],tourism:['Tourism push','+15% customers at your shops and superstore here'],permits:['Fast-track permits','Builds 40% faster, permits half price'],supply:['Supply corridor','Crates 25% cheaper, free delivery']};
+function policyDesk(){var v=civ(),cd=(v.polT||0)-now();popup('Mayor\'s office','Current policy: '+(v.policy?POL[v.policy][0]:'none')+(cd>0?'\nYou can change it again in '+mmssS(cd/1000)+'.':''),Object.keys(POL).map(function(k){return {t:POL[k][0],s:POL[k][1],off:cd>0||v.policy===k,why:cd>0?'Policies can change every 10 minutes.':'Already in effect.',fn:function(){v.policy=k;v.polT=now()+600000;news('Mayor\'s office: '+POL[k][0]+' is now city policy in '+plan.name+'.','good');save();}};}).concat([{t:'Close',cls:'sec'}]),'',{who:'You',role:'Mayor of '+plan.name,col:'#ffc63d'});}
+function campaignTick(){Object.keys(W4().civ).forEach(function(c){var v=W4().civ[c];if(v.camp&&v.camp.until<=now()){var t=v.camp.type;v.camp=null;if(t==='council')v.council=1;else v.mayor=1;banner(t==='mayor'?'You\'re the mayor!':'You won a council seat!',cityName(+c),'good');addFame(t==='mayor'?60:20);
+  note(t==='mayor'?'Elected mayor of '+cityName(+c):'Elected to the city council',t==='mayor'?'Visit the mayor\'s office at City Hall to set policy.':'−15% taxes on your businesses here.','good');if(O.on&&+c===O.city)O.dirty=true;save();}});}
+/* ---------- the bank ---------- */
+function bankWindow(tab){var b=W4().bank,who={who:'Teller',role:'Crema Savings & Loan',col:'#2f5a46'};
+  if(tab==='sav'){popup('Savings','Savings: '+fmt(b.sav)+'\nEarns 0.6% every 8 minutes. Money in savings is safe but can\'t be spent until you withdraw it.',[
+    {t:'Deposit half your cash · '+fmt(G.cash/2),off:G.cash<10,fn:function(){var d=Math.floor(G.cash/2);G.cash-=d;b.sav+=d;toast('Deposited '+fmt(d)+'.','good');save();}},{t:'Withdraw everything · '+fmt(b.sav),off:!b.sav,fn:function(){G.cash+=b.sav;toast('Withdrew '+fmt(b.sav)+'.','good');b.sav=0;save();}},{t:'Done',cls:'sec'}],'',who);return;}
+  if(tab==='loan'){var lim=Math.max(0,loanLimit()-b.loan);popup('Loans','Current loan: '+fmt(b.loan)+'\nYou can borrow '+fmt(lim)+' more. Interest is 2.5% every 8 minutes, taken from cash.',[
+    {t:'Borrow '+fmt(Math.round(lim/4)),off:lim<100,fn:function(){var a=Math.round(lim/4);b.loan+=a;G.cash+=a;note('Loan approved','+'+fmt(a)+' in cash.','good');save();}},{t:'Borrow '+fmt(lim),off:lim<100,fn:function(){b.loan+=lim;G.cash+=lim;note('Loan approved','+'+fmt(lim)+' in cash.','good');save();}},
+    {t:'Repay '+fmt(Math.min(b.loan,G.cash)),off:!b.loan||G.cash<1,fn:function(){var a=Math.min(b.loan,G.cash);G.cash-=a;b.loan-=a;toast(b.loan?'Paid down '+fmt(a)+'.':'Loan paid off!','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46'});return;}
+  if(tab==='ins'){popup('Business insurance',(b.ins?'You\'re covered.':'Not insured.')+'\nCovers 60% of rival dirty tricks (fake reviews, poached staff, price wars). Premium '+fmt(insPremium())+' every 8 minutes.',[{t:b.ins?'Cancel the policy':'Buy a policy',fn:function(){b.ins=!b.ins;toast(b.ins?'You\'re insured.':'Policy cancelled.','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Insurance desk',role:'Crema Savings & Loan',col:'#2f5a46'});}}
+/* ---------- photo mode ---------- */
+function photoMode(on){document.body.classList.toggle('photo',on);$('#o-photo').hidden=!on;if(on)note('Photo mode','Drag to frame the shot, then tap Save.','info');}
+function savePhoto(){try{renderer.render(O.scene,O.cam);var u=renderer.domElement.toDataURL('image/png'),a=document.createElement('a');a.href=u;a.download='crema-city.png';a.click();toast('Saved!','good');}catch(e){toast('Could not save the photo here.','bad');}}
