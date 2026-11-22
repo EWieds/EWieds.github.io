@@ -30,7 +30,7 @@ function fade(fn,cb){var f=$('#o-fade');f.classList.add('on');setTimeout(functio
 function enterArea(id){if(!AREAS[id]){popup('Closed','This building isn\'t open yet.',[{t:'OK'}]);return;}
   fade(function(){retPos={x:P.x,z:P.z,yaw:yaw};P.area=id;var A=AREAS[id];P.x=A.spawn.x;P.z=A.spawn.z;P.ry=Math.PI;yaw=0;pitch=A.cam.pitch;O.snap=true;doorCD=1;
     if(id==='hall'){W4().tax.visited=true;}try{tone(1318,.25,'sine',.02);}catch(e){}updDaylight();});}
-function leaveArea(){if(P.carry.length&&P.area==='supply'){/* fine: you carry crates out */}
+function leaveArea(){if(jailLocked()){toast('The door is locked. Wait it out or post bail.','bad');return;}if(P.carry.length&&P.area==='supply'){/* fine: you carry crates out */}
   fade(function(){var r=retPos||placeById('hall')||{x:0,z:0};P.area='city';var back=outward(r);P.x=back.x;P.z=back.z;yaw=Math.atan2(back.x-r.x,back.z-r.z);P.ry=yaw;pitch=.44;O.snap=true;doorCD=1;updDaylight();});}
 function outward(r){var b=blockAt(r.x,r.z);if(!b)return {x:r.x-1.2,z:r.z};var dz=r.z>b.z?1:-1;return {x:r.x,z:r.z+dz*1.2};}
 /* ---------- going into your shop: the counter view picks up from here ---------- */
@@ -68,7 +68,7 @@ function camInside(x,z,y){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area
 
 /* ---------- the action buttons (stable DOM: built once per change, never every frame) ---------- */
 function updActs(){
-  var list=caterActs().concat(crashActs(),ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs()):[]),best=null,bd=1e9;
+  var list=caterActs().concat(crashActs(),synActs(),gigActs(),catActs(),ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs(),beanActs(),vendActs()):[]),best=null,bd=1e9;
   if(!drv&&!(RIDE&&!RIDE.coming)&&!CUT)list.forEach(function(a){var d=Math.hypot(a.x-P.x,a.z-P.z);if(d<a.r&&d<bd){bd=d;best=a;}});
   curAct=best;var el=$('#o-act'),el2=$('#o-alt'),k1='',k2='';
   if(drv){k1='Get out|'+(drv.v.kind==='truck'?(truckZone(drv.v)?'Park here and open the window':'Not a vending zone'):districtName(P.x,P.z));curAlt=null;}

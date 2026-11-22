@@ -29,6 +29,7 @@ function jobsFor(key){
     if((loc.decor||0)<5)out.push({t:'New storefront & sign · '+fmt(decorCost(loc)),s:'+1 decor (same as the Shop tab). 30 seconds.',fn:function(){startBuild('shop:'+loc.id,null,{kind:'decor',loc:loc.id,cost:decorCost(loc),sec:30});}});
     return out;}
   if(!own)return out;var D=district(cityOfLot(key),own.d),mine=G.locs.filter(function(l){return l.city===cityOfLot(key)&&l.did===own.d;})[0],lp=landPrice(D);
+  if(!own.use)out.push({t:'Build anything you can imagine',s:'A water park? A race track? HQ? Describe it and Bob quotes it',fn:function(){devPrompt(key);}});
   if(own.use){out.push({t:'Demolish and clear the lot · '+fmt(lp*.1),s:'Back to an empty lot. 20 seconds.',fn:function(){startBuild(key,D,{kind:'clear',cost:lp*.1,sec:20});}});return out;}
   if(!mine)IND_ORDER.forEach(function(ik){var I=IND[ik];if(G.lvl<I.lvl||G.lvl<D.lvl)return;var c=Math.round(locCost(cityOfLot(key),D.id,ik)*.65),t=Math.min(600,Math.round(60+c/400));
     out.push({t:'A new Crema '+I.name+' · '+fmt(c),s:'Opens as a new location in '+D.name+'. About '+mmssS(t)+'.',fn:function(){startBuild(key,D,{kind:'shop',ind:ik,cost:c,sec:t});}});});
@@ -58,6 +59,7 @@ function finishBuilds(){var w=W4(),changed=false,cityChanged=false;
     else if(b.kind==='patio'){var l=G.locs.filter(function(x){return x.id===b.loc;})[0];if(l)l.decor=Math.min(10,(l.decor||0)+3);if(land){land.use='patio';land.loc=b.loc;}note('Patio finished','+3 decor. Every table filled within minutes.','good');}
     else if(b.kind==='size'){var l2=G.locs.filter(function(x){return x.id===b.loc;})[0];if(l2&&SIZES[l2.size+1]){l2.size++;G.rebuild=true;note(SIZES[l2.size].name+' finished',l2.name+' has more room behind the counter.','good');}}
     else if(b.kind==='decor'){var l3=G.locs.filter(function(x){return x.id===b.loc;})[0];if(l3){l3.decor=Math.min(5,(l3.decor||0)+1);G.rebuild=true;note('Storefront done',l3.name+' looks sharp. +1 decor.','good');}}
+    else if(b.kind==='dev'){if(land&&land.pendingDev){land.use='dev';land.dev=land.pendingDev;delete land.pendingDev;note(land.dev.label+' is open!','Earning about '+fmt(land.dev.rev)+'/min.','good');addXP(150);}}
     else if(b.kind==='lease'){if(land){land.use='lease';land.tenant=null;land.vac=now();}note('Retail space ready','Dana is already showing it to tenants.','good');}
     else if(b.kind==='billboard'){if(land)land.use='billboard';note('Billboard is up','Your ad is lit up over '+(D?D.name:'town')+'.','good');}
     else if(b.kind==='parking'){if(land)land.use='parking';note('Parking lot open','Customers can park right outside now.','good');}
@@ -124,10 +126,10 @@ function rivalTruckActs(){return rtrucks.map(function(r){var p=r.g.position;retu
 /* ---------- money on a timer: tenants, trucks, superstores, taxes, the bank ---------- */
 var econT=0,PERIOD=480;
 function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){t+=60*TM(+c).pm*w.kiosk[c];});return t;}
-function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
+function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev;});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
 function econTick(dt){
-  if(!G||!G.w4)return;var w=W4(),inc=0;
-  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll();
+  if(!G||!G.w4)return;var w=W4(),inc=0;if((w.led||0)>G.cash)w.led=Math.max(0,G.cash);
+  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll()+extraIncome();
   w.trucks.forEach(function(t){if(t.city!==O.city)return;var v=veh.filter(function(x){return x.truck===t;})[0];if(!v||(drv&&drv.v===v))return;var z=truckZone(v);if(!z||t.stock<=0)return;
     var r=truckRate(t,z),sold=r*dt/60/Math.max(1,IND[t.ind].pm*TM(t.city).pm*4);t.stock=Math.max(0,t.stock-sold);var m=r*dt/60;inc+=m;t.earned=(t.earned||0)+m;
     if(t.stock<=0)note(t.name+' sold out','Load crates or restock at Crema Supply Co.','bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});
@@ -135,7 +137,7 @@ function econTick(dt){
   if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();clubTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -166,7 +168,7 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city);return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1);return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}

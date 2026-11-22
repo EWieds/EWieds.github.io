@@ -143,3 +143,13 @@ body.talking #o-mini,body.talking #o-in,body.talking #o-phb,body.talking #o-bird
 #o-win .w-b{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}#o-win .w-b button{border:2px solid #2a1a12;border-radius:14px;background:#ffc63d;box-shadow:0 3px 0 #2a1a12;padding:10px 4px;font:800 14px system-ui;cursor:pointer}#o-win .w-b i{display:block;font-style:normal;font-size:26px}
 body.window #o-acts,body.window #o-joy,body.window #o-goal{visibility:hidden}
 #o-nav .nv-a{width:auto;padding:0 10px;font:800 13px system-ui,sans-serif;background:#31e0ff;color:#0a2a36;height:30px}
+#o-tut{position:absolute;inset:0;pointer-events:none;z-index:20}
+#o-tut .tt-bar{position:absolute;left:0;top:0;height:4px;background:#ffc63d;transition:width .4s}
+#o-tut .tt-cap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 40px);transform:translateX(-50%);width:min(720px,calc(100% - 32px));text-align:center;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);opacity:0;transition:opacity .5s,transform .5s}
+#o-tut .tt-cap.in{opacity:1}
+#o-tut .tt-cap b{display:block;font:800 clamp(20px,3.4vw,34px)/1.15 var(--display,system-ui)}
+#o-tut .tt-cap span{display:block;margin-top:8px;font:600 clamp(14px,2vw,19px)/1.3 var(--body,system-ui);opacity:.92}
+#o-tut .tt-skip{position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 16px);pointer-events:auto;border:2px solid #fff;background:rgba(0,0,0,.35);color:#fff;font:800 14px system-ui;border-radius:12px;padding:8px 14px;cursor:pointer}
+body.tut::after{content:'';position:fixed;left:0;right:0;bottom:0;height:42vh;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none;z-index:5}
+.ph-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.ph-app{min-width:0}.ph-app span{max-width:100%;text-align:center;line-height:1.15}.ph-app i{width:48px;height:48px}
+body.tut #hud,body.tut #o-ui>*:not(#o-tut){visibility:hidden}

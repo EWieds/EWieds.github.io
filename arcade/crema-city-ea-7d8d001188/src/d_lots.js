@@ -82,7 +82,7 @@ function rivalFront(lot,loc,D){
   var dw=L2W(lot,DOORX,.8);
   ACTS.city.push({x:dw.x,z:dw.z,r:1.8,door:true,dn:lot,label:'Walk into '+c.name,sub:function(){return 'Rival · strength '+Math.round(c.S)+(c.S>c.prev+.5?' and rising':'');},fn:function(){rivalTalk(loc);}});
 }
-function landPrice(D){return Math.round(Math.max(600,(D.cost||1500)*.45+G.lvl*120)*(O.city>0?TM(O.city).cm*.25+.75:1));}
+function landPrice(D){return Math.round((hasClass('re')?.92:1)*Math.max(600,(D.cost||1500)*.45+G.lvl*120)*(O.city>0?TM(O.city).cm*.25+.75:1));}
 function forSaleLot(lot,D,key){
   var w=W4(),own=w.land[key],g=lotGroup(lot),pr=landPrice(D);
   if(curArea==='terminal'){var wl=lot.w-.3;bx(wl,5,BDEP-.6,toon(0xd8dee6),0,2.5,-BDEP/2,g);bx(wl-1,3.2,.1,toon(own?0x9ad6b0:0xb8c0ca),0,1.8,.05,g);for(var k=0;k<8;k++)bx(wl-1,.04,.04,toon(0x9aa2ac),0,.4+k*.4,.12,g);

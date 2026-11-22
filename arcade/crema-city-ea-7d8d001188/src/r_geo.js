@@ -60,4 +60,5 @@ function updGeo(dt,tl){anim.forEach(function(a){
   else if(a.radar){a.radar.rotation.y+=dt*1.5;}
   else if(a.sock){a.sock.rotation.y=Math.sin(tl*.3)*.6+1;a.sock.rotation.z=-.2+Math.sin(tl*2)*.08;}
   else if(a.tug){a.t+=dt*.06;var k2=(Math.sin(a.t)+1)/2;a.tug.position.z=a.z0+(a.z1-a.z0)*k2;a.tug.rotation.y=Math.cos(a.t)>0?0:Math.PI;}
+  else if(a.kart){a.t+=dt*1.3;a.kart.position.set(Math.cos(a.t)*3.9,.4,-BDEP/2+Math.sin(a.t)*2.9);a.kart.rotation.y=-a.t;}
   else if(a.roll){a.t+=dt*a.v;var k3=(a.t%1);a.roll.position.x=a.x0+(a.x1-a.x0)*k3;}});}

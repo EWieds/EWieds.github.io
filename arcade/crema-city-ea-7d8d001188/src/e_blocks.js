@@ -4,12 +4,12 @@ function myLocIn(D){for(var i=0;i<G.locs.length;i++){var l=G.locs[i];if(l.city==
 function buildBlock(b){
   var keep=stat;stat=new T.Group();var r=seeded(b.seed);
   blockSlab(b,stat);if(b.t!=='park'&&b.t!=='mall')furnish(b,stat,r);
-  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock,uni:uniBlock,mall:mallBlock,dining:diningBlock})[b.t](b,r);
+  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock,uni:uniBlock,mall:mallBlock,dining:diningBlock,justice:justiceBlock})[b.t](b,r);
   O.scene.add(mergeGroup(stat));stat=keep;
 }
 function landUse(lot,b,D,key,own){
-  if(own.use==='patio')patioLot(lot,b,own,D);else if(own.use==='lease')leaseLot(lot,b,own,D,key);else if(own.use==='billboard')billboardLot(lot,b,own,D);else if(own.use==='parking')parkingLot(lot,b,own,D);else forSaleLot(lot,D,key);
-  if(own.use)places.push({id:'land:'+key,name:({patio:'Your patio',lease:'Your rental',billboard:'Your billboard',parking:'Your parking lot'})[own.use]+' · '+D.name,kind:'land',x:L2W(lot,0,1.2).x,z:L2W(lot,0,1.2).z});
+  if(own.use==='dev')devLot(lot,b,own,D);else if(own.use==='patio')patioLot(lot,b,own,D);else if(own.use==='lease')leaseLot(lot,b,own,D,key);else if(own.use==='billboard')billboardLot(lot,b,own,D);else if(own.use==='parking')parkingLot(lot,b,own,D);else forSaleLot(lot,D,key);
+  if(own.use)places.push({id:'land:'+key,name:(own.use==='dev'?'Your '+((own.dev||{}).label||'building'):({patio:'Your patio',lease:'Your rental',billboard:'Your billboard',parking:'Your parking lot'})[own.use])+' · '+D.name,kind:'land',x:L2W(lot,0,1.2).x,z:L2W(lot,0,1.2).z});
 }
 function distBlock(b,r){
   var D=b.D,mine=myLocIn(D),lots=lotsOf(b),w=W4();
@@ -183,7 +183,7 @@ function dealer(lot,lot2){
 function gasStation(lot){
   var g=lotGroup(lot),w=lot.w;bx(w-2,.4,6,toon(0xffffff),0,5,-3.2,g);bx(w-2,.5,.1,toon(0xe2553f),0,5,-.2,g);
   [-4,4].forEach(function(x){cyB(.25,4.8,toon(0xd8dee6),x,.2,-3.2,g,10);[-1.6,1.6].forEach(function(z){rb(.6,1.5,.4,.05,toon(0xe2553f),x+z*.5,.95,-3.2+z,g);});});
-  var sh=new T.Group();sh.position.set(-w/2+3.4,0,-6.2);g.add(sh);rb(5.2,3.4,3,.1,toon(0xf4f4f4),0,1.9,0,sh);bx(3.6,1.8,.1,glass(0xbfe6ff,.5),0,1.5,1.52,sh);plane(3.4,.6,flat(0xffffff,{map:signT('GAS & GO',{bg:'#e2553f',fg:'#fff',w:512,h:100})}),0,3.1,1.56,sh);
+  var sh=new T.Group();sh.position.set(-w/2+3.4,0,-6.2);g.add(sh);rb(5.2,3.4,3,.1,toon(0xf4f4f4),0,1.9,0,sh);bx(3.6,1.8,.1,glass(0xbfe6ff,.5),0,1.5,1.52,sh);plane(3.4,.6,flat(0xffffff,{map:signT('GAS & GO',{bg:'#e2553f',fg:'#fff',w:512,h:100})}),0,3.1,1.56,sh);var gw=L2W(lot,-w/2+3.4,-4.2);places.push({id:'gas',name:'Gas & Go',kind:'motors',x:gw.x,z:gw.z});ACTS.city.push({x:gw.x,z:gw.z,r:1.8,label:'Gas & Go',sub:'Scratch tickets · snacks · taxi medallions',fn:function(){popup('Gas & Go','Pump 3 is broken. What can I get ya?',[{t:'Scratch ticket · $2',fn:lottery},{t:'Taxi medallions',fn:medallion},{t:'A gas-station hot dog · $3',fn:function(){if(pay(3,'The hot dog'))eat('A gas-station hot dog');}},{t:'Bye',cls:'sec'}],'',{who:'Dale',role:'Gas & Go',col:'#e2553f'});}});
   var pr=new T.Group();pr.position.set(w/2-1.5,0,-.6);g.add(pr);cyB(.12,5,toon(0x3a3f4b),0,.2,0,pr,8);plane(1.6,2,flat(0xffffff,{map:canvasTex(128,160,function(c,W2,H2){c.fillStyle='#e2553f';c.fillRect(0,0,W2,H2);c.fillStyle='#fff';c.font='700 26px '+FD;c.textAlign='center';c.fillText('REG',W2/2,40);c.fillText('3.29',W2/2,72);c.fillText('PREM',W2/2,112);c.fillText('3.79',W2/2,144);},null,'gasp')}),0,4.6,.15,pr);
   [-4,4].forEach(function(x){rectCol(lot,x-.4,x+.4,-4.2,-2.2);});rectCol(lot,-w/2+.8,-w/2+6,-BDEP,-4.6);
 }

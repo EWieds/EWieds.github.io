@@ -46,7 +46,7 @@ function bizTalk(b,phone,msg){
 }
 function offer(b,o,phone,cash){var s=dState(b);s.offers++;s.last=o;
   if(!canAfford(o)){bizTalk(b,phone,line('broke',b));return;}
-  var eff=o*(cash&&caseAmt()>=o?(b.pers==='greedy'?1.12:1.06):1)*(phone?.96:1);
+  var eff=o*(cash&&caseAmt()>=o?(b.pers==='greedy'?1.12:1.06):1)*(phone?.96:1)*(hasClass('neg')?1.05:1);
   if(b.pers==='sentimental'&&!s.promise&&eff>=s.floor){bizTalk(b,phone,line('heart',b));return;}
   if(eff>=s.ask||(eff>=s.floor&&Math.random()<.25+.6*(eff-s.floor)/Math.max(1,s.ask-s.floor))){closeDeal(b,o,eff>s.ask*1.2);return;}
   if(eff>=s.floor){var c=Math.round((o+s.ask)/2/10)*10;s.ask=Math.max(s.floor,c);s.known=1;bizTalk(b,phone,line('counter',b,{n:fmt(s.ask)}));return;}
