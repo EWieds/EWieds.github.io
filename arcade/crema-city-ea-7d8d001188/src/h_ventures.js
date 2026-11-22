@@ -96,7 +96,7 @@ function startGarage(lot){var S=superOf(),l=(S.garage||0)+1;if(l>5){popup('Garag
 function truckCost(ik){return Math.round((6000+IND[ik].cm*1800)*tierM());}
 function truckCap(t){return 60*(1+(t.up.fridge||0));}
 function truckRate(t,z){var I=IND[t.ind],base=(6+4*Math.log(1+I.pm*4))*I.pm*TM(t.city).pm;var hr=clockH,tod=hr<7||hr>21?.25:1+.5*Math.exp(-Math.pow((hr-12.5)/1.6,2))+.3*Math.exp(-Math.pow((hr-18)/1.5,2));
-  var riv=rtrucks.some(function(r){return r.zone===z;})?.55:1;return base*z.dem*tod*riv*(1+.15*(t.up.wrap||0))*(1+.12*(t.up.speaker||0))*(1+.25*(t.up.window||0))*(rain.on?.7:1);}
+  var riv=rtrucks.some(function(r){return r.zone===z;})&&!lawOn('rivals',t.city)?.55:1;return base*z.dem*tod*riv*warMult(z)*lawMult('truck',t.city)*(t.dmg>60?.8:1)*(1+.15*(t.up.wrap||0))*(1+.12*(t.up.speaker||0))*(1+.25*(t.up.window||0))*(rain.on?.7:1);}
 function truckZone(v){var p=v.g.position;for(var i=0;i<zones.length;i++){var z=zones[i];if(Math.hypot(z.x-p.x,z.z-p.z)<4)return z;}return null;}
 function nearestZone(x,z){var b=null,bd=1e9;zones.forEach(function(q){var d=Math.hypot(q.x-x,q.z-z);if(d<bd){bd=d;b=q;}});return b?{x:b.x,z:b.z+(b.z>0?-1:1)*0,name:'Food truck zone · '+b.name}:null;}
 function buyTruck(ik){var I=IND[ik];
@@ -108,7 +108,7 @@ function buyTruck(ik){var I=IND[ik];
 function loadTruck(v){var t=v.truck,n=0;P.carry=P.carry.filter(function(k){if(SUP[k].inds.indexOf(t.ind)<0)return true;if(t.stock>=truckCap(t))return true;t.stock=Math.min(truckCap(t),t.stock+SUP[k].u*.75);n++;return false;});carryView();
   if(n)toast('Loaded '+n+' crate'+(n>1?'s':'')+'. Stock '+Math.round(t.stock)+'/'+truckCap(t),'good');else popup('Wrong crates','A '+IND[t.ind].name.toLowerCase()+' truck needs '+SUP_ORDER.filter(function(k){return SUP[k].inds.indexOf(t.ind)>=0;}).map(function(k){return SUP[k].name.toLowerCase();}).join(' or ')+'.',[{t:'OK'}],'bad');save();}
 var TRUCK_UP={fridge:{n:'Bigger fridge',s:'+60 servings capacity',c:2500},wrap:{n:'Custom wrap',s:'+15% sales',c:3000},speaker:{n:'Speaker & music',s:'+12% sales',c:2200},window:{n:'Second window',s:'+25% sales',c:6000}};
-function truckMenu(v){var t=v.truck,opts=[];
+function truckMenu(v){var t=v.truck,opts=[];if(truckZone(v))opts.push({t:'Work the window yourself',s:'60 seconds of serving. Match the orders, earn tips',fn:function(){workWindow(v);}});if(FEST&&FEST.until>now()&&truckZone(v)&&truckZone(v).park)opts.push({t:'Enter the cook-off',s:'Describe your dish to the judges',fn:function(){cookOff(v);}});
   var nearSup=Math.hypot(placeById('supply').x-v.g.position.x,placeById('supply').z-v.g.position.z)<16,refill=Math.round((truckCap(t)-t.stock)*supPrice(SUP_ORDER.filter(function(k){return SUP[k].inds.indexOf(t.ind)>=0;})[0])/24);
   if(t.stock<truckCap(t))opts.push({t:nearSup?'Restock here · '+fmt(refill):'Restock at Crema Supply Co.',s:nearSup?'Fill to '+truckCap(t)+' servings':'Drive the truck to Market Square, or load crates by hand',off:!nearSup,why:'Park within a few meters of Crema Supply Co.',fn:function(){if(!pay(refill,'Restocking'))return;t.stock=truckCap(t);save();toast('Truck restocked.','good');}});
   Object.keys(TRUCK_UP).forEach(function(k){var u=TRUCK_UP[k],l=t.up[k]||0,c=Math.round(u.c*Math.pow(2.2,l)*tierM());opts.push({t:u.n+(l?' '+(l+1):'')+' · '+fmt(c),s:u.s,fn:function(){if(!pay(c,u.n))return;t.up[k]=l+1;save();note('Truck upgraded',u.n+' installed on '+t.name+'.','good');}});});
@@ -119,12 +119,12 @@ function initRivalTrucks(){rtrucks.forEach(function(r){dyn.remove(r.g);});rtruck
 function moveRival(r){var free=zones.filter(function(z){return !rtrucks.some(function(o){return o!==r&&o.zone===z;});});var z=pick(free);r.zone=z;r.t=rnd(150,320);r.g.position.set(z.x,0,z.z);r.g.rotation.y=z.ry;}
 function updRivalTrucks(dt){rtrucks.forEach(function(r){r.t-=dt;if(r.t<=0){var d=Math.hypot(r.g.position.x-P.x,r.g.position.z-P.z);if(!O.on||d>45)moveRival(r);else r.t=20;}});}
 function rivalTruckActs(){return rtrucks.map(function(r){var p=r.g.position;return {x:p.x,z:p.z,r:3.4,label:'Talk to '+r.name,sub:'Rival truck · halves sales for anyone sharing this zone',fn:function(){var c=Math.round(600*tierM()*(1+G.lvl*.05));
-  popup(r.name,'"This is our spot, friend. Been parking here since the spring."',[{t:'Pay them to move on · '+fmt(c),s:'They leave this zone for a while',fn:function(){if(!pay(c,'The payoff'))return;bubble(p.x,3,p.z,'Pleasure doing business!','good');r.zone=null;r.t=0;r.g.position.set(-9999,0,-9999);setTimeout(function(){moveRival(r);},240000);}},{t:'Buy a taco ($4)',s:'Know your enemy',fn:function(){if(pay(4,'A taco'))toast(pick(['Honestly? Pretty good.','Too much cilantro.','You see why people line up.']));}},{t:'Leave',cls:'sec'}],'',{who:r.name,role:'Rival food truck',col:'#e2553f'});}};});}
+  popup(r.name,'"This is our spot, friend. Been parking here since the spring."',[{t:'Pay them to move on · '+fmt(c),s:'They leave this zone for a while',fn:function(){if(!pay(c,'The payoff'))return;bubble(p.x,3,p.z,'Pleasure doing business!','good');r.zone=null;r.t=0;r.g.position.set(-9999,0,-9999);setTimeout(function(){moveRival(r);},240000);}},{t:'Start a price war',s:'Undercut them hard. Someone blinks first',off:!r.zone||!veh.some(function(v){return v.kind==='truck'&&truckZone(v)===r.zone;}),why:'Park one of your trucks in this zone first.',fn:function(){priceWar(r);}},{t:'Buy their truck',s:'Every truck has a price',fn:function(){rivalBuyout(r);}},{t:'Buy a taco ($4)',s:'Know your enemy',fn:function(){if(pay(4,'A taco'))toast(pick(['Honestly? Pretty good.','Too much cilantro.','You see why people line up.']));}},{t:'Leave',cls:'sec'}],'',{who:r.name,role:'Rival food truck',col:'#e2553f'});}};});}
 
 /* ---------- money on a timer: tenants, trucks, superstores, taxes, the bank ---------- */
 var econT=0,PERIOD=480;
 function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){t+=60*TM(+c).pm*w.kiosk[c];});return t;}
-function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(c===O.city?1:1);});return inc;}
+function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
 function econTick(dt){
   if(!G||!G.w4)return;var w=W4(),inc=0;
   for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll();
@@ -135,13 +135,13 @@ function econTick(dt){
   if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
 function cityTax(c){var t=0;G.locs.forEach(function(l){if(l.city!==c)return;var e=locEcon(l);t+=e.rev*.035+(30+20*l.size)*TM(c).pm/8;});
   Object.keys(W4().land).forEach(function(k){if(cityOfLot(k)===c)t+=landPrice(district(c,W4().land[k].d))*.002;});t+=ventureIncomeCity(c)*.05;
-  var cr=taxCredits(c);return t*(1-cr.total)*PERIOD/60;}
+  var cr=taxCredits(c);return t*(1-cr.total)*lawMult('tax',c)*PERIOD/60;}
 function taxCredits(c){var v=civ(c),staff=0,dec=0,l=[];G.locs.forEach(function(x){if(x.city!==c)return;ROLE_ORDER.forEach(function(r){staff+=x.staff[r]||0;});dec=Math.max(dec,x.decor||0);});
   var patio=Object.keys(W4().land).some(function(k){return cityOfLot(k)===c&&W4().land[k].use==='patio';});
   if(staff>=6)l.push(['Hire-local credit',.15]);if(patio||dec>=3)l.push(['Main Street revival credit',.1]);if(v.council)l.push(['Council member',.15]);if(v.policy==='holiday')l.push(['Small business tax holiday',.4]);
@@ -166,7 +166,7 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city);return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}

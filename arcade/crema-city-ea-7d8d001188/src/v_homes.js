@@ -10,8 +10,8 @@ function homeState(h){return W4().biz[h.key]||{};}
 
 /* a detached house: yard, porch, picket fence, mailbox, garden, sometimes a driveway and a car */
 function houseModel(lot,b,r,h){
-  var g=lotGroup(lot),dg=dynGroup(lot),w=lot.w-.3,big=h.big,hw=big?7.6:6.6,hd=big?5.4:4.6,hh=big?5.8:3.2,f=-2.6,cx=(r()-.5)*.6,
-    wallM=toon(HOMEC[Math.floor(r()*HOMEC.length)]),roofM=toon(ROOFC[Math.floor(r()*ROOFC.length)]),trim=toon(0xffffff),st=homeState(h);
+  var st0=homeState(h);if((st0.proj||[]).some(function(p){return p.k==='floor2'&&p.done;}))h.big=true;var g=lotGroup(lot),dg=dynGroup(lot),w=lot.w-.3,big=h.big,hw=big?7.6:6.6,hd=big?5.4:4.6,hh=big?5.8:3.2,f=-2.6,cx=(r()-.5)*.6,
+    wallM=toon((function(){var c0=HOMEC[Math.floor(r()*HOMEC.length)],pp=(st0.proj||[]).filter(function(p){return p.k==='paint'&&p.done&&p.color;}).pop();return pp?pp.color:c0;})()),roofM=toon(ROOFC[Math.floor(r()*ROOFC.length)]),trim=toon(0xffffff),st=homeState(h);
   var gr=planeR(lot.w-.2,BDEP-.2,4,4,toon(0xffffff,{map:grassT()}),0,.215,-BDEP/2,g);gr.rotation.x=-Math.PI/2;
   bx(hw+.25,.4,hd+.25,toon(0x9a948a),cx,.2,f-hd/2,g);rb(hw,hh,hd,.05,wallM,cx,hh/2+.3,f-hd/2,g);
   var top=hh+.3;if(r()<.5){prism(hw+.6,big?2.6:2.1,hd+.7,roofM,cx,top,f-hd/2,g);}else{var pr=prism(hd+.7,big?2.3:1.9,hw+.6,roofM,cx,top,f-hd/2,g);pr.rotation.y=Math.PI/2;}
@@ -33,6 +33,7 @@ function houseModel(lot,b,r,h){
   var sg=null;if(!st.own&&h.sale)sg=['FOR SALE','BY OWNER','#c8443a'];else if(st.own&&st.home===1&&W4().home===h.key)sg=['HOME','SWEET HOME','#2fa860'];else if(st.own&&!st.tenant&&st.rentOut)sg=['FOR RENT','ASK THE OWNER','#2f8fd0'];
   if(sg){var sgp=new T.Group();sgp.position.set(dx-1.3>-w/2+.6?dx-1.4:dx+1.9,0,-1.1);g.add(sgp);cyB(.04,1.4,toon(0x6b4a30),-.45,.2,0,sgp,4);cyB(.04,1.4,toon(0x6b4a30),.45,.2,0,sgp,4);
     plane(1.2,.75,flat(0xffffff,{map:signT(sg[0],{bg:'#ffffff',fg:sg[2],w:256,h:160,sub:sg[1]})}),0,1.25,.03,sgp);}
+  projDecor(g,h,st,cx,hw,hd,hh,f,dx,lot.w);
   rectCol(lot,cx-hw/2-.1,cx+hw/2+.1,f-hd-.1,f+.05).h=top+2;
   return g;
 }
@@ -43,7 +44,7 @@ function regHome(lot,b,kind,opt){
   if(!h){h={key:key};BUS.push(h);}
   h.name=opt.addr;h.home=1;h.kind=kind;h.type=kind==='apt'?'apt':'home';h.city=O.city;h.lot=lot;h.val=val;h.units=units;h.big=!!opt.big;h.sale=!!opt.sale;h.num=opt.num;
   h.owner=OWNERS[Math.floor(rr()*OWNERS.length)];h.pers=h.sale?(rr()<.6?'tired':'practical'):Object.keys(PERS)[Math.floor(rr()*6)];h.phone='555-0'+(100+Math.floor(rr()*899));
-  h.revv=Math.round(val/80*Math.pow(1.12,st.rb||0));h.door=dw;h.dx=opt.dx;h.f=opt.f;HOMES.push(h);
+  val+=st.valAdd||0;h.revv=Math.round((val/80+(st.rentAdd||0))*Math.pow(1.12,st.rb||0));h.door=dw;h.dx=opt.dx;h.f=opt.f;HOMES.push(h);
   if(h.sale){var ds=dState(h);ds.known=1;}
   ACTS[curArea].push({x:dw.x,z:dw.z,r:1.6,door:true,dn:lot,label:function(){var s=homeState(h);if(s.own)return W4().home===key?'Go inside · home':kind==='apt'?'Your building · '+h.name:'Your house · '+h.name;if(s.ban>now())return h.owner+' won\'t answer';return kind==='apt'?'Buzz the landlord':h.sale?'Knock · for sale':'Knock on the door';},
     sub:function(){var s=homeState(h);if(s.own)return s.tenant?(kind==='apt'?units+' units rented':'Rented to '+s.tenant)+' · '+fmt(bizRev(h))+'/min':W4().home===key?'You live here':'Empty · rent it out or move in';return h.name+' · '+(kind==='apt'?units+' apartments':h.big?'two-story house':'house')+(h.sale?' · '+fmt(dState(h).ask):'');},
@@ -66,6 +67,7 @@ function homeTalk(h){var s=homeState(h),w=W4(),mine=w.home===h.key,who={who:'You
       opts.push({t:'End the lease',s:'Then you can move in yourself',fn:function(){s.tenant=null;s.rentOut=0;O.dirty=true;save();note('Lease ended',h.name+' is empty.','info');}});}
     if(!mine&&!s.tenant)opts.push({t:'Look around inside',fn:function(){enterHome(h,false);}});
   }
+  opts.push({t:'Hire Bob for a project',s:'Pool, deck, solar, a second story… or anything you can describe',fn:function(){bobProject(h);}});
   var rc=Math.round((h.val||1)*.35*Math.pow(1.6,s.ren||0));
   opts.push({t:'Renovate · '+fmt(rc),s:'+30% rent and resale value. You can keep going',fn:function(){if(!pay(rc,'The renovation'))return;s.ren=(s.ren||0)+1;note(h.name+' renovated','Worth more, rents for more.','good');save();}});
   opts.push({t:'Sell it · '+fmt(sellP),s:'Or wait: buyers sometimes make offers by mail',fn:function(){popup('Sell '+h.name+'?','You\'d get '+fmt(sellP)+'.',[{t:'Sell',fn:function(){sellHome(h.key,sellP);}},{t:'Keep it',cls:'sec'}]);}});

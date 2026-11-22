@@ -3,8 +3,8 @@
 function myLocIn(D){for(var i=0;i<G.locs.length;i++){var l=G.locs[i];if(l.city===O.city&&l.did===D.id)return l;}return null;}
 function buildBlock(b){
   var keep=stat;stat=new T.Group();var r=seeded(b.seed);
-  blockSlab(b,stat);if(b.t!=='park')furnish(b,stat,r);
-  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock,uni:uniBlock})[b.t](b,r);
+  blockSlab(b,stat);if(b.t!=='park'&&b.t!=='mall')furnish(b,stat,r);
+  ({dist:distBlock,civic:civicBlock,market:marketBlock,park:parkBlock,motors:motorsBlock,homes:homesBlock,uni:uniBlock,mall:mallBlock,dining:diningBlock})[b.t](b,r);
   O.scene.add(mergeGroup(stat));stat=keep;
 }
 function landUse(lot,b,D,key,own){
@@ -62,11 +62,11 @@ function homesBlock(b,r){
 function civicBlock(b,r){
   var L=lotsOf(b);
   genBuilding(L[0],b,r,{name:'Crema Realty · Dana',floors:2,arch:'classic',nobiz:1});
-  var rd=L2W(L[0],DOORX,.9);ACTS.city.push({x:rd.x,z:rd.z,r:1.8,door:true,dn:L[0],label:'Visit Crema Realty',sub:'Dana sells land and finds tenants',fn:function(){callDana(null,null,true);}});
+  var rd=L2W(L[0],DOORX,.9);ACTS.city.push({x:rd.x,z:rd.z,r:1.8,door:true,dn:L[0],label:'Visit Crema Realty',sub:'Dana sells land, homes, and finds tenants',fn:function(){enterOffice('realty','Crema Realty','Dana');}});
   places.push({id:'realty',name:'Crema Realty',kind:'civic',x:rd.x,z:rd.z});
   hallFront(wideLot(b,1,1,2));bankFront(L[3]);
   var police=genBuilding(L[4],b,r,{name:'City Police',floors:2,arch:'classic',nobiz:1}),post=genBuilding(L[5],b,r,{name:'Post Office',floors:2,arch:'brick',nobiz:1}),lib=genBuilding(L[6],b,r,{name:'Public Library',floors:3,arch:'brick',nobiz:1});
-  fireStation(L[7]);
+  fireStation(L[7]);officeDoor(L[4],'police','City Police','Officer Diaz');officeDoor(L[5],'post','Post Office','Wendell');officeDoor(L[6],'library','Public Library','Mrs. Okafor');var fd=L2W(L[7],3.2,1.2);ACTS.city.push({x:fd.x,z:fd.z,r:2,label:'Fire Station 1',sub:'Captain Bell is in',fn:function(){enterOffice('fire','Fire Station 1','Captain Bell');}});places.push({id:'off:fire',name:'Fire Station 1',kind:'civic',x:fd.x,z:fd.z});
   var pc=carModel('police');pc.position.set(L[4].x,0,b.z-BD/2-1.15);pc.rotation.y=Math.PI/2;stat.add(pc);cols.push({x0:pc.position.x-2.2,x1:pc.position.x+2.2,z0:pc.position.z-1,z1:pc.position.z+1,area:curArea,car:1});
 }
 function fireStation(lot){

@@ -1,6 +1,6 @@
 
 /* ---------- interiors: real rooms you walk through ---------- */
-var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000,grocery:-4300,home:-4600};
+var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000,grocery:-4300,home:-4600,store:-4900,eatery:-5150,office:-5400,mall:-5700,sewer:-6200};
 function floorT(a,b,s){return tx('fl'+a+b+s,128,128,function(g,w,h){var n=s||4,c=w/n;for(var y=0;y<n;y++)for(var x=0;x<n;x++){g.fillStyle=(x+y)%2?hexCss(a):hexCss(b);g.fillRect(x*c,y*c,c,c);}speck(g,w,h,200,.04);});}
 function room(id,o){
   var ox=IOX[id],w=o.w,d=o.d,g=new T.Group();g.position.set(ox,0,0);stat.add(g);curArea=id;ACTS[id]=[];
@@ -20,7 +20,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  supplyRoom();hallRoom();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();
+  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();storeRoom();eateryRoom();officeRoom();mallRoom();sewerRoom();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){

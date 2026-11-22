@@ -125,6 +125,8 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;
     var mg=G.locs.filter(function(l){return hasMgr(l)&&overlap(cq,staffName(l,'manager',0)+' '+l.name)>=1;})[0];if(mg){callManager(mg);return true;}
     openPhone('calls');return true;}
   if(/\b(fly|flight|plane|travel to|visit another|another city|other city|book a)\b/.test(n)){flightsDesk(false);return true;}
+  if(/\bbus\b/.test(n)){var bs=BSTOPS.slice().sort(function(a,b){return Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z);})[0];if(bs)return goTo(bs,'Nearest bus stop: '+bs.name);}
+  if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var tq=n.replace(/.*\bto\b/,'');if(/\bto\b/.test(n)){cabTo(tq);return true;}hailBox();return true;}
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var cp=findPlace(n.replace(/.*\bto\b/,''));if(cp&&/\bto\b/.test(n)){callCab(cp);}else openPhone('cab');return true;}
   if(/bird|whole city|city view|overview|from above|map view|see everything|zoom out/.test(n)){if(P.area==='city')birdOn();else toast('Step outside first.');return true;}
   if(/\b(loan|borrow|bank account|deposit|withdraw|briefcase)\b/.test(n)){bankWindow();return true;}

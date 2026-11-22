@@ -55,6 +55,7 @@ function offer(b,o,phone,cash){var s=dState(b);s.offers++;s.last=o;
   save();bizTalk(b,phone,eff>=s.floor*.8?line('firm',b,{n:fmt(s.ask)}):line('insult',b));}
 function closeDeal(b,o,over){var s=dState(b);payDeal(o);s.own=true;s.paid=o;s.at=now();s.grocery=!!b.grocery;s.city=b.city;s.name=b.name;s.rev=b.revv||Math.round(bizRev(b));W4().stats.deals=(W4().stats.deals||0)+1;addFame(8);
   if(b.home){s.home=1;s.kind=b.kind;s.tenant=b.kind==='apt'?'units':null;}
+  if(b.rtruck){var r0=b.rtruck,w0=W4(),zz=r0.zone||zones[0];w0.trucks.push({id:now(),ind:'coffee',city:O.city,x:zz.x,z:zz.z,ry:zz.ry,stock:30,up:{},name:b.name+' (Crema)',earned:0});rtrucks.splice(rtrucks.indexOf(r0),1);dyn.remove(r0.g);delete w0.biz[b.key];O.dirty=true;note('Truck acquired',b.name+' is part of the Crema fleet now. One less rival.','good');}
   popup(b.name,line(over?'over':'accept',b),[{t:'Shake hands',fn:function(){if(b.home)setTimeout(function(){homeTalk(b);},300);}}],'',{who:b.owner,role:(b.home?'Sold you ':'Owner, ')+b.name,col:'#2fa860'});
   news('You bought '+b.name+' for '+fmt(o)+'.','good');banner('Acquired!',b.name,'good');
   if(b.grocery)note('Cheaper ingredients','Owning '+b.name+' makes ingredients 8% cheaper at your shops in '+cityName(b.city)+'.','good');
@@ -65,11 +66,11 @@ function ownedTalk(b){if(b.home){homeTalk(b);return;}var s=dState(b),rc=Math.rou
   popup(b.name,'"Morning, boss! We\'re doing about '+fmt(bizRev(b))+' a minute."',[{t:'Renovate · '+fmt(rc),s:'+30% revenue. You can keep renovating; it gets pricier each time',fn:function(){if(!pay(rc,'The renovation'))return;s.ren=(s.ren||0)+1;note(b.name+' renovated','Now '+fmt(bizRev(b))+'/min.','good');save();}},
     {t:'Sell it · '+fmt(back),s:'Back on the market',fn:function(){popup('Sell '+b.name+'?','You\'d get '+fmt(back)+'.',[{t:'Sell',fn:function(){G.cash+=back;delete W4().biz[b.key];note('Sold',b.name+' · +'+fmt(back),'info');if(b.lot)O.dirty=true;save();}},{t:'Keep it',cls:'sec'}]);}},{t:'Keep it up',cls:'sec'}],'',{who:b.owner,role:'Runs '+b.name+' for you',col:'#2fa860'});}
 function ownedBiz(){var w=W4(),out=[];Object.keys(w.biz).forEach(function(k){if(w.biz[k].own&&!w.biz[k].home)out.push(k);});return out;}
-function bizIncome(c){var w=W4(),inc=0;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own||s.rev==null&&!s.paid)return;if(s.home&&!s.tenant)return;var cc=s.city!=null?s.city:cityOfLot(k);if(c!=null&&cc!==c)return;inc+=(s.rev||0)*(1+.3*(s.ren||0));});return inc;}
+function bizIncome(c){var w=W4(),inc=0;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own||s.rev==null&&!s.paid)return;if(s.home&&!s.tenant)return;if(s.home&&s.city!=null&&lawOn('rent',s.city))inc-=(s.rev||0)*(1+.3*(s.ren||0))*.15;var cc=s.city!=null?s.city:cityOfLot(k);if(c!=null&&cc!==c)return;inc+=(s.rev||0)*(1+.3*(s.ren||0));});return inc;}
 /* remember each owned business's earnings so they pay even when you're in another city */
 function syncBizRev(){apSync();BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own){s.rev=Math.round(bizRev(b)/(1+.3*(s.ren||0)));s.city=b.city;s.name=b.name;}});['valley','supco:'+O.city].forEach(function(k){var s=W4().biz[k],b=k==='valley'?VALLEY():SUPCO();if(s&&s.own){s.rev=b.revv;s.city=k==='valley'?-1:O.city;s.name=b.name;}});}
 function ingredientMult(loc){var w=G.w4;if(!w||!w.biz)return 1;var m=1,c=loc.city;
-  Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own)return;if(s.grocery&&s.city===c)m*=.92;if(k==='valley')m*=.8;if(k==='supco:'+c)m*=.95;});
+  Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own)return;if(s.grocery&&s.city===c)m*=.92;if(k==='valley')m*=.8;if(k==='supco:'+c)m*=.95;});m*=lawMult('ing',c);
   if(!(w.biz.valley&&w.biz.valley.own)&&w.contract&&w.contract.until>now())m*=1-w.contract.pct;return m;}
 /* the supplier behind the grocery store, and Crema Supply Co. itself */
 function VALLEY(){var t=TM(Math.max(0,(G.cities||1)-1)).pm;return {key:'valley',name:'Valley Farms Distribution',owner:'Earl',pers:'shrewd',type:'office',city:-1,val:Math.round(160000*t),revv:Math.round(320*t),door:{x:0,z:0}};}

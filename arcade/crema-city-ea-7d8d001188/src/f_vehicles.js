@@ -123,7 +123,7 @@ function honk(c){if(!O.on||P.area!=='city')return;var d=Math.hypot(c.x-P.x,c.z-P
 function myVeh(){for(var i=0;i<veh.length;i++)if(veh[i].kind==='pickup'||veh[i].kind==='rental')return veh[i];return null;}
 function pickupCost(){return Math.round(4000*tierM());}
 function initVehicles(){
-  veh.forEach(function(v){dyn.remove(v.g);});veh=[];var w=W4(),c=O.city;
+  veh.forEach(function(v){dyn.remove(v.g);});veh=[];var w=W4(),c=O.city;starterTruck();
   var own=w.cars[c];
   if(c===0||own){var col=curLoc()&&IND[curLoc().ind]?IND[curLoc().ind].theme.accent:0xffb83d;
     if(!own){var b0=blockOf('dist');own=w.cars[c]={x:b0.x-BW/2+6,z:b0.z+BD/2+1.15,ry:Math.PI/2};}
@@ -156,12 +156,15 @@ function exitVeh(){
 }
 function driveStep(dt){
   var v=drv.v,g=v.g,fw=clamp((keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0)-joy.y,-1,1),st=clamp((keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0)-joy.x,-1,1);
-  var mx=v.kind==='truck'?16:20;
+  if(drv.auto){if(Math.abs(st)>.3||fw<-.3){drv.auto=false;toast('Autopilot off','');}else{var ad=autoDrive(dt);if(ad){fw=ad.fw;st=ad.st;}}}
+  var dm=(v.truck?v.truck.dmg:(W4().cars[O.city]||{}).dmg)||0,mx=(v.kind==='truck'?16:20)*(1-dm/250);
   drv.speed+=fw*dt*(fw*drv.speed<0?26:11);drv.speed*=Math.pow(fw?.97:.3,dt);if(keys[' '])drv.speed*=Math.pow(.02,dt);drv.speed=clamp(drv.speed,-6,mx);
-  g.rotation.y+=st*dt*1.7*clamp(drv.speed/6,-1,1);
+  g.rotation.y+=st*dt*1.9*clamp(drv.speed/5,-1,1)*(Math.abs(drv.speed)>14?.8:1);steerAssist(g,st,dt);
   var h=g.rotation.y,nx=g.position.x+Math.sin(h)*drv.speed*dt,nz=g.position.z+Math.cos(h)*drv.speed*dt,fx=nx+Math.sin(h)*2.1*Math.sign(drv.speed||1),fz=nz+Math.cos(h)*2.1*Math.sign(drv.speed||1);
   var ok=onRoad(nx,nz,.6)&&onRoad(fx,fz,.3)&&!carHit(fx,fz,v);
-  if(ok){g.position.x=nx;g.position.z=nz;}else{if(Math.abs(drv.speed)>5){try{tone(90,.15,'square',.05);}catch(e){}shakeO=.25;}drv.speed*=-.25;}
+  if(ok){g.position.x=nx;g.position.z=nz;}else{var hitCar=null;for(var ci=0;ci<cars.length;ci++){if(Math.hypot(cars[ci].x-fx,cars[ci].z-fz)<2.3){hitCar=cars[ci];break;}}
+    if(Math.abs(drv.speed)>9){crash(v,hitCar,Math.abs(drv.speed));drv.speed*=-.2;}
+    else{var sx2=g.position.x+Math.sin(h)*drv.speed*dt,sz2=g.position.z+Math.cos(h)*drv.speed*dt;if(!hitCar&&onRoad(sx2,g.position.z,.6)&&!carHit(sx2+Math.sin(h)*2.1,g.position.z,v)){g.position.x=sx2;drv.speed*=.9;}else if(!hitCar&&onRoad(g.position.x,sz2,.6)&&!carHit(g.position.x,sz2+Math.cos(h)*2.1,v)){g.position.z=sz2;drv.speed*=.9;}else{if(Math.abs(drv.speed)>5){try{tone(90,.15,'square',.05);}catch(e){}shakeO=.25;}drv.speed*=-.25;}}}
   P.x=g.position.x;P.z=g.position.z;
 }
 var shakeO=0;

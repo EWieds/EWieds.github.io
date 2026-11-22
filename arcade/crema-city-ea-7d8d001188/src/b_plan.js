@@ -2,11 +2,11 @@
 /* ---------- city plan: a grid of blocks, your district in the middle ---------- */
 function mkPlan(city){
   var ds=cityDistricts(city),air=null,list=[];ds.forEach(function(D){if(!air&&D.win==='runway')air=D;else list.push(D);});
-  var uni=list.some(function(D){return D.win==='campus';}),C=4,n=list.length+4+(uni?1:0),R=Math.max(3,Math.ceil(n/C)),slots=[];
+  var uni=list.some(function(D){return D.win==='campus';}),C=5,n=list.length+7+(uni?1:0),R=Math.max(4,Math.ceil(n/C)),slots=[];
   for(var r=0;r<R;r++)for(var c=0;c<C;c++)slots.push({c:c,r:r,d:Math.hypot(c-(C-1)/2,(r-(R-1)/2)*1.3)+c*.001+r*.0001});
   slots.sort(function(a,b){return a.d-b.d;});
   var order=[{t:'dist',D:list[0]},{t:'civic'},{t:'market'},{t:'park'}];
-  list.slice(1).forEach(function(D){order.push({t:'dist',D:D});});order.push({t:'motors'});if(uni)order.push({t:'uni'});
+  list.slice(1).forEach(function(D){order.push({t:'dist',D:D});});order.push({t:'motors'});if(uni)order.push({t:'uni'});order.push({t:'dining'});order.push({t:'mall'});order.push({t:'dining'});
   while(order.length<C*R)order.push({t:'homes'});
   var blocks=order.slice(0,C*R).map(function(o,i){var s=slots[i];return {t:o.t,D:o.D||null,c:s.c,r:s.r,x:s.c*PX,z:s.r*PZ,id:o.D?o.D.id:o.t+(o.t==='homes'?i:''),seed:city*131+i*17+7};});
   placeEdges({blocks:blocks,R:R});
@@ -33,7 +33,7 @@ function districtName(x,z){
   var b=blockAt(x,z),best=null,bd=1e9;if(b)best=b;else plan.blocks.forEach(function(q){var d=Math.hypot(q.x-x,q.z-z);if(d<bd){bd=d;best=q;}});
   return best?blockName(best):plan.name;
 }
-function blockName(b){return b.D?b.D.name:{civic:'Civic Center',market:'Market Square',park:'Central Park',motors:'Motor Row',homes:'Residential',uni:plan.name+' University'}[b.t]||'';}
+function blockName(b){return b.D?b.D.name:{civic:'Civic Center',market:'Market Square',park:'Central Park',motors:'Motor Row',homes:'Residential',uni:plan.name+' University',mall:plan.name+' Galleria',dining:'Restaurant Row'}[b.t]||'';}
 
 /* ---------- drivable surfaces ---------- */
 function mkRoads(){

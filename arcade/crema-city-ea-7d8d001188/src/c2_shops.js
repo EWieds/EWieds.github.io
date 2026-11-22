@@ -1,7 +1,7 @@
 
 /* ---------- every business is its own building, and every business has an owner you can deal with ---------- */
 var BT={
-  home:{base:1,arch:'cottage',prop:'',what:'a house'},apt:{base:1,arch:'brick',prop:'',what:'an apartment building'},
+  restaurant:{base:1.8,arch:'diner',prop:'bench',what:'a restaurant'},home:{base:1,arch:'cottage',prop:'',what:'a house'},apt:{base:1,arch:'brick',prop:'',what:'an apartment building'},
   grocery:{base:6,arch:'market',prop:'produce',what:'a grocery store'},books:{base:1,arch:'brick',prop:'cart',what:'a bookshop'},florist:{base:.9,arch:'cottage',prop:'flowers',what:'a flower shop'},
   pizza:{base:1.3,arch:'classic',prop:'bench',what:'a pizza place'},deli:{base:1.2,arch:'classic',prop:'bench',what:'a deli'},records:{base:.8,arch:'brick',prop:'cart',what:'a record store'},
   toys:{base:.9,arch:'classic',prop:'balloons',what:'a toy shop'},barber:{base:.8,arch:'brick',prop:'pole',what:'a barbershop'},nails:{base:.8,arch:'modern',prop:'plant',what:'a nail salon'},
@@ -89,12 +89,12 @@ function propFor(g,k,w,r){var x=2.8,z=1.2;
   else if(k==='plant'){rb(1,.6,.5,.1,toon(0x3a3f4b),x,.5,z-.4,g);sp(.45,toon(0x5fb35a),x,1.1,z-.4,g,10);}
 }
 function regBiz(lot,b,name,type,g,opt){
-  var key=lot.key,city=O.city,D=b.D||null,bz={key:key,name:name,type:type,city:city,D:D,lot:lot,grocery:!!opt.grocery};BUS.push(bz);
+  var key=lot.key,city=O.city,D=b.D||null,bz={key:key,name:name,type:type,city:city,D:D,lot:lot,grocery:!!opt.grocery,cuisine:opt.cuisine||null};BUS.push(bz);
   var r=seeded(hashS(key+name));bz.owner=OWNERS[Math.floor(r()*OWNERS.length)];bz.pers=Object.keys(PERS)[Math.floor(r()*6)];bz.phone='555-0'+(100+Math.floor(r()*899));
   var st=W4().biz[key];if(st&&st.own){plane(.9,.45,flat(0xffffff,{map:signT('A CREMA COMPANY',{bg:'#2a1a12',fg:'#ffc63d',w:256,h:120})}),DOORX+1.15,1.9,.26,g);var fp=new T.Group();fp.position.set(-lot.w/2+.6,3.8,.3);g.add(fp);cyB(.03,1.4,toon(0xd8d8d8),0,0,0,fp,4);plane(.7,.45,toon(0xffffff,{map:flagTex(),ds:1}),.38,1.15,0,fp);}
   var dw=L2W(lot,DOORX,.9);bz.door=dw;
-  ACTS[curArea].push({x:dw.x,z:dw.z,r:1.7,door:true,dn:lot,label:function(){var s=W4().biz[key];return s&&s.own?'Check on '+name+' (yours)':'Step into '+name;},
+  ACTS[curArea].push({x:dw.x,z:dw.z,r:1.7,door:true,dn:lot,label:function(){var s=W4().biz[key];return s&&s.own?'Check on '+name+' (yours)':(isEatery(bz)?'Eat at ':'Step into ')+name;},
     sub:function(){var s=W4().biz[key];if(s&&s.own)return 'Earning '+fmt(bizRev(bz))+'/min for you';if(s&&s.ban>now())return bz.owner+' isn\'t speaking to you for a while';return BT[type].what.charAt(0).toUpperCase()+BT[type].what.slice(1)+' · owner: '+bz.owner;},
-    fn:function(){if(opt.grocery&&AREAS.grocery){enterArea('grocery');return;}bizTalk(bz,false);}});
+    fn:function(){if(opt.grocery&&AREAS.grocery){enterArea('grocery');return;}var s=W4().biz[key];if(s&&s.own){bizTalk(bz,false);return;}enterBiz(bz);},alt:function(){return {label:'Ask for '+bz.owner,fn:function(){bizTalk(bz,false);}};}});
   places.push({id:'biz:'+key,name:name,kind:'biz',x:dw.x,z:dw.z});
 }
