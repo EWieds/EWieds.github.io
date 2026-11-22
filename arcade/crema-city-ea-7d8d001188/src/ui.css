@@ -125,3 +125,9 @@ body.incut #o-acts,body.incut #o-goal,body.incut #o-mini,body.incut #o-in,body.i
 body.incut #o-do,body.bird #o-do{display:none}
 #o-ui #o-notes{right:78px}
 @media (max-width:640px){#o-do{right:12px;top:calc(env(safe-area-inset-top) + 172px);width:46px;height:46px}#o-ui #o-notes{right:66px;width:calc(100% - 176px)}}
+body.talking #o-pop{justify-content:flex-end;align-items:center;padding-right:28px;background:linear-gradient(to left,rgba(30,18,10,.35),rgba(30,18,10,0) 45%)}
+@media (max-aspect-ratio:9/10){body.talking #o-pop{justify-content:center;align-items:flex-end;padding:12px;background:linear-gradient(to top,rgba(30,18,10,.35),rgba(30,18,10,0) 55%)}body.talking .pp-card{max-height:62vh;padding:12px 14px}body.talking .pp-b small{display:none}body.talking .pp-t{display:none}body.talking .pp-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}body.talking .pp-b{padding:8px 10px;margin-top:0;font-size:13px;line-height:1.2}body.talking .pp-card>p{margin:4px 0 8px}body.talking .deal{padding:6px 10px}body.talking .pp-say{margin-top:6px}}
+body.talking #o-mini,body.talking #o-in,body.talking #o-phb,body.talking #o-birdb,body.talking #o-do,body.talking #o-acts,body.talking #o-goal,body.talking #o-nav,body.talking #o-notes,body.talking #o-joy{visibility:hidden}
+.pp-dots{display:flex;gap:6px;padding:6px 2px}.pp-dots i{width:9px;height:9px;border-radius:50%;background:#8a5a3a;opacity:.3;animation:ppd 1s infinite}.pp-dots i:nth-child(2){animation-delay:.15s}.pp-dots i:nth-child(3){animation-delay:.3s}
+@keyframes ppd{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+#o-nav .nv-w{width:auto;padding:0 10px;font:800 13px system-ui,sans-serif;background:#ffc63d;color:#2a1a12;height:30px}

@@ -20,7 +20,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  supplyRoom();hallRoom();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();
+  supplyRoom();hallRoom();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){
@@ -70,7 +70,7 @@ function bankRoom(){
 }
 /* the terminal: check-in, security, concourse shops, the gate, and a real jet out the window */
 function terminalRoom(){
-  var g=room('terminal',{name:plan.name+' International · Terminal',w:66,d:34,floor:floorT(0xdfe4ea,0xc9d1da,2),tile:3,outside:0x6b6f78,wall:0xe8eef2,trim:0x2f8fd0,bg:0x23384a,h:7,doorX:-14,eastGlass:1,cam:{dist:12,pitch:.6}});
+  var g=room('terminal',{name:apName()+' · Terminal',w:66,d:34,floor:floorT(0xdfe4ea,0xc9d1da,2),tile:3,outside:0x6b6f78,wall:0xe8eef2,trim:0x2f8fd0,bg:0x23384a,h:7,doorX:-14,eastGlass:1,cam:{dist:12,pitch:.6}});
   var ox=IOX.terminal;
   for(var mu=-3;mu<=3;mu++)bx(.3,7,.3,toon(0xc8d0d8),33,3.5,mu*5,g);
   var jet=planeModel(0xe2553f);jet.position.set(ox+46,0,-2);jet.rotation.y=0;stat.add(jet);var ap=planeR(40,60,4,6,toon(0xffffff,{map:asphaltT()}),46,-.02,0,g);ap.rotation.x=-Math.PI/2;

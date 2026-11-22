@@ -133,6 +133,8 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;
   if(/\b(hire|staff|employee|manager)\b/.test(n)&&!/talk/.test(n)){openPhone('emp');return true;}
   if(/\b(go home|my home|my house)\b|^home$/.test(n)&&!w.home){popup('No home yet','You don\'t live anywhere in '+plan.name+' yet. Buy a house and move in.',[{t:'Find a house for sale',fn:function(){doCmd('buy a house');}},{t:'OK',cls:'sec'}]);return true;}
   if(/\bparty\b/.test(n)){var hh=w.home&&bizOf(w.home);if(hh){houseParty(hh);}else popup('No place to party','You need a home first. Buy a house and move in.',[{t:'Find a house',fn:function(){doCmd('buy a house');}},{t:'OK',cls:'sec'}]);return true;}
+  if(/\b(buy|own|purchase)\b.*\bairport\b/.test(n)){var ap=placeById('airport');if(ap)return goTo(ap,'Head to the terminal: the Airport Authority office is on the west wall.');}
+  if(/catering|delivery order|orders?\b/.test(n)&&w.cater){if(w.cater.state==='offer')takeOrder();else{var cp2=placeById(w.cater.state==='make'?'shop:'+w.cater.loc:w.cater.key);if(cp2)return goTo(cp2);}return true;}
   if(/\b(build|construct|develop|expand)\b/.test(n)){if(/superstore/.test(n)){var su=placeById('super')||placeById('supersite');if(su)return goTo(su);}callBob();return true;}
   if(/\b(sell|list)\b/.test(n)&&/\b(house|home|apartment|property|building)\b/.test(n)){var oh=ownedHomes();if(!oh.length){popup('Nothing to sell','You don\'t own any homes yet.',[{t:'OK'}]);return true;}var hb=bizOf(oh[0]);if(hb)homeTalk(hb);return true;}
   if(/\b(buy|purchase|acquire|own|get)\b/.test(n)||/for sale/.test(n)){

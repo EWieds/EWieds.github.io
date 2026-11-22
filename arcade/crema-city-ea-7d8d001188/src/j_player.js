@@ -48,6 +48,7 @@ O.deferSum=function(s){if(!O.on)return false;pendSum=s;note('Day '+s.day+' at '+
 /* ---------- camera ---------- */
 var camT=V3(0,0,0),camL=V3(0,0,0);
 function updCamera(dt){
+  updTalk(dt);if(talkCamera(dt))return;
   var f,dd,pt;
   if(RIDE&&!RIDE.wait){f=RIDE.car.g.position;dd=12;pt=.4;yaw+=angD(yaw,RIDE.car.h+Math.PI)*Math.min(1,dt*2);}
   else if(drv){f=drv.v.g.position;dd=drv.v.kind==='truck'?15:13;pt=.4;yaw+=angD(yaw,drv.v.g.rotation.y+Math.PI)*Math.min(1,dt*2.2);}
@@ -67,7 +68,7 @@ function camInside(x,z,y){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area
 
 /* ---------- the action buttons (stable DOM: built once per change, never every frame) ---------- */
 function updActs(){
-  var list=(ACTS[P.area]||[]).concat(P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs()):[]),best=null,bd=1e9;
+  var list=caterActs().concat(ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs()):[]),best=null,bd=1e9;
   if(!drv&&!(RIDE&&!RIDE.coming)&&!CUT)list.forEach(function(a){var d=Math.hypot(a.x-P.x,a.z-P.z);if(d<a.r&&d<bd){bd=d;best=a;}});
   curAct=best;var el=$('#o-act'),el2=$('#o-alt'),k1='',k2='';
   if(drv){k1='Get out|'+(drv.v.kind==='truck'?(truckZone(drv.v)?'Park here and open the window':'Not a vending zone'):districtName(P.x,P.z));curAlt=null;}
@@ -134,7 +135,7 @@ function updRide(dt){if(!RIDE)return;var c=RIDE.car;
 }
 /* ---------- flights ---------- */
 function flightList(){var out=[],n=Math.min(CITY_NAMES.length,Math.max(4,(G.cities||1)+2));for(var c=0;c<n;c++){if(c===O.city)continue;out.push({to:c,name:cityName(c),req:0,ok:true,cost:flightCost(c),scout:c>=(G.cities||1)});}return out;}
-function flightCost(to){return Math.round(350*Math.pow(2.1,Math.max(to,O.city))*(1+.25*Math.abs(to-O.city)));}
+function flightCost(to){if(apOwned())return 0;return Math.round(350*Math.pow(2.1,Math.max(to,O.city))*(1+.25*Math.abs(to-O.city)));}
 function myTicket(){return W4().tickets.filter(function(t){return t.from===O.city;})[0]||null;}
 function flightsDesk(atCounter){
   var fl=flightList();if(!fl.length){popup('Air Crema','No routes yet.',[{t:'OK'}]);return;}

@@ -29,7 +29,7 @@ function lotsOf(b){var out=[];[1,-1].forEach(function(s){for(var i=0;i<NL;i++){v
 function wideLot(b,s,i0,i1){var a=b.x-INW/2+LOTW/2+i0*(LOTW+LGAP),c=b.x-INW/2+LOTW/2+i1*(LOTW+LGAP);return {s:s,i:i0,x:(a+c)/2,z:b.z+s*(BD/2-WALK),ry:s>0?0:Math.PI,b:b,w:c-a+LOTW,key:plan.city+':'+b.id+':'+s+':'+i0+'-'+i1};}
 function districtName(x,z){
   if(P.area!=='city')return AREAS[P.area]?AREAS[P.area].name:'';
-  if(x>plan.xs[plan.C]+RH)return plan.name+' International Airport';
+  if(x>plan.xs[plan.C]+RH)return apName()+' Airport';
   var b=blockAt(x,z),best=null,bd=1e9;if(b)best=b;else plan.blocks.forEach(function(q){var d=Math.hypot(q.x-x,q.z-z);if(d<bd){bd=d;best=q;}});
   return best?blockName(best):plan.name;
 }

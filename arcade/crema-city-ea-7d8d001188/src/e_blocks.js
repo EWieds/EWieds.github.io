@@ -248,7 +248,7 @@ function buildAirport(){
   var pl=planeModel(0xffc63d);dyn.add(pl);planes.push({g:pl,t:rnd(0,40)});
   addCol(fx,AX+400,AZ-60,AZ+60);
   var dw={x:fx-1.2,z:AZ};ACTS.city.push({x:dw.x,z:dw.z,r:2.6,door:true,dnX:1,label:'Enter the terminal',sub:'Flights · rental cars · shops',fn:function(){enterArea('terminal');}});
-  places.push({id:'airport',name:p.name+' International Airport',kind:'airport',x:dw.x,z:dw.z});
+  places.push({id:'airport',name:apName()+' Airport',kind:'airport',x:dw.x,z:dw.z});
 }
 var planes=[];
 function termInT(){return tx('termin',256,128,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#cfe2ee');gr.addColorStop(1,'#8aa6b8');g.fillStyle=gr;g.fillRect(0,0,w,h);

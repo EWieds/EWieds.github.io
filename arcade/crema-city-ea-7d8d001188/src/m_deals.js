@@ -23,7 +23,8 @@ function canAfford(n){return G.cash+caseAmt()>=n;}
 function payDeal(n){var c=Math.min(caseAmt(),n);W4().case=caseAmt()-c;n-=c;G.cash-=n;caseView();try{sfx.buy();}catch(e){}save();}
 var YOU=null;
 function bizTalk(b,phone,msg){
-  var you=YOU;YOU=null;var s=dState(b),who={who:b.owner,role:s.own?'Your manager at '+b.name:b.home?(b.kind==='apt'?'Landlord, ':'Lives at ')+b.name:'Owner, '+b.name,col:s.own?'#2fa860':'#8a5a3a'};
+  if(!phone&&P.area==='city'&&b.lot&&(!TALK||TALK.key!==b.key))startTalk(b);
+  var you=YOU;YOU=null;var s=dState(b),who={who:b.owner,role:s.own?'Your manager at '+b.name:b.airport?'Director, Airport Authority':b.home?(b.kind==='apt'?'Landlord, ':'Lives at ')+b.name:'Owner, '+b.name,col:s.own?'#2fa860':'#8a5a3a'};
   if(s.own){ownedTalk(b);return;}
   if(s.ban>now()){popup(b.name,'"I told you. Out."\n('+b.owner+' will talk to you again in '+mmssS((s.ban-now())/1000)+'.)',[{t:'Leave',cls:'sec'}],'bad',who);return;}
   if(phone&&b.pers==='proud'){popup(b.name,line('phone',b),[{t:'Directions',fn:function(){navTo(placeById('biz:'+b.key)||{x:b.door.x,z:b.door.z,name:b.name});}},{t:'OK',cls:'sec'}],'',who);return;}
@@ -41,7 +42,7 @@ function bizTalk(b,phone,msg){
     b.home?null:{t:'Can I see the books?',fn:function(){var tr=bizRev(b);if(b.pers==='proud'||b.pers==='greedy')bizTalk(b,phone,'"The books stay private until we have a deal. It makes good money, trust me."');else bizTalk(b,phone,'"Here. About '+fmt(tr)+' a minute after costs, give or take."'+(b.pers==='tired'?' "I\'m tired, not broke."':''));}},
     b.pers==='sentimental'&&!s.promise?{t:b.home?'Promise to look after the place':'Promise to keep the name and the staff',fn:function(){s.promise=1;s.floor=Math.round(s.floor*.92);bizTalk(b,phone,'"You\'d do that? ...That means a lot. Let\'s talk numbers."');}}:null,
     {t:'Leave',cls:'sec'}].filter(Boolean);
-  popup(b.name,txt,btns,'',{who:who.who,role:who.role,col:who.col,html:html,you:you,say:{ph:pick(['Say anything… "why sell?"','Say anything… "50k cash"','Say anything… "too much"']),fn:function(t){dealSay(b,phone,t);}},after:function(el){var r=el.querySelector('#dl-r');r.oninput=function(){cur=+r.value;el.querySelector('#dl-v').textContent=fmt(cur);s.last=cur;};}});
+  popup(b.name,txt,btns,'',{who:who.who,role:who.role,col:who.col,html:html,you:you,say:{ph:pick(['Say anything… "why sell?"','Say anything… "50k cash"','Say anything… "too much"']),fn:function(t){aiDeal(b,phone,t);}},after:function(el){var r=el.querySelector('#dl-r');r.oninput=function(){cur=+r.value;el.querySelector('#dl-v').textContent=fmt(cur);s.last=cur;};}});
 }
 function offer(b,o,phone,cash){var s=dState(b);s.offers++;s.last=o;
   if(!canAfford(o)){bizTalk(b,phone,line('broke',b));return;}
@@ -59,14 +60,14 @@ function closeDeal(b,o,over){var s=dState(b);payDeal(o);s.own=true;s.paid=o;s.at
   if(b.grocery)note('Cheaper ingredients','Owning '+b.name+' makes ingredients 8% cheaper at your shops in '+cityName(b.city)+'.','good');
   if(b.key==='valley')note('Valley Farms is yours','Ingredients are 20% cheaper at every shop you own, in every city.','good');
   if(b.supco)note('Crema Supply Co. is yours','Crates cost 40% less here, and the store pays you.','good');
-  if(b.lot)O.dirty=true;save();}
+  if(b.lot||b.airport)O.dirty=true;if(b.airport){apSync();note(apName()+' is yours','Walk into the terminal: the Operations office is on the west wall. You fly free from here now.','good');}save();}
 function ownedTalk(b){if(b.home){homeTalk(b);return;}var s=dState(b),rc=Math.round((b.val||bizValue(b))*.5*Math.pow(1.7,s.ren||0)),back=Math.round((b.val||bizValue(b))*.85*(1+.25*(s.ren||0)));
   popup(b.name,'"Morning, boss! We\'re doing about '+fmt(bizRev(b))+' a minute."',[{t:'Renovate · '+fmt(rc),s:'+30% revenue. You can keep renovating; it gets pricier each time',fn:function(){if(!pay(rc,'The renovation'))return;s.ren=(s.ren||0)+1;note(b.name+' renovated','Now '+fmt(bizRev(b))+'/min.','good');save();}},
     {t:'Sell it · '+fmt(back),s:'Back on the market',fn:function(){popup('Sell '+b.name+'?','You\'d get '+fmt(back)+'.',[{t:'Sell',fn:function(){G.cash+=back;delete W4().biz[b.key];note('Sold',b.name+' · +'+fmt(back),'info');if(b.lot)O.dirty=true;save();}},{t:'Keep it',cls:'sec'}]);}},{t:'Keep it up',cls:'sec'}],'',{who:b.owner,role:'Runs '+b.name+' for you',col:'#2fa860'});}
 function ownedBiz(){var w=W4(),out=[];Object.keys(w.biz).forEach(function(k){if(w.biz[k].own&&!w.biz[k].home)out.push(k);});return out;}
 function bizIncome(c){var w=W4(),inc=0;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own||s.rev==null&&!s.paid)return;if(s.home&&!s.tenant)return;var cc=s.city!=null?s.city:cityOfLot(k);if(c!=null&&cc!==c)return;inc+=(s.rev||0)*(1+.3*(s.ren||0));});return inc;}
 /* remember each owned business's earnings so they pay even when you're in another city */
-function syncBizRev(){BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own){s.rev=Math.round(bizRev(b)/(1+.3*(s.ren||0)));s.city=b.city;s.name=b.name;}});['valley','supco:'+O.city].forEach(function(k){var s=W4().biz[k],b=k==='valley'?VALLEY():SUPCO();if(s&&s.own){s.rev=b.revv;s.city=k==='valley'?-1:O.city;s.name=b.name;}});}
+function syncBizRev(){apSync();BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own){s.rev=Math.round(bizRev(b)/(1+.3*(s.ren||0)));s.city=b.city;s.name=b.name;}});['valley','supco:'+O.city].forEach(function(k){var s=W4().biz[k],b=k==='valley'?VALLEY():SUPCO();if(s&&s.own){s.rev=b.revv;s.city=k==='valley'?-1:O.city;s.name=b.name;}});}
 function ingredientMult(loc){var w=G.w4;if(!w||!w.biz)return 1;var m=1,c=loc.city;
   Object.keys(w.biz).forEach(function(k){var s=w.biz[k];if(!s.own)return;if(s.grocery&&s.city===c)m*=.92;if(k==='valley')m*=.8;if(k==='supco:'+c)m*=.95;});
   if(!(w.biz.valley&&w.biz.valley.own)&&w.contract&&w.contract.until>now())m*=1-w.contract.pct;return m;}

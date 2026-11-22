@@ -7,17 +7,17 @@ function pedActs(){
   if(!best)return [];var p=best;pedName(p);
   return [{x:p.x,z:p.z,r:2,label:'Talk to '+p.name,sub:p.job?'Looks like they\'re job hunting':p.me.cup.visible?'Holding a Crema cup':'Passer-by',fn:function(){talkPed(p);}}];
 }
-function talkPed(p){pedName(p);
+function talkPed(p){pedName(p);startTalkPed(p);
   W4().f.talked=1;p.stop=999;p.me.root.rotation.y=Math.atan2(P.x-p.x,P.z-p.z);var loc=nearestMine(p.x,p.z),opts=[];
   opts.push({t:'What do you think of Crema?',fn:function(){say(p,opinion(p,loc));}});
   opts.push({t:'Heard anything interesting?',fn:function(){say(p,rumor(p));}});
   if(p.job)opts.push({t:'Are you looking for work?',fn:function(){hirePed(p);}});
   if(loc)opts.push({t:'Here, a coupon for a free coffee',s:'$3 · they head to '+loc.name,fn:function(){if(!pay(3,'The coupon'))return;addFame(1);p.done=1;say(p,pick(['"Oh, nice! I\'ll go right now."','"Free coffee? You don\'t have to ask twice."']),function(){p.coupon=loc;});}});
   opts.push({t:'Bye!',cls:'sec',fn:function(){p.stop=rnd(.5,1.5);}});
-  popup(p.name,greet(p),opts,'',{who:p.name,role:p.me.cup.visible?'One of your regulars':'Local',col:'#46a9e6',say:{ph:pick(['Say anything… "Where\'s the bank?"','Say anything… "Heard any news?"','Say anything… "Need a job?"']),fn:function(t){pedSay(p,t);}}});
+  popup(p.name,greet(p),opts,'',{who:p.name,role:p.me.cup.visible?'One of your regulars':'Local',col:'#46a9e6',say:{ph:pick(['Say anything… "Where\'s the bank?"','Say anything… "Heard any news?"','Say anything… "Need a job?"']),fn:function(t){aiPed(p,t);}}});
   setTimeout(function(){if(!popOpen()&&p.stop>100)p.stop=1;},50);
 }
-function say(p,t,after){var you=YOU;YOU=null;p.stop=Math.max(p.stop,999);popup(p.name,t,[{t:after?'Thanks!':'OK, thanks',fn:function(){p.stop=rnd(.5,1.2);if(after)after();}}],'',{who:p.name,role:'Local',col:'#46a9e6',you:you,say:{fn:function(x){if(after)after();pedSay(p,x);}}});bubble(p.x,2.4,p.z,t.replace(/"/g,'').slice(0,28)+(t.length>30?'…':''),'');}
+function say(p,t,after){var you=YOU;YOU=null;p.stop=Math.max(p.stop,999);popup(p.name,t,[{t:after?'Thanks!':'OK, thanks',fn:function(){p.stop=rnd(.5,1.2);if(after)after();}}],'',{who:p.name,role:'Local',col:'#46a9e6',you:you,say:{fn:function(x){if(after)after();aiPed(p,x);}}});bubble(p.x,2.4,p.z,t.replace(/"/g,'').slice(0,28)+(t.length>30?'…':''),'');}
 function nearestMine(x,z){var best=null,bd=1e9;shopV.forEach(function(v){if(v.rival||v.super)return;var d=Math.hypot(v.door.x-x,v.door.z-z);if(d<bd){bd=d;best=v.loc;}});return best;}
 function greet(p){var h=clockH;return pick([h<11?'"Morning!"':h<17?'"Hi there!"':'"Evening!"','"Hey! You\'re the coffee person, right?"','"Oh, hello."'])+(rain.on?' "Can you believe this rain?"':'');}
 function opinion(p,loc){if(!loc)return '"Crema? Never been. Is there one around here?"';var rep=loc.rep||3,pm=loc.price||1,c=loc.comp;

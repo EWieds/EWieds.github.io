@@ -43,7 +43,7 @@ function regHome(lot,b,kind,opt){
   if(!h){h={key:key};BUS.push(h);}
   h.name=opt.addr;h.home=1;h.kind=kind;h.type=kind==='apt'?'apt':'home';h.city=O.city;h.lot=lot;h.val=val;h.units=units;h.big=!!opt.big;h.sale=!!opt.sale;h.num=opt.num;
   h.owner=OWNERS[Math.floor(rr()*OWNERS.length)];h.pers=h.sale?(rr()<.6?'tired':'practical'):Object.keys(PERS)[Math.floor(rr()*6)];h.phone='555-0'+(100+Math.floor(rr()*899));
-  h.revv=Math.round(val/80*Math.pow(1.12,st.rb||0));h.door=dw;HOMES.push(h);
+  h.revv=Math.round(val/80*Math.pow(1.12,st.rb||0));h.door=dw;h.dx=opt.dx;h.f=opt.f;HOMES.push(h);
   if(h.sale){var ds=dState(h);ds.known=1;}
   ACTS[curArea].push({x:dw.x,z:dw.z,r:1.6,door:true,dn:lot,label:function(){var s=homeState(h);if(s.own)return W4().home===key?'Go inside · home':kind==='apt'?'Your building · '+h.name:'Your house · '+h.name;if(s.ban>now())return h.owner+' won\'t answer';return kind==='apt'?'Buzz the landlord':h.sale?'Knock · for sale':'Knock on the door';},
     sub:function(){var s=homeState(h);if(s.own)return s.tenant?(kind==='apt'?units+' units rented':'Rented to '+s.tenant)+' · '+fmt(bizRev(h))+'/min':W4().home===key?'You live here':'Empty · rent it out or move in';return h.name+' · '+(kind==='apt'?units+' apartments':h.big?'two-story house':'house')+(h.sale?' · '+fmt(dState(h).ask):'');},
