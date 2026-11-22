@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heist Maker · Lazer Arcade</title>
+<link rel="icon" href="/arcade/img/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Unbounded:wght@600;700;800;900&display=swap">
+<style>
+:root{--bg:#06101f;--ink:#0b1a33;--ink2:#10244a;--line:#1c3c70;--cy:#46e3ff;--gold:#ffc53d;--good:#3fe39a;--bad:#ff4d63;--vio:#b78bff;--org:#ff9a3d;--mut:#7f97bf;--wh:#eef4ff;--disp:'Unbounded',system-ui,sans-serif;--body:'Manrope',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--wh);font-family:var(--body);font-weight:600}
+body{min-height:100vh;padding-bottom:40px}
+a{color:inherit}
+.top{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(6,16,31,.92);backdrop-filter:blur(8px);z-index:30}
+.top .logo{font:800 20px var(--disp);letter-spacing:1px;text-decoration:none}
+.top .logo span{color:var(--gold)}
+.top .sp{flex:1}
+.top a.back{font:700 13px var(--body);color:var(--mut);text-decoration:none}
+.btn{border:0;border-radius:12px;background:var(--cy);color:#042;font:700 14px var(--disp);letter-spacing:.4px;padding:10px 16px;cursor:pointer}
+.btn.gold{background:var(--gold);color:#2a1c00}.btn.good{background:var(--good);color:#04220f}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--wh);border:1.5px solid rgba(255,255,255,.16)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 12px;font-size:12px;border-radius:10px}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px}
+.panel h3{font:700 13px var(--disp);letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.gridwrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+#grid{display:grid;gap:2px;background:#071226;padding:8px;border-radius:12px;border:1px solid var(--line);touch-action:none;user-select:none}
+.cell{width:var(--cs,30px);height:var(--cs,30px);border-radius:4px;background:#0d1f3c;display:flex;align-items:center;justify-content:center;font:800 14px var(--disp);position:relative;cursor:pointer;color:#cfe4ff}
+.cell.w{background:#16294d;box-shadow:inset 0 0 0 1px #24406f}
+.cell.sh{background:repeating-linear-gradient(45deg,#0a1830,#0a1830 3px,#13284e 3px,#13284e 6px)}
+.cell.sh{background:repeating-linear-gradient(45deg,#0a1830,#0a1830 3px,#13284e 3px,#13284e 6px)}
+.cell.exit{background:#0c3b2a;color:var(--good)}
+.cell .g{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px}
+.cell.see{box-shadow:inset 0 0 0 2px rgba(255,77,99,.5)}
+.cell.see2{box-shadow:inset 0 0 0 2px rgba(255,154,61,.5)}
+.cell.laz{background:#3a1222}
+.cell .gd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--bad);font-size:17px}
+.cell .wp{position:absolute;top:1px;right:2px;font:800 9px var(--body);color:var(--gold)}
+.pal{display:flex;flex-wrap:wrap;gap:6px}
+.tool{border:1.5px solid var(--line);background:var(--ink2);border-radius:10px;padding:7px 9px;cursor:pointer;display:flex;align-items:center;gap:6px;font:700 12px var(--body);color:var(--wh)}
+.tool .sw{width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font:800 11px var(--disp)}
+.tool.on{border-color:var(--cy);box-shadow:0 0 0 2px rgba(70,227,255,.18)}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+label.f{display:block;font:700 11px var(--body);letter-spacing:.4px;color:var(--mut);text-transform:uppercase;margin-bottom:4px}
+input[type=text],textarea,select,input[type=number]{width:100%;background:#0a1a34;border:1px solid var(--line);border-radius:10px;color:var(--wh);font:600 14px var(--body);padding:9px 11px}
+textarea{resize:vertical;min-height:52px}
+.mini{width:62px}
+input[type=range]{width:100%}
+.hint{font:600 12px var(--body);color:var(--mut);line-height:1.4}
+.crewrow{display:flex;gap:6px;align-items:center;margin:6px 0}
+.pill{border:1.5px solid var(--line);border-radius:999px;padding:5px 11px;font:700 12px var(--body);cursor:pointer;background:var(--ink2)}
+.pill.on{border-color:var(--cy);color:var(--cy)}
+.glist{display:flex;flex-direction:column;gap:6px}
+.gitem{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--ink2)}
+.gitem.on{border-color:var(--bad);box-shadow:0 0 0 2px rgba(255,77,99,.18)}
+.gitem .h{display:flex;align-items:center;justify-content:space-between;font:700 12px var(--body)}
+.wps{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.wpc{border:1px solid var(--line);border-radius:7px;padding:3px 6px;font:700 11px var(--body);display:flex;gap:4px;align-items:center}
+.wpc b{color:var(--gold)}
+.wpc .x{color:var(--bad);cursor:pointer}
+.compass{display:inline-flex;gap:2px}
+.compass button{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);background:#0a1a34;color:var(--wh);cursor:pointer;font:800 11px var(--disp)}
+.compass button.on{border-color:var(--cy);color:var(--cy)}
+.status{font:700 13px var(--body);padding:10px 12px;border-radius:10px;margin-top:10px}
+.status.ok{background:rgba(63,227,154,.12);color:var(--good);border:1px solid rgba(63,227,154,.3)}
+.status.err{background:rgba(255,77,99,.12);color:var(--bad);border:1px solid rgba(255,77,99,.3)}
+.status.work{background:rgba(70,227,255,.1);color:var(--cy);border:1px solid rgba(70,227,255,.3)}
+.scrub{display:flex;align-items:center;gap:10px;width:100%;max-width:520px}
+.seg{display:flex;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--ink2);color:var(--wh);border-radius:8px;padding:6px 10px;font:700 12px var(--body);cursor:pointer}
+.seg button.on{border-color:var(--cy);color:var(--cy)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0a1a34;border:1px solid var(--cy);color:var(--wh);padding:11px 16px;border-radius:12px;font:700 13px var(--body);z-index:60;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font:600 11px var(--body);color:var(--mut);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+h1{font:800 22px var(--disp);letter-spacing:.5px;margin-bottom:2px}
+.sub{font:600 13px var(--body);color:var(--mut);margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="logo" href="/arcade/" >LAZER <span>ARCADE</span></a>
+  <span class="sp"></span>
+  <a class="back" href="/arcade/community/">← Community</a>
+</div>
+
+<div style="max-width:1180px;margin:0 auto;padding:18px 16px 0">
+  <h1>Heist Maker</h1>
+  <div class="sub">Design a heist, place the crew and the guards, then <b>solve it</b> to lock in a par and an answer key. You can only publish a heist you've proven is beatable.</div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel gridwrap">
+      <div class="row" style="width:100%;justify-content:space-between">
+        <div class="seg" id="sizeSeg">
+          <button data-w="9" data-h="9">9×9</button>
+          <button data-w="11" data-h="11" class="on">11×11</button>
+          <button data-w="13" data-h="11">13×11</button>
+          <button data-w="15" data-h="11">15×11</button>
+        </div>
+        <div class="seg">
+          <button id="tgVision" class="on">Guard vision</button>
+          <button id="tgClear">Clear map</button>
+        </div>
+      </div>
+      <div id="grid"></div>
+      <div class="scrub">
+        <span class="hint" style="white-space:nowrap">Preview tick</span>
+        <input type="range" id="tick" min="0" max="40" value="0">
+        <span class="hint" id="tickv" style="width:28px;text-align:right">0</span>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:#16294d">　</span>Wall</span>
+        <span>▦ Shadow (hides from cameras)</span>
+        <span style="color:var(--good)">◻ Exit</span>
+        <span style="color:var(--gold)">★ Score</span>
+        <span style="color:var(--org)">◆ Bonus</span>
+        <span style="color:var(--cy)">⬢ Safe</span>
+        <span style="color:var(--vio)">⌨ Terminal</span>
+        <span style="color:var(--bad)">╱ Laser · ⬣ Guard</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h3>Tiles</h3>
+      <div class="pal" id="pal"></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px" id="guardPanel">
+      <h3>Guards &amp; cameras</h3>
+      <div class="row">
+        <button class="btn sm" id="addGuard">＋ Guard</button>
+        <button class="btn sm ghost" id="addCam">＋ Camera</button>
+        <span class="hint" id="guardHelp">Add one, then tap tiles on the map to lay its patrol path. Tap the same tile twice to make it turn in place.</span>
+      </div>
+      <div class="glist" id="glist"></div>
+      <div class="glist" id="clist" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h3>The crew</h3>
+      <div class="hint" style="margin-bottom:8px">Pick who's on the job. Each role you add gets a numbered start tile — place it with the matching Start tool.</div>
+      <div id="crewPick"></div>
+      <div class="row" style="margin-top:6px">
+        <span class="hint">Who decides the crew?</span>
+      </div>
+      <div class="seg" id="crewMode">
+        <button data-m="fixed" class="on">Fixed crew</button>
+        <button data-m="choose">Player chooses</button>
+      </div>
+      <div class="hint" style="margin-top:6px" id="crewModeHelp">Fixed: everyone plays the exact crew you set.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h3>Terminal effect</h3>
+      <div class="hint" style="margin-bottom:8px">Select a Terminal tile on the map to set what hacking it does.</div>
+      <div id="termCfg" class="hint">No terminal selected.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h3>Lasers</h3>
+      <div class="row">
+        <div><label class="f">On</label><input type="number" id="lzOn" class="mini" value="9" min="1" max="30"></div>
+        <div><label class="f">Off</label><input type="number" id="lzOff" class="mini" value="1" min="0" max="30"></div>
+        <div><label class="f">Phase</label><input type="number" id="lzPhase" class="mini" value="0" min="0" max="30"></div>
+      </div>
+      <div class="hint">Lasers blink: lit for “On” ticks, dark for “Off”. They only catch you while lit.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h3>Briefing</h3>
+      <div class="row"><div style="flex:1"><label class="f">Heist name</label><input type="text" id="mName" maxlength="40" placeholder="The Vault Job"></div></div>
+      <div class="row">
+        <div style="flex:1"><label class="f">Location</label><input type="text" id="mLoc" maxlength="30" placeholder="First National"></div>
+        <div style="flex:1"><label class="f">The prize</label><input type="text" id="mPrize" maxlength="30" placeholder="vault cash"></div>
+      </div>
+      <label class="f">Brief (what's the plan?)</label>
+      <textarea id="mBrief" maxlength="240" placeholder="The vault's behind a laser grid. Hacker kills the lasers, Cracker opens the safe."></textarea>
+      <label class="f" style="margin-top:8px">Tip (optional)</label>
+      <input type="text" id="mTip" maxlength="120" placeholder="Plan one crew at a time.">
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h3>Solve &amp; publish</h3>
+      <div class="row">
+        <button class="btn gold" id="btnSolve">Solve it</button>
+        <button class="btn ghost sm" id="btnWatch" disabled>Watch solution</button>
+      </div>
+      <div class="row">
+        <div><label class="f">Par (ticks)</label><input type="number" id="mPar" class="mini" value="" placeholder="auto"></div>
+        <div class="hint" style="flex:1">Set after solving — the clean-getaway time, with a little room. Beating par earns the speed star.</div>
+      </div>
+      <div id="solveStatus" class="status work" style="display:none"></div>
+      <button class="btn good" id="btnPublish" style="width:100%;margin-top:12px" disabled>Publish heist</button>
+      <div class="hint" style="margin-top:8px">You must solve the heist before publishing, so every published heist is beatable.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="engine.js"></script>
+<script type="module">
+// Load the arcade account + community layers if available; the editor still runs without them
+// (you just can't publish until they load / you sign in).
+let LZ=null, C=null;
+try{ LZ=(await import("/arcade/lz.js")).default; }catch(e){ console.warn("LZ unavailable",e); }
+try{ C=await import("/arcade/community/cloud.js"); }catch(e){ console.warn("cloud unavailable",e); }
+
+const $=s=>document.querySelector(s);
+const toast=(m)=>{const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2600);};
+const DIRS=["N","E","S","W"];
+
+/* ---------- editor state ---------- */
+const ROLES={G:{n:"Ghost",c:"#8fe9ff"},H:{n:"Hacker",c:"#b78bff"},C:{n:"Cracker",c:"#ffc53d"},M:{n:"Muscle",c:"#ff9a3d"}};
+let W=11,H=11,cells=[],crew=["G"],crewMode="fixed",guards=[],term={},laser={on:9,off:1,phase:0};
+let tool="#",selTerm=null,routeGuard=-1,showVision=true,previewTick=0;
+let answer=null,solvedPar=null;
+
+function blank(){cells=[];for(let r=0;r<H;r++){const row=[];for(let c=0;c<W;c++){row.push(r===0||c===0||r===H-1||c===W-1?"#":".");}cells.push(row);}}
+function at(c,r){return cells[r]&&cells[r][c];}
+function setCell(c,r,ch){if(r<=0||c<=0||r>=H-1||c>=W-1)return;cells[r][c]=ch;}
+
+/* ---------- palette ---------- */
+const TOOLS=[
+  {k:"#",label:"Wall",sw:"#16294d",t:"#9fbbe6"},
+  {k:".",label:"Floor",sw:"#0d1f3c",t:"#6d86ae"},
+  {k:",",label:"Shadow",sw:"#13284e",t:"#9fbbe6",glyph:"▦"},
+  {k:"E",label:"Exit",sw:"#0c3b2a",t:"var(--good)",glyph:"◻"},
+  {k:"*",label:"Score",sw:"#3a2e0a",t:"var(--gold)",glyph:"★"},
+  {k:"$",label:"Bonus",sw:"#3a220a",t:"var(--org)",glyph:"◆"},
+  {k:"S",label:"Safe",sw:"#0a2d3a",t:"var(--cy)",glyph:"⬢"},
+  {k:"T",label:"Terminal",sw:"#231046",t:"var(--vio)",glyph:"⌨"},
+  {k:"K",label:"Keycard",sw:"#143a2a",t:"var(--good)",glyph:"⚷"},
+  {k:"D",label:"Door",sw:"#2a2140",t:"#cbb6ff",glyph:"▤"},
+  {k:"L",label:"Laser",sw:"#3a1222",t:"var(--bad)",glyph:"╱"},
+  {k:"start",label:"Start",sw:"#0a2a4a",t:"var(--cy)",glyph:"◉"}
+];
+function buildPal(){
+  $("#pal").innerHTML=TOOLS.map(t=>`<button class="tool${t.k===tool?" on":""}" data-k="${t.k}"><span class="sw" style="background:${t.sw};color:${t.t}">${t.glyph||""}</span>${t.label}</button>`).join("");
+  $("#pal").querySelectorAll(".tool").forEach(b=>b.onclick=()=>{tool=b.dataset.k;routeGuard=-1;camPlacing=false;buildPal();renderGuards();renderCams();render();});
+}
+
+/* ---------- crew ---------- */
+function buildCrew(){
+  const avail=["G","H","C","M"];
+  $("#crewPick").innerHTML=avail.map(r=>`<button class="pill${crew.includes(r)?" on":""}" data-r="${r}">${ROLES[r].n}</button>`).join(" ");
+  $("#crewPick").querySelectorAll(".pill").forEach(b=>b.onclick=()=>{
+    const r=b.dataset.r;
+    if(crew.includes(r)){ if(crew.length<=1){toast("Keep at least one crew member.");return;}
+      // remove role + its start tile
+      const idx=crew.indexOf(r);crew.splice(idx,1);
+      // clear any start numbers beyond new length and renumber
+      stripStartsBeyond(crew.length);
+    } else { if(crew.length>=4){toast("Four crew max.");return;} crew.push(r); }
+    buildCrew();render();
+  });
+}
+function stripStartsBeyond(n){for(let r=0;r<H;r++)for(let c=0;c<W;c++){const ch=cells[r][c];if(/[1-4]/.test(ch)&&+ch>n)cells[r][c]=".";}}
+function placedStarts(){const m={};for(let r=0;r<H;r++)for(let c=0;c<W;c++){const ch=cells[r][c];if(/[1-4]/.test(ch))m[+ch]=[c,r];}return m;}
+function nextStart(){const p=placedStarts();for(let i=1;i<=crew.length;i++)if(!p[i])return i;return null;}
+
+/* ---------- grid render ---------- */
+let draftM=null;
+function buildDraftM(){try{draftM=HE.prep(buildLevel(true));}catch(e){draftM=null;}}
+function render(){
+  const g=$("#grid");g.style.gridTemplateColumns=`repeat(${W},1fr)`;
+  const cs=Math.max(20,Math.min(34,Math.floor(520/W)));g.style.setProperty("--cs",cs+"px");
+  buildDraftM();
+  let vis=null,laz=false,camset=null;
+  if(showVision&&draftM){
+    vis={};const t=previewTick;
+    draftM.guards.forEach(gd=>{const gp=HE.guardAt(gd,t);const v=HE.vision(draftM,gp.c,gp.r,gp.f,gd.range,"g",true);for(const i in v)vis[i]=1;});
+    (draftM.cams||[]).forEach(cm=>{const f=HE.camDir(cm,t);const v=HE.vision(draftM,cm.c,cm.r,f,cm.range,"c",true);for(const i in v)vis[i]=(vis[i]||0)|2;});
+    laz=HE.laserOn?HE.laserOn(draftM,t):true;
+  }
+  let html="";
+  const starts=placedStarts();
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+    const ch=cells[r][c];let cls="cell",glyph="",extra="";
+    if(ch==="#")cls+=" w";
+    else if(ch===",")cls+=" sh";
+    else if(ch==="E"){cls+=" exit";glyph="◻";}
+    else if(ch==="*")glyph="<span class='g' style='color:var(--gold)'>★</span>";
+    else if(ch==="$")glyph="<span class='g' style='color:var(--org)'>◆</span>";
+    else if(ch==="S")glyph="<span class='g' style='color:var(--cy)'>⬢</span>";
+    else if(ch==="T")glyph="<span class='g' style='color:var(--vio)'>⌨</span>";
+    else if(ch==="K")glyph="<span class='g' style='color:var(--good)'>⚷</span>";
+    else if(ch==="D")glyph="<span class='g' style='color:#cbb6ff'>▤</span>";
+    else if(ch==="L"){glyph="<span class='g' style='color:var(--bad)'>╱</span>";if(showVision&&laz)cls+=" laz";}
+    else if(/[1-4]/.test(ch)){const role=crew[+ch-1];glyph=`<span class='g' style='color:${role?ROLES[role].c:'#fff'};font-size:12px'>${role||"?"}<sub style='font-size:8px'>${ch}</sub></span>`;}
+    if(ch==="T"&&selTerm&&selTerm[0]===c&&selTerm[1]===r)extra+=";outline:2px solid var(--vio)";
+    const i=r*W+c;
+    if(showVision&&vis&&vis[i]&&ch!=="#"){cls+=(vis[i]&1)?" see":"";cls+=(vis[i]&2&&!(vis[i]&1))?" see2":"";}
+    html+=`<div class="${cls}" data-c="${c}" data-r="${r}" style="${extra}">${glyph}`;
+    // guard markers + waypoint badges
+    html+=`</div>`;
+  }
+  g.innerHTML=html;
+  // overlay guards
+  guards.forEach((gd,gi)=>{
+    gd.route.forEach((wp,wi)=>{
+      const el=g.querySelector(`[data-c="${wp[0]}"][data-r="${wp[1]}"]`);
+      if(el){const b=document.createElement("span");b.className="wp";b.textContent=(gi+1)+"."+(wi+1);b.style.color=gi===routeGuard?"var(--cy)":"var(--gold)";el.appendChild(b);}
+    });
+    // marker at current preview pos
+    if(draftM&&draftM.guards[gi]){const gp=HE.guardAt(draftM.guards[gi],previewTick);const el=g.querySelector(`[data-c="${gp.c}"][data-r="${gp.r}"]`);if(el){const m=document.createElement("span");m.className="gd";m.textContent="⬣";el.appendChild(m);}}
+  });
+  (draftM&&draftM.cams||[]).forEach((cm,ci)=>{const el=g.querySelector(`[data-c="${cm.c}"][data-r="${cm.r}"]`);if(el){const m=document.createElement("span");m.className="gd";m.style.color="var(--org)";m.textContent="◉";el.appendChild(m);}});
+  g.querySelectorAll(".cell").forEach(el=>{
+    el.onpointerdown=(e)=>{e.preventDefault();paint(+el.dataset.c,+el.dataset.r);};
+  });
+}
+
+/* cams stored in guards too? keep separate */
+let cams=[];
+function paint(c,r){
+  // cameras mount on walls/edges; guard waypoints must be on walkable floor — handle before the border guard
+  if(camPlacing){ placeCam(c,r); return; }
+  if(routeGuard>=0){ if(at(c,r)==="#"){toast("Guards walk on floor, not walls.");return;} addWaypoint(routeGuard,c,r); return; }
+  if(r<=0||c<=0||r>=H-1||c>=W-1) return;
+  if(tool==="start"){ const n=nextStart(); if(n==null){toast("All crew starts placed. Remove one to move it.");return;}
+    // remove existing same tile start
+    setCell(c,r,String(n)); invalidateSolve(); render(); return; }
+  if(tool==="T"){ setCell(c,r,"T"); if(!term[c+","+r])term[c+","+r]={fx:"lasers",dur:14}; selTerm=[c,r]; renderTermCfg(); }
+  else { if(at(c,r)==="T")delete term[c+","+r]; setCell(c,r,tool); if(selTerm&&selTerm[0]===c&&selTerm[1]===r){selTerm=null;renderTermCfg();} }
+  invalidateSolve();render();
+}
+
+/* ---------- guards ---------- */
+function renderGuards(){
+  const gl=$("#glist");
+  gl.innerHTML=guards.map((gd,i)=>`<div class="gitem${i===routeGuard?" on":""}" data-i="${i}">
+    <div class="h"><span>Guard ${i+1}${gd.ping?" · 🔔":""}</span><span><button class="btn sm ghost" data-edit="${i}">${i===routeGuard?"Done":"Path"}</button> <button class="btn sm ghost" data-del="${i}">✕</button></span></div>
+    <div class="row" style="margin:6px 0 0">
+      <span class="hint">Range</span><input type="range" min="2" max="8" value="${gd.range||4}" data-range="${i}" style="flex:1">
+      <span class="hint" style="width:14px">${gd.range||4}</span>
+      <label class="hint" style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-ping="${i}" ${gd.ping?"checked":""}>Alarm</label>
+    </div>
+    <div class="wps">${gd.route.map((wp,wi)=>`<span class="wpc">#${wi+1} (${wp[0]},${wp[1]}) <span class="compass">${DIRS.map(d=>`<button class="${wp[3]===d?"on":""}" data-face="${i},${wi},${d}">${d}</button>`).join("")}</span> ⏸<input type="number" value="${wp[2]||1}" min="0" max="9" class="mini" style="width:40px;padding:3px" data-pause="${i},${wi}"><span class="x" data-delwp="${i},${wi}">✕</span></span>`).join("")||"<span class='hint'>No path yet — tap tiles on the map.</span>"}</div>
+  </div>`).join("")||"<span class='hint'>No guards yet.</span>";
+  gl.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{routeGuard=routeGuard===+b.dataset.edit?-1:+b.dataset.edit;camPlacing=false;renderGuards();render();});
+  gl.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{guards.splice(+b.dataset.del,1);routeGuard=-1;invalidateSolve();renderGuards();render();});
+  gl.querySelectorAll("[data-range]").forEach(s=>s.oninput=()=>{guards[+s.dataset.range].range=+s.value;invalidateSolve();renderGuards();render();});
+  gl.querySelectorAll("[data-ping]").forEach(s=>s.onchange=()=>{guards[+s.dataset.ping].ping=s.checked;renderGuards();});
+  gl.querySelectorAll("[data-face]").forEach(b=>b.onclick=()=>{const[i,wi,d]=b.dataset.face.split(",");guards[+i].route[+wi][3]=d;invalidateSolve();renderGuards();render();});
+  gl.querySelectorAll("[data-pause]").forEach(n=>n.onchange=()=>{const[i,wi]=n.dataset.pause.split(",");guards[+i].route[+wi][2]=Math.max(0,+n.value||0);invalidateSolve();renderGuards();render();});
+  gl.querySelectorAll("[data-delwp]").forEach(b=>b.onclick=()=>{const[i,wi]=b.dataset.delwp.split(",");guards[+i].route.splice(+wi,1);invalidateSolve();renderGuards();render();});
+}
+function addWaypoint(gi,c,r){
+  const route=guards[gi].route;
+  // default facing: toward previous waypoint's travel, else E
+  let face="E";
+  if(route.length){const p=route[route.length-1];const dc=c-p[0],dr=r-p[1];if(Math.abs(dc)>=Math.abs(dr))face=dc>=0?"E":"W";else face=dr>=0?"S":"N";}
+  route.push([c,r,1,face]);
+  invalidateSolve();renderGuards();render();
+}
+$("#addGuard").onclick=()=>{guards.push({route:[],range:4,ping:true});routeGuard=guards.length-1;camPlacing=false;tool="guardwp";buildPal();renderGuards();render();toast("Tap tiles to lay the patrol path.");};
+
+/* cameras — schema {c,r,dirs:"ESWN",hold,range,phase}. dirs is the facing cycle
+   (one letter = fixed stare, several = a sweep). Shadow tiles (,) hide you from them. */
+let camPlacing=false;
+$("#addCam").onclick=()=>{camPlacing=true;routeGuard=-1;tool="camwp";buildPal();renderCams();render();toast("Tap a tile (wall edges are fine) to mount the camera.");};
+function placeCam(c,r){ cams.push({c,r,dirs:"S",hold:4,range:6,phase:0}); camPlacing=false; invalidateSolve(); renderCams(); render(); }
+function renderCams(){
+  const cl=$("#clist");if(!cl)return;
+  cl.innerHTML=cams.map((cm,i)=>`<div class="gitem" data-ci="${i}">
+    <div class="h"><span style="color:var(--org)">Camera ${i+1}</span><button class="btn sm ghost" data-delcam="${i}">✕</button></div>
+    <div class="row" style="margin:6px 0 0">
+      <span class="hint">Range</span><input type="range" min="3" max="14" value="${cm.range}" data-crange="${i}" style="flex:1"><span class="hint" style="width:16px">${cm.range}</span>
+    </div>
+    <div class="row" style="margin:4px 0 0">
+      <span class="hint">Looks</span><span class="compass">${DIRS.map(d=>`<button class="${cm.dirs.includes(d)&&cm.dirs.length===1&&cm.dirs===d?"on":""}" data-camface="${i},${d}">${d}</button>`).join("")}</span>
+      <span class="hint" style="margin-left:6px">Sweep</span><input type="text" value="${cm.dirs}" maxlength="6" class="mini" style="width:66px" data-camdirs="${i}" placeholder="ESWN">
+      <span class="hint">hold</span><input type="number" value="${cm.hold}" min="1" max="12" class="mini" style="width:44px" data-camhold="${i}">
+    </div>
+    <div class="hint">One letter = a fixed stare. Several (e.g. ESWN) = a slow sweep, ${cm.hold} ticks each.</div>
+  </div>`).join("")||"<span class='hint'>No cameras.</span>";
+  cl.querySelectorAll("[data-delcam]").forEach(b=>b.onclick=()=>{cams.splice(+b.dataset.delcam,1);invalidateSolve();renderCams();render();});
+  cl.querySelectorAll("[data-crange]").forEach(s=>s.oninput=()=>{cams[+s.dataset.crange].range=+s.value;invalidateSolve();renderCams();render();});
+  cl.querySelectorAll("[data-camface]").forEach(b=>b.onclick=()=>{const[i,d]=b.dataset.camface.split(",");cams[+i].dirs=d;invalidateSolve();renderCams();render();});
+  cl.querySelectorAll("[data-camdirs]").forEach(n=>n.onchange=()=>{const v=n.value.toUpperCase().replace(/[^NESW]/g,"")||"S";cams[+n.dataset.camdirs].dirs=v;invalidateSolve();renderCams();render();});
+  cl.querySelectorAll("[data-camhold]").forEach(n=>n.onchange=()=>{cams[+n.dataset.camhold].hold=Math.max(1,+n.value||4);invalidateSolve();renderCams();render();});
+}
+
+/* ---------- terminal config ---------- */
+function renderTermCfg(){
+  const box=$("#termCfg");
+  if(!selTerm){box.innerHTML="No terminal selected.";return;}
+  const key=selTerm[0]+","+selTerm[1],t=term[key]||{fx:"lasers",dur:14};term[key]=t;
+  box.innerHTML=`<div class="row"><div style="flex:1"><label class="f">Hacking this kills…</label>
+    <select id="tfx"><option value="lasers">Lasers</option><option value="cams">Cameras</option><option value="doors">Locked doors</option></select></div>
+    <div><label class="f">For how long</label><input type="number" id="tdur" class="mini" value="${t.dur||14}" min="0" max="40"></div></div>
+    <div class="hint">Terminal at (${selTerm[0]},${selTerm[1]}). Duration 0 = stays off for good.</div>`;
+  $("#tfx").value=t.fx;
+  $("#tfx").onchange=()=>{t.fx=$("#tfx").value;invalidateSolve();};
+  $("#tdur").onchange=()=>{t.dur=Math.max(0,+$("#tdur").value||0);invalidateSolve();};
+}
+
+/* ---------- build level object ---------- */
+function buildLevel(draft){
+  const map=cells.map(row=>row.join(""));
+  const L={id:"draft",name:$("#mName").value||"Untitled Heist",loc:$("#mLoc").value||"",prize:$("#mPrize").value||"the goods",
+    crew:crew.join(""),par:+$("#mPar").value||99,brief:$("#mBrief").value||"",tip:$("#mTip").value||"",map};
+  const tkeys=Object.keys(term).filter(k=>{const[c,r]=k.split(",").map(Number);return at(c,r)==="T";});
+  if(tkeys.length){L.term={};tkeys.forEach(k=>L.term[k]=term[k]);}
+  if(map.join("").includes("L"))L.laser={on:+$("#lzOn").value||9,off:+$("#lzOff").value||1,phase:+$("#lzPhase").value||0};
+  if(guards.length)L.guards=guards.filter(g=>g.route.length).map(g=>({route:g.route.map(w=>[w[0],w[1],w[2]||1,w[3]||"E"]),range:g.range||4,ping:!!g.ping}));
+  if(cams.length)L.cams=cams.map(c=>({c:c.c,r:c.r,dirs:(c.dirs||"S"),hold:c.hold||4,range:c.range||6,phase:c.phase||0}));
+  return L;
+}
+
+/* ---------- validation ---------- */
+function problems(){
+  const p=[],flat=cells.map(r=>r.join("")).join("");
+  if(!flat.includes("E"))p.push("Add an exit (◻).");
+  if(!flat.includes("*"))p.push("Add the score tile (★) — every heist needs one.");
+  const ps=placedStarts();for(let i=1;i<=crew.length;i++)if(!ps[i])p.push("Place start "+i+" ("+ROLES[crew[i-1]].n+").");
+  if(flat.includes("S")&&!crew.includes("C"))p.push("There's a safe but no Cracker on the crew.");
+  if(flat.includes("T")&&!crew.includes("H"))p.push("There's a terminal but no Hacker on the crew.");
+  guards.forEach((g,i)=>{if(g.route.length&&g.route.length<1)p.push("Guard "+(i+1)+" needs a path.");});
+  return p;
+}
+
+/* ---------- solve ---------- */
+function invalidateSolve(){answer=null;solvedPar=null;$("#btnWatch").disabled=true;$("#btnPublish").disabled=true;}
+$("#btnSolve").onclick=()=>{
+  const p=problems();
+  const st=$("#solveStatus");st.style.display="block";
+  if(p.length){st.className="status err";st.innerHTML="Fix first:<br>• "+p.join("<br>• ");return;}
+  st.className="status work";st.textContent="Searching for a clean getaway…";
+  setTimeout(()=>{
+    let res;try{res=autoSolveHeist(buildLevel());}catch(e){res={ok:false,err:e.message};}
+    if(!res.ok){st.className="status err";st.innerHTML="No solution found. The guards/lasers may make it impossible — open a path, widen a timing window, or move a guard.";invalidateSolve();return;}
+    answer=res.plans;solvedPar=res.t;
+    const suggested=res.t+Math.max(4,Math.round(res.t*0.18));
+    if(!$("#mPar").value)$("#mPar").value=suggested;
+    $("#btnWatch").disabled=false;$("#btnPublish").disabled=false;
+    st.className="status ok";st.innerHTML=`Solved in <b>${res.t} ticks</b> (${res.stars}★). Par set to <b>${$("#mPar").value}</b> — players beating it get the speed star. Answer key locked in. ▶ Watch it or publish.`;
+  },30);
+};
+
+/* ---------- watch solution ---------- */
+let anim=null;
+$("#btnWatch").onclick=()=>{
+  if(!answer)return;
+  const L=buildLevel();const M=HE.prep(L);
+  const plans=answer.map(s=>HE.P(s));
+  const sim=HE.simulate(M,plans,{cont:false,until:(solvedPar||80)+20});
+  const frames=sim.frames||[];
+  if(anim)clearInterval(anim);
+  let i=0;showVision=true;$("#tgVision").classList.add("on");
+  anim=setInterval(()=>{
+    if(i>=frames.length){clearInterval(anim);anim=null;return;}
+    previewTick=i;$("#tick").value=Math.min(i,$("#tick").max);$("#tickv").textContent=i;
+    render();drawCrew(frames[i]);i++;
+  },260);
+};
+function drawCrew(f){
+  if(!f)return;const g=$("#grid");
+  (f.crew||[]).forEach((a,ci)=>{if(!a||a.c==null||a.st==="out"||a.st==="absent")return;const el=g.querySelector(`[data-c="${a.c}"][data-r="${a.r}"]`);if(el){const m=document.createElement("span");m.className="gd";m.style.color=crew[ci]?ROLES[crew[ci]].c:"#fff";m.style.zIndex="5";m.textContent="●";el.appendChild(m);}});
+}
+
+/* ---------- publish ---------- */
+$("#btnPublish").onclick=async()=>{
+  if(!answer){toast("Solve the heist first.");return;}
+  if(!LZ||!C){toast("Still connecting to your account — try again in a moment.");return;}
+  if(!LZ.signedIn()){LZ.openAccount?LZ.openAccount("signin"):toast("Sign in to publish.");return;}
+  const p=problems();if(p.length){toast(p[0]);return;}
+  const L=buildLevel();L.id="h"+Date.now().toString(36);
+  const project={engine:"heist",title:L.name,desc:$("#mBrief").value||L.prize,level:L,answer,crewMode,par:+$("#mPar").value||solvedPar};
+  const btn=$("#btnPublish");btn.disabled=true;btn.textContent="Publishing…";
+  try{
+    const thumb=makeThumb(L);
+    const r=await C.publish(project,thumb);
+    toast("Published! Opening your heist…");
+    setTimeout(()=>location.href="/arcade/heist-planner/?heist="+encodeURIComponent(r.id),900);
+  }catch(e){btn.disabled=false;btn.textContent="Publish heist";toast("Couldn't publish: "+(e.code||e.message||"error"));}
+};
+function makeThumb(L){
+  const cv=document.createElement("canvas"),s=12;cv.width=W*s;cv.height=H*s;const x=cv.getContext("2d");
+  x.fillStyle="#07122a";x.fillRect(0,0,cv.width,cv.height);
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){const ch=cells[r][c];let col="#0d1f3c";
+    if(ch==="#")col="#16294d";else if(ch==="E")col="#1f6b4a";else if(ch==="*")col="#ffc53d";else if(ch==="$")col="#ff9a3d";else if(ch==="S")col="#46e3ff";else if(ch==="T")col="#b78bff";else if(ch==="L")col="#ff4d63";else if(ch===",")col="#13284e";else if(/[1-4]/.test(ch))col="#8fe9ff";
+    x.fillStyle=col;x.fillRect(c*s+1,r*s+1,s-1,s-1);}
+  guards.forEach(g=>g.route[0]&&(x.fillStyle="#ff4d63",x.fillRect(g.route[0][0]*s+2,g.route[0][1]*s+2,s-3,s-3)));
+  try{return cv.toDataURL("image/jpeg",0.7);}catch(e){return "";}
+}
+
+/* ---------- top controls ---------- */
+$("#sizeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $("#sizeSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  W=+b.dataset.w;H=+b.dataset.h;blank();selTerm=null;guards=[];cams=[];invalidateSolve();$("#tick").max=40;renderTermCfg();renderGuards();renderCams();render();
+});
+$("#tgVision").onclick=()=>{showVision=!showVision;$("#tgVision").classList.toggle("on",showVision);render();};
+$("#tgClear").onclick=()=>{if(confirm("Clear the whole map?")){blank();guards=[];cams=[];term={};selTerm=null;invalidateSolve();renderTermCfg();renderGuards();renderCams();render();}};
+$("#tick").oninput=()=>{previewTick=+$("#tick").value;$("#tickv").textContent=previewTick;if(anim){clearInterval(anim);anim=null;}render();};
+$("#crewMode").querySelectorAll("button").forEach(b=>b.onclick=()=>{crewMode=b.dataset.m;$("#crewMode").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.m===crewMode));$("#crewModeHelp").textContent=crewMode==="fixed"?"Fixed: everyone plays the exact crew you set.":"Player chooses: players pick who to bring from your crew before planning. Your solution proves it can be done.";});
+["mName","mLoc","mPrize","mBrief","mTip","mPar","lzOn","lzOff","lzPhase"].forEach(id=>$("#"+id).addEventListener("input",()=>{if(["lzOn","lzOff","lzPhase"].includes(id))invalidateSolve();}));
+
+/* ---------- boot ---------- */
+blank();buildPal();buildCrew();renderTermCfg();renderGuards();renderCams();render();
+// seed a friendly starter
+$("#mName").value="";
+</script>
+</body>
+</html>

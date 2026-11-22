@@ -410,7 +410,7 @@ service cloud.firestore {
         && (!('desc' in d) || (d.desc is string && d.desc.size() <= 300))
         && d.data is string && d.data.size() <= 500000
         && (!('thumb' in d) || (d.thumb is string && d.thumb.size() <= 120000))
-        && d.engine in ['studio2d', 'rush', 'crane', 'custom', 'html']
+        && d.engine in ['studio2d', 'rush', 'crane', 'custom', 'html', 'heist']
         && (!('hasCode' in d) || d.hasCode is bool)
         && (d.engine != 'custom' || d.hasCode == true)
         && (!('lpRatio' in d) || (d.lpRatio is number && d.lpRatio >= 0 && d.lpRatio <= 1))

@@ -64,6 +64,8 @@ const $ = (s) => document.querySelector(s), esc = LZ.esc, fmt = LZ.fmt;
 const id = new URLSearchParams(location.search).get("id");
 await LZ.ready;
 const g = id ? await C.getGame(id).catch(() => (C.BUILTIN[id] ? Object.assign({}, C.BUILTIN[id]) : null)) : null;
+// Heist levels play in the full Heist Planner, not the generic stage.
+if (g && (g.engine === "heist")) { location.replace("/arcade/heist-planner/?heist=" + encodeURIComponent(id)); }
 const roles = await LZ.roles();
 const isStaff = () => LZ.signedIn() && ["admin", "creator"].includes(roles[(LZ.username || "").toLowerCase()]);
 const isOwner = () => LZ.signedIn() && g && LZ.user && g.ownerUid === LZ.user.uid;
