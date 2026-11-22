@@ -105,7 +105,12 @@ var MIS=[
   {ch:'Big time',t:'Fly to another city',h:'Buy a ticket at the airport, go through security, board at gate B4.',p:'airport',ok:function(w){return w.stats.flights;}},
   {ch:'Tycoon',t:'Become mayor',h:'Elections office, City Hall. You need 900 fame.',p:'hall',ok:function(w){return Object.keys(w.civ).some(function(c){return w.civ[c].mayor;});}},
   {ch:'Tycoon',t:'Buy Valley Farms',h:'Earl won\'t sell cheap. Bring a briefcase and patience.',ok:function(w){return (w.biz.valley||{}).own;}},
-  {ch:'Tycoon',t:'Buy the airport',h:'Airport Authority office, west wall of the terminal. Gloria Vance drives a hard bargain.',p:'airport',ok:function(){return Object.keys(W4().biz).some(function(k){return k.indexOf('airport:')===0&&W4().biz[k].own;});}}];
+  {ch:'Tycoon',t:'Buy the airport',h:'Airport Authority office, west wall of the terminal. Gloria Vance drives a hard bargain.',p:'airport',ok:function(){return Object.keys(W4().biz).some(function(k){return k.indexOf('airport:')===0&&W4().biz[k].own;});}},
+  {ch:'Living large',t:'Eat at a restaurant',h:'Restaurant Row. Ask about the secret menu.',ok:function(w){return (w.stats.meals||0)>0;}},
+  {ch:'Living large',t:'Work your truck\'s window',h:'Park your truck in a striped zone, open Truck options, serve customers yourself.',ok:function(w){return w.f.window;}},
+  {ch:'Living large',t:'Pass a university class',h:'Admissions office at the university.',p:'uni',ok:function(w){return w.cls&&Object.keys(w.cls).length>0;}},
+  {ch:'Living large',t:'Buy a stock',h:'Phone → Stocks.',ok:function(w){return w.mkt&&Object.keys(w.mkt.own).some(function(k){return w.mkt.own[k]>0;});}},
+  {ch:'Living large',t:'Build something on your own land',h:'Buy a lot, then ask Bob for anything. A water park? A race track?',ok:function(w){return Object.keys(w.land).some(function(k){return w.land[k].use==='dev';});}}];
 function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
 var misT=0;
 function updMission(dt){var w=W4();w.f=w.f||{};misT-=dt;if(misT>0)return;misT=.5;var m=misCur();

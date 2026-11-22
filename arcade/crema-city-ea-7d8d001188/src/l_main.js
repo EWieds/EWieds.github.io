@@ -21,7 +21,7 @@ function build(city){
   P.me=makeCustomer(district(city,plan.blocks[0].D.id),{staff:acc});P.me.root.scale.setScalar(1.05);sc.add(P.me.root);
   P.hand=new T.Group();P.hand.position.set(0,.72,.5);P.me.root.add(P.hand);carryView();
   P.phone=new T.Group();P.phone.position.set(0,-.42,.1);P.me.arms[1].add(P.phone);rb(.12,.22,.03,.02,toon(0x1a1a1e),0,0,0,P.phone);plane(.1,.18,flat(0x8fd3ff),0,0,.017,P.phone);P.phone.visible=false;
-  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();endTalk(true);TALKERS={};syncBizRev();
+  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
   O.dirty=false;
   if(lowEnd()){sc.fog.far=140;}
 }
@@ -41,12 +41,12 @@ O.enter=function(){
   var v=shopVOf(loc);P.area='city';drv=null;
   if(v){var o=L2W(v.lot,DOORX,.5);P.x=o.x;P.z=o.z;P.ry=v.lot.ry;yaw=v.lot.ry;var ar=areaOfX(v.lot.x);if(ar)P.area=ar;swing(v);P.auto=.5;}
   else{var b=blockOf('dist');P.x=b.x;P.z=b.z+BD/2-1.5;yaw=0;}
-  pitch=.38;O.snap=true;P.me.root.visible=true;actKey='';altKey='';resizeO();updDaylight();if(!(W4().f&&W4().f.tut))setTimeout(function(){if(O.on&&P.area==='city'&&!popOpen())playTutorial();},1800);
+  pitch=.38;O.snap=true;P.me.root.visible=true;actKey='';altKey='';resizeO();updDaylight();awayReport();if(!(W4().f&&W4().f.tut))setTimeout(function(){if(O.on&&P.area==='city'&&!popOpen())playTutorial();},1800);
   if(SH&&SH.phase==='open'&&!hasMgr(loc))setTimeout(function(){if(O.on)note('Counter unattended',loc.name+' has no manager, so it\'s CLOSED until you walk back in. The shift clock is paused.','bad');},700);
   else if(SH&&SH.phase==='open')note(staffName(loc,'manager',0)+' has the counter','The shift keeps running while you\'re out. Watch the door: every customer you see go in is real.','good');
   if(!W4().seen2){W4().seen2=1;setTimeout(function(){popup('Welcome to '+plan.name,'This is your town. Everything here is real:\n• The people walking into your shop are the customers at your counter.\n• Walk into any door to go inside. Walk into your shop\'s door to get back behind the counter.\n• Crema Supply Co. sells crates. Haul them back and ingredients cost half.\n• Buy land, then call Bob\'s Builders from your phone.\n• City Hall, the bank, Crema Motors and the airport are all open.\n\nMove: WASD or the stick · Use: E or the yellow button · Look: drag · Phone: P',[{t:'Let\'s go'}]);},500);}
 };
-O.exit=function(noUnpause){if(!O.on)return;if(drv)exitVeh();if(RIDE){if(RIDE.car)dyn.remove(RIDE.car.g);RIDE=null;}O.on=false;document.body.classList.remove('outside','photo');$('#o-ui').hidden=true;$('#o-photo').hidden=true;closePhone();closePop();save();
+O.exit=function(noUnpause){if(!O.on)return;if(G&&G.w4)G.w4.ledOut=G.w4.led||0;if(drv)exitVeh();if(RIDE){if(RIDE.car)dyn.remove(RIDE.car.g);RIDE=null;}O.on=false;document.body.classList.remove('outside','photo');$('#o-ui').hidden=true;$('#o-photo').hidden=true;closePhone();closePop();save();
   if(!noUnpause){paused=true;unpause();if(SH&&SH.phase!=='done')fitCamera();}};
 O.walkOut=function(){if(O.on||!G)return;audioOn();if(!$('#modal').hidden||SHEET)return;fade(function(){O.enter();});};
 function goBackIn(){var loc=curLoc();if(loc.city===O.city){if(P.area==='city'){var v=shopVOf(loc);if(v&&Math.hypot(v.out.x-P.x,v.out.z-P.z)>30){popup('Head back to '+loc.name+'?','It\'s '+Math.round(Math.hypot(v.out.x-P.x,v.out.z-P.z))+' m away.',[{t:'Directions',fn:function(){navTo(placeById('shop:'+loc.id));}},{t:'Take a shortcut',s:'Skip the walk',fn:function(){goInside(loc);}},{t:'Stay out',cls:'sec'}]);return;}}goInside(loc);return;}
@@ -91,7 +91,7 @@ O.frame=function(dt){
     if(CUT)updCut(dt);else{if(P.auto>0){P.auto-=dt;var o=V3(Math.sin(P.ry),0,Math.cos(P.ry));P.x+=o.x*dt*2.2;P.z+=o.z*dt*2.2;P.moving=true;animCust(P.me,dt,0,true);P.me.root.position.set(P.x,.2,P.z);P.me.root.rotation.y=P.ry;}
       else if(drv)driveStep(dt);else if(!(RIDE&&!RIDE.wait))moveWalk(dt);updRide(dt);}
     if(P.area==='city'){updTraffic(dt,tl);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
-    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
+    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
     if(!CUT)updCamera(dt);
     updActs();updNav(dt);updLabels(dt);if(frameN++%3===0)drawMini();
     var stn=P.area==='city'?streetAt(P.x,P.z):null,wk=districtName(P.x,P.z)+(stn?' · '+stn:'')+' · '+clockStrH(clockH)+(rain.on?' · rain':'')+(P.carry.length?' · carrying '+P.carry.length:'');if($('#o-where').textContent!==wk)$('#o-where').textContent=wk;

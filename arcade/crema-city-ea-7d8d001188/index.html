@@ -445,6 +445,10 @@ body.window #o-acts,body.window #o-joy,body.window #o-goal{visibility:hidden}
 body.tut::after{content:'';position:fixed;left:0;right:0;bottom:0;height:42vh;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none;z-index:5}
 .ph-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.ph-app{min-width:0}.ph-app span{max-width:100%;text-align:center;line-height:1.15}.ph-app i{width:48px;height:48px}
 body.tut #hud,body.tut #o-ui>*:not(#o-tut){visibility:hidden}
+#o-inc{position:absolute;left:14px;top:calc(env(safe-area-inset-top) + 64px);background:#fff6e6;border:2px solid #2a1a12;border-radius:12px;padding:3px 9px;font:800 12px system-ui;color:#2fa860;opacity:0;pointer-events:none;display:flex;gap:6px;align-items:baseline}
+#o-inc span{color:#8a6a54;font-weight:700;font-size:11px}#o-inc.pop{animation:incp 3.2s ease-out}
+@keyframes incp{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+body.incut #o-inc,body.talking #o-inc{display:none}
 </style>
 
 </head>
@@ -500,6 +504,7 @@ body.tut #hud,body.tut #o-ui>*:not(#o-tut){visibility:hidden}
   <button id="o-cut" type="button" hidden>Skip ›</button>
   <div id="o-win" hidden></div>
   <div id="o-tut" hidden></div>
+  <div id="o-inc"></div>
   <div id="o-photo" hidden><button class="save" type="button">Save photo</button><button class="done" type="button">Done</button></div>
 </div>
 <div id="o-phone" hidden class="away"><div class="ph"><div class="ph-scr"><div class="ph-st"><span id="ph-time">9:41</span><span>5G ▮▮▮ 87%</span></div><div id="ph-body"></div></div><button id="ph-home" type="button" aria-label="Home"></button></div></div>
@@ -3809,7 +3814,7 @@ function econTick(dt){
   if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();clubTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();clubTick(dt);incTick(dt);chimeTick();celebTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -3840,7 +3845,7 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1);return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1)*(w.celeb>now()?1.15:1)*(w.dog&&w.dog.own?1.02:1);return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}
@@ -4075,7 +4080,7 @@ function camInside(x,z,y){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area
 
 /* ---------- the action buttons (stable DOM: built once per change, never every frame) ---------- */
 function updActs(){
-  var list=caterActs().concat(crashActs(),synActs(),gigActs(),catActs(),ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs(),beanActs(),vendActs()):[]),best=null,bd=1e9;
+  var list=caterActs().concat(crashActs(),synActs(),gigActs(),catActs(),celebActs(),ghostActs(),dogActs(),clockActs(),ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs(),beanActs(),vendActs()):[]),best=null,bd=1e9;
   if(!drv&&!(RIDE&&!RIDE.coming)&&!CUT)list.forEach(function(a){var d=Math.hypot(a.x-P.x,a.z-P.z);if(d<a.r&&d<bd){bd=d;best=a;}});
   curAct=best;var el=$('#o-act'),el2=$('#o-alt'),k1='',k2='';
   if(drv){k1='Get out|'+(drv.v.kind==='truck'?(truckZone(drv.v)?'Park here and open the window':'Not a vending zone'):districtName(P.x,P.z));curAlt=null;}
@@ -4170,7 +4175,7 @@ function updCut(dt){if(!CUT||!cutPlane)return;CUT.t+=dt;var c=CUT;
 /* ---------- your phone ---------- */
 var PH={open:false,app:'home',call:null,ring:null};
 function phoneOpen(){return PH.open;}
-var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['tut','How to play','#e2553f','▶']];
+var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['garage','Garage','#2f5f90','🚗'],['tut','How to play','#e2553f','▶']];
 function openPhone(app){PH.open=true;PH.app=app||'home';if(app!=='msgs')PH.thread=null;$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');renderPhone();try{sfx.pick();}catch(e){}if(app==='msgs'){W4().unread=0;badge();}}
 O.openPhone=openPhone;
 function closePhone(){PH.open=false;$('#o-phone').classList.add('away');setTimeout(function(){if(!PH.open)$('#o-phone').hidden=true;},250);stopRing();}
@@ -4180,6 +4185,7 @@ function renderPhone(){
   if(a==='home'){h='<div class="ph-wall"><div class="ph-clock">'+esc(clockStrH(clockH))+'</div><div class="ph-date">'+esc(plan?plan.name:'')+' · '+(rain.on?'Rain':'Clear')+'</div></div><div class="ph-grid">'+
     APPS.map(function(x){return '<button type="button" class="ph-app" data-go="'+x[0]+'"><i style="background:'+x[2]+'">'+x[3]+'</i><span>'+x[1]+'</span>'+(x[0]==='msgs'&&W4().unread?'<em>'+W4().unread+'</em>':'')+'</button>';}).join('')+'</div>';}
   else if(a==='calls'){h=phTop('Contacts')+'<div class="ph-list">'+contacts().map(function(c,i){return '<button type="button" class="ph-row" data-call="'+i+'"><i style="background:'+c.col+'">'+esc(c.n.charAt(0))+'</i><div><b>'+esc(c.n)+'</b><small>'+esc(c.r)+'</small></div><span>☎</span></button>';}).join('')+'</div>';}
+  else if(a==='garage'){h=garageApp();PH.vl=veh.slice();}
   else if(a==='stk'){h=stockApp();}else if(a==='club'){h=clubApp();}else if(a==='gig'){h=gigApp();}
   else if(a==='msgs'&&PH.thread){h=threadHTML(PH.thread);}
   else if(a==='msgs'){var ns=W4().notes,TT=texts(),tk=Object.keys(TT).sort(function(x,y){var a1=TT[x].m[TT[x].m.length-1],b1=TT[y].m[TT[y].m.length-1];return (b1?b1.t:0)-(a1?a1.t:0);});h=phTop('Messages')+(tk.length?'<div class="ph-list">'+tk.map(function(k){var th=TT[k],lm=th.m[th.m.length-1];return '<button type="button" class="ph-row" data-th="'+esc(k)+'"><i style="background:#2f8fd0">'+esc(k.charAt(0))+'</i><div><b>'+esc(k)+(th.unread?' •':'')+'</b><small>'+esc(lm?(lm.me?'You: ':'')+lm.x:'')+'</small></div><span>›</span></button>';}).join('')+'</div><div class="ph-sub">Alerts</div>':'')+'<div class="ph-list">'+(ns.length?ns.slice(0,40).map(function(n){return '<div class="ph-msg '+(n.kind||'')+'"><b>'+esc(n.title)+'</b><span>'+esc(n.text)+'</span><small>'+ago(n.t)+'</small></div>';}).join(''):'<p class="ph-empty">No messages yet.</p>')+'</div>';W4().unread=0;badge();}
@@ -4193,6 +4199,7 @@ function renderPhone(){
   el.innerHTML=h;
   el.querySelectorAll('[data-bz]').forEach(function(bt){bt.onclick=function(){var b=PH.bs[+bt.dataset.bz];dial({n:b.name,col:'#8a5a3a',fn:function(){bizTalk(b,true);}});};});
   el.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){var g=b.dataset.go;if(g==='fly'){closePhone();flightsDesk(false);return;}if(g==='tut'){closePhone();if(P.area!=='city'){toast('Step outside to watch it.','');return;}playTutorial();return;}if(g==='emp'){closePhone();openEmpire();return;}if(g==='cam'){closePhone();photoMode(true);return;}PH.app=g;renderPhone();if(g==='maps')drawPhoneMap();};});
+  el.querySelectorAll('[data-veh]').forEach(function(b){b.onclick=function(){var v=PH.vl&&PH.vl[+b.dataset.veh];if(v)vehMenu(v);};});
   el.querySelectorAll('[data-stk]').forEach(function(b){b.onclick=function(){stockTrade(b.dataset.stk);};});el.querySelectorAll('[data-club]').forEach(function(b){b.onclick=function(){clubAct(b.dataset.club);};});el.querySelectorAll('[data-gig]').forEach(function(b){b.onclick=takeGig;});
   if(a==='msgs'&&PH.thread)bindThread(el,PH.thread);el.querySelectorAll('[data-th]').forEach(function(b){b.onclick=function(){PH.thread=b.dataset.th;renderPhone();};});
   if(a==='cab'){var cf=el.querySelector('.ph-cabq');if(cf)cf.onsubmit=function(e){e.preventDefault();var v=cf.querySelector('input').value.trim();if(!v)return;closePhone();cabTo(v);};}
@@ -4723,7 +4730,12 @@ var MIS=[
   {ch:'Big time',t:'Fly to another city',h:'Buy a ticket at the airport, go through security, board at gate B4.',p:'airport',ok:function(w){return w.stats.flights;}},
   {ch:'Tycoon',t:'Become mayor',h:'Elections office, City Hall. You need 900 fame.',p:'hall',ok:function(w){return Object.keys(w.civ).some(function(c){return w.civ[c].mayor;});}},
   {ch:'Tycoon',t:'Buy Valley Farms',h:'Earl won\'t sell cheap. Bring a briefcase and patience.',ok:function(w){return (w.biz.valley||{}).own;}},
-  {ch:'Tycoon',t:'Buy the airport',h:'Airport Authority office, west wall of the terminal. Gloria Vance drives a hard bargain.',p:'airport',ok:function(){return Object.keys(W4().biz).some(function(k){return k.indexOf('airport:')===0&&W4().biz[k].own;});}}];
+  {ch:'Tycoon',t:'Buy the airport',h:'Airport Authority office, west wall of the terminal. Gloria Vance drives a hard bargain.',p:'airport',ok:function(){return Object.keys(W4().biz).some(function(k){return k.indexOf('airport:')===0&&W4().biz[k].own;});}},
+  {ch:'Living large',t:'Eat at a restaurant',h:'Restaurant Row. Ask about the secret menu.',ok:function(w){return (w.stats.meals||0)>0;}},
+  {ch:'Living large',t:'Work your truck\'s window',h:'Park your truck in a striped zone, open Truck options, serve customers yourself.',ok:function(w){return w.f.window;}},
+  {ch:'Living large',t:'Pass a university class',h:'Admissions office at the university.',p:'uni',ok:function(w){return w.cls&&Object.keys(w.cls).length>0;}},
+  {ch:'Living large',t:'Buy a stock',h:'Phone → Stocks.',ok:function(w){return w.mkt&&Object.keys(w.mkt.own).some(function(k){return w.mkt.own[k]>0;});}},
+  {ch:'Living large',t:'Build something on your own land',h:'Buy a lot, then ask Bob for anything. A water park? A race track?',ok:function(w){return Object.keys(w.land).some(function(k){return w.land[k].use==='dev';});}}];
 function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
 var misT=0;
 function updMission(dt){var w=W4();w.f=w.f||{};misT-=dt;if(misT>0)return;misT=.5;var m=misCur();
@@ -5144,16 +5156,21 @@ O.doBox=doBox;
    The model only talks. The game decides every price, sale and ban, so nobody can be sweet-talked
    below their real minimum. If the AI is off, slow or out of quota, the scripted brain answers instead. */
 var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite'],mi:0,hist:{},tok:0};
-var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade';
+var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade',AI_APPID='',AI_SITEKEY='',AC={tok:null,exp:0,p:null,ac:null};
+/* App Check: proves requests come from the real game page (reCAPTCHA v3, invisible) */
+function acToken(){if(!AI_SITEKEY||!AI_APPID)return Promise.resolve(null);if(AC.tok&&AC.exp>now()+60000)return Promise.resolve(AC.tok);if(AC.p)return AC.p;
+  AC.p=Promise.all([import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js')]).then(function(m){var A=m[0],C=m[1],app=A.getApps().filter(function(a){return a.name==='crema-ai';})[0]||A.initializeApp({apiKey:AI_KEY,projectId:AI_PROJ,appId:AI_APPID,authDomain:'lazer-arcade.firebaseapp.com'},'crema-ai');
+    if(!AC.ac)AC.ac=C.initializeAppCheck(app,{provider:new C.ReCaptchaV3Provider(AI_SITEKEY),isTokenAutoRefreshEnabled:true});return C.getToken(AC.ac,false);})
+    .then(function(r){AC.tok=r&&r.token;AC.exp=now()+25*60000;AC.p=null;return AC.tok;}).catch(function(e){AC.p=null;console.warn('App Check',e&&e.message);return null;});return AC.p;}
 function aiOk(){return AI.on&&AI.calls<400&&now()>AI.down&&navigator.onLine!==false;}
 function aiCall(sys,hist,user){
   if(!aiOk())return Promise.resolve(null);AI.calls++;
   var contents=hist.slice(-10).map(function(h){return {role:h.r,parts:[{text:h.t}]};}).concat([{role:'user',parts:[{text:user}]}]);
   var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:400,responseMimeType:'application/json'},
     safetySettings:['HARM_CATEGORY_HARASSMENT','HARM_CATEGORY_HATE_SPEECH','HARM_CATEGORY_SEXUALLY_EXPLICIT','HARM_CATEGORY_DANGEROUS_CONTENT'].map(function(c){return {category:c,threshold:'BLOCK_MEDIUM_AND_ABOVE'};})};
-  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},9000);
-    return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'},body:JSON.stringify(body),signal:ctl?ctl.signal:undefined})
-      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===403?600000:30000);return null;}return r.json();})
+  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},11000);
+    return acToken().then(function(tk){var hd={'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'};if(tk)hd['X-Firebase-AppCheck']=tk;if(AI_APPID)hd['X-Firebase-Appid']=AI_APPID;return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:hd,body:JSON.stringify(body),signal:ctl?ctl.signal:undefined});})
+      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===401||r.status===403?300000:30000);if(r.status===401)AC.tok=null;return null;}return r.json();})
       .then(function(j){if(!j||!j.candidates)return j===null?null:null;var c=j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||'';}).join(''):'';return aiJSON(t);})
       .catch(function(){clearTimeout(tm);AI.down=now()+20000;return null;});};
   return go();}
@@ -5385,6 +5402,7 @@ function storeRoom(){var g=room('store',{name:'Shop',w:14,d:11,floor:floorT(0xd8
   counterTop(g,3.4,-2.2,3.6,0x8a5a3a,0xf4efe6);addCol(ox+1.5,ox+5.3,-2.7,-1.7,'store');bx(.5,.4,.4,toon(0x3a3f4b),2.4,1.3,-2.2,g);
   sp(.3,toon(0x4f9a4a),-6.2,.9,-4.6,g,7);cy(.24,.2,.5,toon(0xc8743a),-6.2,.25,-4.6,g,8);
   ACTS.store.push({x:ox+3.4,z:-.9,r:1.8,label:function(){return CUR_B?'Talk to '+CUR_B.owner:'Counter';},sub:function(){var s=CUR_B&&W4().biz[CUR_B.key]||{};return s.own?'Your manager':CUR_B?'The owner':'';},fn:function(){if(CUR_B)bizTalk(CUR_B,false);}});
+  ACTS.store.push({x:ox-5,z:-4.2,r:1.4,label:function(){var a=speakeasyAct();return a?a.label:'Back shelf';},sub:function(){var a=speakeasyAct();return a?a.sub:'Dusty. Nothing interesting.';},fn:function(){var a=speakeasyAct();if(a)a.fn();else toast('Just dust.','');}});
   ACTS.store.push({x:ox-1.8,z:.6,r:1.7,label:'Browse the shelves',sub:function(){var it=SOUV[CUR_B&&CUR_B.type]||SOUV.shop;return it[0]+' · '+fmt(it[1]);},fn:function(){var t=CUR_B&&CUR_B.type;if(t==='antiques'){antiques(CUR_B);return;}var it=SOUV[t]||SOUV.shop;buyItem(it[0],it[1],t);}});}
 function buyItem(name,price,type){popup(name,'"'+pick(['Good choice.','That one\'s popular.','You\'ll love it.'])+'" · '+fmt(price),[{t:'Buy it · '+fmt(price),fn:function(){if(!pay(price,name))return;var w=W4();w.items=w.items||{};w.items[name]=(w.items[name]||0)+1;
   if(type==='hardware'){note('You have a pry bar','Heavy, rusty, useful. Somebody said the city crews open manholes with these…','good');}else if(type==='barber'){bubble(P.x,2.7,P.z,'Looking sharp','good');addFame(1);}else toast('Bought: '+name,'good');try{sfx.buy();}catch(e){}save();}},{t:'Just looking',cls:'sec'}],'',{who:CUR_B?CUR_B.owner:'Clerk',role:CUR_B?CUR_B.name:'',col:'#8a5a3a'});}
@@ -5924,6 +5942,76 @@ function gigActs(){var g=W4().gig;if(!g||!g.state||P.area!=='city')return [];var
 function extraIncome(){var w=W4();return vendIncome()+clubIncome()+frIncome()+(w.taxi||0)*Math.round(60*tierM());}
 
 
+/* ---------- your garage, money you can feel, and things the tutorial never mentions ---------- */
+
+/* ===== garage: every vehicle you own, where it is, and a valet ===== */
+function garageApp(){var w=W4(),rows=[];veh.forEach(function(v,i){if(v.kind!=='pickup'&&v.kind!=='rental'&&v.kind!=='truck')return;var d=Math.round(Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z)),dm=v.truck?v.truck.dmg:(w.cars[O.city]||{}).dmg;
+    rows.push('<button type="button" class="ph-row" data-veh="'+i+'"><i style="background:'+(v.kind==='truck'?'#e2553f':'#2f5f90')+'">'+(v.kind==='truck'?'🚚':'🛻')+'</i><div><b>'+esc(vehName(v)==='pickup'?'Your pickup':v.truck?v.truck.name:'Rental car')+'</b><small>'+d+' m away'+(dm?' · '+dm+'% damaged':'')+(v.truck?' · stock '+Math.round(v.truck.stock):'')+'</small></div><span>›</span></button>');});
+  w.trucks.filter(function(t){return t.city!==O.city;}).forEach(function(t){rows.push('<div class="ph-msg"><b>'+esc(t.name)+'</b><span>Parked in '+esc(cityName(t.city))+'</span></div>');});
+  return phTop('Garage')+'<div class="ph-list">'+(rows.join('')||'<p class="ph-empty">No vehicles in '+esc(plan.name)+'. Crema Motors sells pickups and food trucks; the airport rents cars.</p>')+'</div>';}
+function vehMenu(v){var c=Math.round(25*tierM()),nm=v.truck?v.truck.name:vehName(v)==='pickup'?'your pickup':'your rental';
+  popup(v.truck?v.truck.name:'Your pickup','Parked '+Math.round(Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z))+' m from you.',[{t:'Walk me there',fn:function(){closePhone();navTo({x:v.g.position.x,z:v.g.position.z,name:nm.charAt(0).toUpperCase()+nm.slice(1)});}},{t:'Valet: bring it here · '+fmt(c),s:'Shows up at the nearest curb in a few seconds',fn:function(){if(P.area!=='city'){toast('Step outside first.','bad');return;}if(!pay(c,'The valet'))return;closePhone();valet(v);}},{t:'Close',cls:'sec'}]);}
+function valet(v){var e=nearestEdge(P.x,P.z);if(!e)return;var a=GR.N[e.e[0]],b=GR.N[e.e[1]],h=Math.atan2(b.x-a.x,b.z-a.z),rx=Math.cos(h),rz=-Math.sin(h),side=((P.x-e.q.x)*rx+(P.z-e.q.z)*rz)>0?1:-1,x=e.q.x+rx*side*(RH-1.5),z=e.q.z+rz*side*(RH-1.5);
+  setTimeout(function(){v.g.position.set(x,0,z);v.g.rotation.y=side>0?h:h+Math.PI;var sv=v.truck||v.sv;if(sv){sv.x=x;sv.z=z;sv.ry=v.g.rotation.y;}save();try{tone(392,.15,'square',.03);tone(392,.15,'square',.03,.25);}catch(err){}bubble(x,2.4,z,'Your keys!','good');},2500);toast('The valet is on the way.','good');}
+
+/* ===== money you can feel ===== */
+var incT=0,lastInc=0;
+function empireRate(){var r=0;for(var c=0;c<Math.max(1,G.cities||1);c++)r+=ventureIncomeCity(c);return r+bizIncome(-1)+kioskAll()+extraIncome();}
+function incTick(dt){if(!O.on)return;incT+=dt;if(incT<10)return;incT=0;var r=empireRate();if(r<1)return;var el=$('#o-inc');if(!el)return;el.innerHTML='<b>+'+fmt(r/6)+'</b><span>empire · '+fmt(r)+'/min</span>';el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
+function awayReport(){var w=W4(),was=w.ledOut;if(was==null)return;var d=(w.led||0)-was;w.ledOut=null;if(d>50)setTimeout(function(){note('While you were behind the counter','Your city businesses made '+fmt(d)+'.','good');},1200);}
+
+/* ===== a stray dog in the park. Feed it enough and it's yours ===== */
+var DOG=null;
+function dogModel(){var g=new T.Group(),c=toon(0xc8955a),d=toon(0x6b4a30);sp(.28,c,0,.42,0,g,8).scale.set(.8,.8,1.4);sp(.2,c,0,.62,.36,g,8);sp(.08,toon(0x1a1a1a),0,.6,.55,g,6);cone(.07,.16,d,.1,.8,.32,g,4);cone(.07,.16,d,-.1,.8,.32,g,4);
+  [[-.13,.2],[.13,.2],[-.13,-.22],[.13,-.22]].forEach(function(q){cyB(.05,.32,c,q[0],0,q[1],g,5);});var tail=cyB(.03,.3,c,0,.45,-.4,g,4);tail.rotation.x=-.8;g.userData.tail=tail;return g;}
+function initDog(){DOG=null;var w=W4(),pk=placeById('park');if(!pk)return;var g=dogModel();dyn.add(g);var owned=w.dog&&w.dog.own;
+  DOG={g:g,x:owned?P.x-1.5:pk.x+3,z:owned?P.z-1.5:pk.z-4,home:{x:pk.x+3,z:pk.z-4},own:owned,t:0};g.position.set(DOG.x,0,DOG.z);if(owned&&w.dog.name)DOG.name=w.dog.name;}
+function dogActs(){if(!DOG||P.area!=='city'||drv)return [];var w=W4(),d=w.dog||{};if(Math.hypot(DOG.x-P.x,DOG.z-P.z)>2.2)return [];
+  if(DOG.own)return [{x:DOG.x,z:DOG.z,r:2.2,label:'Pet '+(d.name||'your dog'),sub:'Good dog',fn:function(){bubble(DOG.x,1.4,DOG.z,'♥','good');try{tone(880,.06,'sine',.03);}catch(e){}addXP(1);}}];
+  return [{x:DOG.x,z:DOG.z,r:2.2,label:'A scruffy dog',sub:(d.fed||0)?'It remembers you. Wag wag.':'It looks hungry',fn:function(){popup('A scruffy dog','No collar. Big eyes. It sniffs your pockets hopefully.',[{t:'Share a snack · $3',fn:function(){if(!pay(3,'A snack'))return;w.dog=w.dog||{fed:0};w.dog.fed++;if(w.dog.fed>=3){w.dog.own=1;DOG.own=true;popup('It\'s following you','The dog has decided you belong to it now. What\'s its name?',[{t:'Name it Biscotti',fn:function(){w.dog.name='Biscotti';DOG.name='Biscotti';save();}}],'',{say:{ph:'Name your dog…',fn:function(t){var n=t.replace(/[^\w '-]/g,'').trim().slice(0,16)||'Biscotti';w.dog.name=n;DOG.name=n;note(n+' joined the family','Your dog follows you everywhere and waits at home while you work. Customers love a shop dog (+fame over time).','good');save();}}});}else{bubble(DOG.x,1.4,DOG.z,'*crunch*','good');}save();}},{t:'Leave it be',cls:'sec'}]);}}];}
+function updDog(dt){var cp=O.cam.position;peds.forEach(function(q){if(TALK)return;var near=Math.hypot(q.x-cp.x,q.z-cp.z)<1.8;if(near!==!!q.camHid){q.camHid=near;q.me.root.visible=!near;}});if(!DOG)return;var g=DOG.g,tx,tz;DOG.t+=dt;if(P.area!=='city'){g.visible=false;return;}g.visible=true;
+  if(DOG.own){var bx2=drv?drv.v.g.position:P.me.root.position;tx=bx2.x-Math.sin(P.ry||0)*1.4+.9;tz=bx2.z-Math.cos(P.ry||0)*1.4;if(Math.random()<.0008)bubble(DOG.x,1.3,DOG.z,pick(['Woof!','*sniff sniff*','Arf!']),'');}else{tx=DOG.home.x+Math.sin(DOG.t*.3)*2.5;tz=DOG.home.z+Math.cos(DOG.t*.23)*1.5;}
+  var dx=tx-DOG.x,dz=tz-DOG.z,d=Math.hypot(dx,dz);if(d>40){DOG.x=tx;DOG.z=tz;}else if(d>.3){var sp2=Math.min(d*2.2,drv?14:5.6);DOG.x+=dx/d*sp2*dt;DOG.z+=dz/d*sp2*dt;g.rotation.y=Math.atan2(dx,dz);}
+  g.position.set(DOG.x,(onBlockSlab(DOG.x,DOG.z)?.2:0)+(d>.3?Math.abs(Math.sin(DOG.t*14))*.06:0),DOG.z);if(g.userData.tail)g.userData.tail.rotation.z=Math.sin(DOG.t*(DOG.own?18:6))*.6;}
+
+/* ===== after dark: Josiah Crema walks Old Town ===== */
+var GHOST=null;
+function initGhost(){GHOST=null;var ob=plan.blocks.filter(function(b){return b.D&&b.D.win==='old';})[0]||plan.blocks.filter(function(b){return b.t==='dist';})[1];if(!ob)return;var me=liteMe({shirt:0xdfe8ff,pant:0xc8d4ee});
+  me.root.traverse(function(o){if(o.material){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.38;o.material.depthWrite=false;}});var hat=cy(.22,.25,.42,toon(0xdfe8ff),0,1.85,0,me.root,10);hat.material.transparent=true;hat.material.opacity=.38;
+  me.root.position.set(ob.x-BW/2+3,0,ob.z+BD/2+.6);dyn.add(me.root);GHOST={me:me,x:me.root.position.x,z:me.root.position.z,b:ob,t:0};}
+function ghostHere(){return GHOST&&(clockH>=23||clockH<1.5);}
+function updGhost(dt){if(!GHOST)return;var on=ghostHere()&&P.area==='city';GHOST.me.root.visible=on;if(!on)return;GHOST.t+=dt;var b=GHOST.b;GHOST.x=b.x-BW/2+3+((Math.sin(GHOST.t*.08)+1)/2)*(BW-6);GHOST.me.root.position.set(GHOST.x,.15+Math.sin(GHOST.t*2)*.08,GHOST.z);GHOST.me.root.rotation.y=Math.cos(GHOST.t*.08)>0?Math.PI/2:-Math.PI/2;animLite(GHOST.me,dt,true,.5);}
+function ghostActs(){if(!ghostHere()||P.area!=='city'||drv)return [];if(Math.hypot(GHOST.x-P.x,GHOST.z-P.z)>2.6)return [];return [{x:GHOST.x,z:GHOST.z,r:2.6,label:'A man in an old-fashioned hat',sub:'He is… slightly see-through',fn:ghostTalk}];}
+function ghostTalk(){var w=W4(),found=w.f&&w.f.lockbox,who={who:'Josiah Crema',role:'Founder, 1871',col:'#9fb4e8'};w.f=w.f||{};w.f.ghost=1;
+  var hint=found?'"You found my little stash. Spend it on something with a good aroma."':'"I hid my first profits where the rain goes. Find the round doors. Bring iron."';
+  popup('Josiah Crema',hint,[{t:'Ask for his blessing',fn:function(){if(w.bless&&now()-w.bless<1800000){popup('Josiah Crema','"Greedy, aren\'t we? One blessing a night."',[{t:'Fair'}],'',who);return;}w.bless=now();var c=Math.round(1871*tierM());cityGain(c);addFame(5);banner('Blessed by the founder','+'+fmt(c)+' · the coffee tastes better tonight','good');save();}},{t:'Back away slowly',cls:'sec'}],'',
+    {who:who.who,role:who.role,col:who.col,say:{ph:'Say something to the ghost…',fn:function(t){if(!aiOk()){popup('Josiah Crema','"'+pick(['In my day, coffee cost a nickel and we were grateful.','Doppio the mule was the finest partner I ever had.','The tunnels remember everything.'])+'"',[{t:'…okay'}],'',{who:who.who,col:who.col,you:t});return;}
+      aiCall('You are the friendly ghost of Josiah Crema, who founded the town in 1871 as a coffee merchant with one sack of beans and a mule named Doppio. You speak in old-fashioned, warm, slightly spooky riddles. You know: your stash is in a lockbox in the storm tunnels under Main Street, reached through a manhole opened with a pry bar. Hint at it in riddles only if asked about treasure; otherwise chat about the old days and coffee. 1-2 sentences. '+SAFE+'\nReturn only JSON: {"say": string}.',[],t.slice(0,240)).then(function(r){popup('Josiah Crema','"'+clean(r&&r.say?r.say:'The tunnels remember everything.').replace(/^"|"$/g,'')+'"',[{t:'…okay'}],'',{who:who.who,role:who.role,col:who.col,you:t});});}}});}
+
+/* ===== the bookshop's red book ===== */
+MENUS.speak=[['Smoked espresso tonic',14],['Vanilla-bourbon cold brew (zero proof)',12],['The house riddle',1]];
+function speakeasyAct(){if(!CUR_B||CUR_B.type!=='books')return null;return {label:'A red book that sticks out',sub:'"The Inkwell" on the spine',fn:function(){fade(function(){var b={key:'speak:'+O.city,name:'The Inkwell (members only)',owner:'Lou',type:'restaurant',cuisine:'speak'};CUR_B=b;AREAS.eatery.name=b.name;drawSign('eatery','THE INKWELL','EST. 1923 · KEEP IT QUIET','#1a1210','#d4af37');placeRoomNpc('eatery',b,4,-3.6,0);P.area='eatery';var A=AREAS.eatery;P.x=A.spawn.x;P.z=A.spawn.z;O.snap=true;updDaylight();var w=W4();w.f=w.f||{};if(!w.f.inkwell){w.f.inkwell=1;addFame(8);save();setTimeout(function(){banner('The Inkwell','A speakeasy behind the bookshelf. Since 1923.','good');},600);}});}};}
+
+/* ===== the clock tower at midnight ===== */
+function clockActs(){var u=placeById('uni');if(!u||P.area!=='city'||drv)return [];var mid=clockH>=23.8||clockH<.4;if(!mid||Math.hypot(u.x-P.x,u.z-P.z)>14)return [];
+  return [{x:P.x,z:P.z,r:14,label:'The clock tower door is open',sub:'It\'s never open',fn:function(){var w=W4();w.f=w.f||{};fade(function(){birdOn();if(!w.f.tower){w.f.tower=1;addFame(6);note('Josiah\'s map','Scratched into the bell: a sketch of the storm tunnels, an X under Main Street, and the words "BRING IRON".','good');save();}});}}];}
+var lastChime=-1;
+function chimeTick(){var h=Math.floor(clockH);if(h!==lastChime){lastChime=h;if(h===0&&O.on&&P.area==='city'){var u=placeById('uni');if(u&&Math.hypot(u.x-P.x,u.z-P.z)<120){try{[523,659,784,1046].forEach(function(f,i){tone(f,.6,'triangle',.04,i*.5);});}catch(e){}toast('Somewhere, a clock tower strikes midnight.','');}}}}
+
+/* ===== a celebrity is in town ===== */
+var CELEB=null,celebT=600;
+function celebTick(dt){if(!O.on||P.area!=='city')return;celebT-=dt;if(CELEB&&now()>CELEB.until){if(CELEB.me.root.parent)CELEB.me.root.parent.remove(CELEB.me.root);CELEB=null;}if(celebT>0||CELEB)return;celebT=rnd(800,1300);
+  var bs=plan.blocks.filter(function(b){return b.t==='dist';}),b=pick(bs);if(!b)return;var me=liteMe({shirt:0x1a1a1a,pant:0x1a1a1a});bx(.34,.07,.04,toon(0x111111),0,1.38,.3,me.head?me.root:me.root);
+  me.root.position.set(b.x-BW/2+4,0,b.z+BD/2-1.2);dyn.add(me.root);var nm=pick(['Jade Monroe','DJ Kettle','Marco Velvet','Sunny Okafor','The Brew Brothers']);CELEB={me:me,b:b,x:me.root.position.x,z:me.root.position.z,t:0,name:nm,until:now()+300000,done:false};
+  note('Celebrity sighting!',nm+' was just spotted in '+blockName(b)+'. If they post about Crema, everyone will come.','good',{label:'Directions',fn:function(){navTo({x:CELEB.x,z:CELEB.z,name:nm});}});}
+function updCeleb(dt){if(!CELEB)return;CELEB.t+=dt;var b=CELEB.b;CELEB.x=b.x-BW/2+4+((Math.sin(CELEB.t*.05)+1)/2)*(BW-8);CELEB.me.root.position.set(CELEB.x,.2,CELEB.z);CELEB.me.root.rotation.y=Math.cos(CELEB.t*.05)>0?Math.PI/2:-Math.PI/2;animLite(CELEB.me,dt,true,.7);}
+function celebActs(){if(!CELEB||CELEB.done||P.area!=='city'||drv||Math.hypot(CELEB.x-P.x,CELEB.z-P.z)>2.6)return [];return [{x:CELEB.x,z:CELEB.z,r:2.6,label:'Talk to '+CELEB.name,sub:'Sunglasses indoors energy',fn:celebTalk}];}
+function celebTalk(){var c=CELEB,who={who:c.name,role:'Very famous',col:'#1a1a1a'};var win=function(){c.done=true;addFame(25);var w=W4();w.celeb=now()+300000;banner(c.name+' posted about Crema!','+25 fame · lines out the door for 5 minutes','good');save();};
+  popup(c.name,'"Oh. Hi. Please don\'t make this weird."',[{t:'Offer a free coffee',s:'Smooth',fn:function(){if(Math.random()<.55)win();else popup(c.name,'"I only drink oat-milk cortados made by monks. Sorry."',[{t:'Fair enough'}],'',who);}},{t:'Ask for a selfie',s:'Risky',fn:function(){if(Math.random()<.25)win();else{c.done=true;popup(c.name,'"Security!" (They walk off.)',[{t:'Oops'}],'bad',who);}}},{t:'Leave them alone',cls:'sec'}],'',
+    {who:who.who,role:who.role,col:who.col,say:{ph:'Pitch them in your own words…',fn:function(t){if(!aiOk()){if(t.length>40&&Math.random()<.6)win();else popup(c.name,'"Cute. Not today."',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});return;}
+      aiCall('You are '+c.name+', a famous, slightly aloof celebrity in a cozy city-builder game. A coffee entrepreneur approaches you on the street. Decide if their pitch is charming, respectful and genuinely appealing enough that you\'d post about their coffee shop. Most pitches fail; creative, funny or kind ones can win. '+SAFE+'\nReturn only JSON: {"say": string, "post": boolean}.',[],t.slice(0,240)).then(function(r){if(r&&r.post){popup(c.name,'"'+clean(r.say).replace(/^"|"$/g,'')+'"',[{t:'!!!',fn:win}],'',{who:who.who,col:who.col,you:t});}else popup(c.name,'"'+clean(r&&r.say?r.say:'Not today.').replace(/^"|"$/g,'')+'"',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});});}}});}
+
+
 /* ---------- build a city ---------- */
 function build(city){
   city=city==null?curLoc().city:city;
@@ -5946,7 +6034,7 @@ function build(city){
   P.me=makeCustomer(district(city,plan.blocks[0].D.id),{staff:acc});P.me.root.scale.setScalar(1.05);sc.add(P.me.root);
   P.hand=new T.Group();P.hand.position.set(0,.72,.5);P.me.root.add(P.hand);carryView();
   P.phone=new T.Group();P.phone.position.set(0,-.42,.1);P.me.arms[1].add(P.phone);rb(.12,.22,.03,.02,toon(0x1a1a1e),0,0,0,P.phone);plane(.1,.18,flat(0x8fd3ff),0,0,.017,P.phone);P.phone.visible=false;
-  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();endTalk(true);TALKERS={};syncBizRev();
+  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
   O.dirty=false;
   if(lowEnd()){sc.fog.far=140;}
 }
@@ -5966,12 +6054,12 @@ O.enter=function(){
   var v=shopVOf(loc);P.area='city';drv=null;
   if(v){var o=L2W(v.lot,DOORX,.5);P.x=o.x;P.z=o.z;P.ry=v.lot.ry;yaw=v.lot.ry;var ar=areaOfX(v.lot.x);if(ar)P.area=ar;swing(v);P.auto=.5;}
   else{var b=blockOf('dist');P.x=b.x;P.z=b.z+BD/2-1.5;yaw=0;}
-  pitch=.38;O.snap=true;P.me.root.visible=true;actKey='';altKey='';resizeO();updDaylight();if(!(W4().f&&W4().f.tut))setTimeout(function(){if(O.on&&P.area==='city'&&!popOpen())playTutorial();},1800);
+  pitch=.38;O.snap=true;P.me.root.visible=true;actKey='';altKey='';resizeO();updDaylight();awayReport();if(!(W4().f&&W4().f.tut))setTimeout(function(){if(O.on&&P.area==='city'&&!popOpen())playTutorial();},1800);
   if(SH&&SH.phase==='open'&&!hasMgr(loc))setTimeout(function(){if(O.on)note('Counter unattended',loc.name+' has no manager, so it\'s CLOSED until you walk back in. The shift clock is paused.','bad');},700);
   else if(SH&&SH.phase==='open')note(staffName(loc,'manager',0)+' has the counter','The shift keeps running while you\'re out. Watch the door: every customer you see go in is real.','good');
   if(!W4().seen2){W4().seen2=1;setTimeout(function(){popup('Welcome to '+plan.name,'This is your town. Everything here is real:\n• The people walking into your shop are the customers at your counter.\n• Walk into any door to go inside. Walk into your shop\'s door to get back behind the counter.\n• Crema Supply Co. sells crates. Haul them back and ingredients cost half.\n• Buy land, then call Bob\'s Builders from your phone.\n• City Hall, the bank, Crema Motors and the airport are all open.\n\nMove: WASD or the stick · Use: E or the yellow button · Look: drag · Phone: P',[{t:'Let\'s go'}]);},500);}
 };
-O.exit=function(noUnpause){if(!O.on)return;if(drv)exitVeh();if(RIDE){if(RIDE.car)dyn.remove(RIDE.car.g);RIDE=null;}O.on=false;document.body.classList.remove('outside','photo');$('#o-ui').hidden=true;$('#o-photo').hidden=true;closePhone();closePop();save();
+O.exit=function(noUnpause){if(!O.on)return;if(G&&G.w4)G.w4.ledOut=G.w4.led||0;if(drv)exitVeh();if(RIDE){if(RIDE.car)dyn.remove(RIDE.car.g);RIDE=null;}O.on=false;document.body.classList.remove('outside','photo');$('#o-ui').hidden=true;$('#o-photo').hidden=true;closePhone();closePop();save();
   if(!noUnpause){paused=true;unpause();if(SH&&SH.phase!=='done')fitCamera();}};
 O.walkOut=function(){if(O.on||!G)return;audioOn();if(!$('#modal').hidden||SHEET)return;fade(function(){O.enter();});};
 function goBackIn(){var loc=curLoc();if(loc.city===O.city){if(P.area==='city'){var v=shopVOf(loc);if(v&&Math.hypot(v.out.x-P.x,v.out.z-P.z)>30){popup('Head back to '+loc.name+'?','It\'s '+Math.round(Math.hypot(v.out.x-P.x,v.out.z-P.z))+' m away.',[{t:'Directions',fn:function(){navTo(placeById('shop:'+loc.id));}},{t:'Take a shortcut',s:'Skip the walk',fn:function(){goInside(loc);}},{t:'Stay out',cls:'sec'}]);return;}}goInside(loc);return;}
@@ -6016,7 +6104,7 @@ O.frame=function(dt){
     if(CUT)updCut(dt);else{if(P.auto>0){P.auto-=dt;var o=V3(Math.sin(P.ry),0,Math.cos(P.ry));P.x+=o.x*dt*2.2;P.z+=o.z*dt*2.2;P.moving=true;animCust(P.me,dt,0,true);P.me.root.position.set(P.x,.2,P.z);P.me.root.rotation.y=P.ry;}
       else if(drv)driveStep(dt);else if(!(RIDE&&!RIDE.wait))moveWalk(dt);updRide(dt);}
     if(P.area==='city'){updTraffic(dt,tl);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
-    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
+    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
     if(!CUT)updCamera(dt);
     updActs();updNav(dt);updLabels(dt);if(frameN++%3===0)drawMini();
     var stn=P.area==='city'?streetAt(P.x,P.z):null,wk=districtName(P.x,P.z)+(stn?' · '+stn:'')+' · '+clockStrH(clockH)+(rain.on?' · rain':'')+(P.carry.length?' · carrying '+P.carry.length:'');if($('#o-where').textContent!==wk)$('#o-where').textContent=wk;

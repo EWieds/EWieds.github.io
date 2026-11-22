@@ -3,16 +3,21 @@
    The model only talks. The game decides every price, sale and ban, so nobody can be sweet-talked
    below their real minimum. If the AI is off, slow or out of quota, the scripted brain answers instead. */
 var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite'],mi:0,hist:{},tok:0};
-var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade';
+var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade',AI_APPID='',AI_SITEKEY='',AC={tok:null,exp:0,p:null,ac:null};
+/* App Check: proves requests come from the real game page (reCAPTCHA v3, invisible) */
+function acToken(){if(!AI_SITEKEY||!AI_APPID)return Promise.resolve(null);if(AC.tok&&AC.exp>now()+60000)return Promise.resolve(AC.tok);if(AC.p)return AC.p;
+  AC.p=Promise.all([import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js')]).then(function(m){var A=m[0],C=m[1],app=A.getApps().filter(function(a){return a.name==='crema-ai';})[0]||A.initializeApp({apiKey:AI_KEY,projectId:AI_PROJ,appId:AI_APPID,authDomain:'lazer-arcade.firebaseapp.com'},'crema-ai');
+    if(!AC.ac)AC.ac=C.initializeAppCheck(app,{provider:new C.ReCaptchaV3Provider(AI_SITEKEY),isTokenAutoRefreshEnabled:true});return C.getToken(AC.ac,false);})
+    .then(function(r){AC.tok=r&&r.token;AC.exp=now()+25*60000;AC.p=null;return AC.tok;}).catch(function(e){AC.p=null;console.warn('App Check',e&&e.message);return null;});return AC.p;}
 function aiOk(){return AI.on&&AI.calls<400&&now()>AI.down&&navigator.onLine!==false;}
 function aiCall(sys,hist,user){
   if(!aiOk())return Promise.resolve(null);AI.calls++;
   var contents=hist.slice(-10).map(function(h){return {role:h.r,parts:[{text:h.t}]};}).concat([{role:'user',parts:[{text:user}]}]);
   var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:400,responseMimeType:'application/json'},
     safetySettings:['HARM_CATEGORY_HARASSMENT','HARM_CATEGORY_HATE_SPEECH','HARM_CATEGORY_SEXUALLY_EXPLICIT','HARM_CATEGORY_DANGEROUS_CONTENT'].map(function(c){return {category:c,threshold:'BLOCK_MEDIUM_AND_ABOVE'};})};
-  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},9000);
-    return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'},body:JSON.stringify(body),signal:ctl?ctl.signal:undefined})
-      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===403?600000:30000);return null;}return r.json();})
+  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},11000);
+    return acToken().then(function(tk){var hd={'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'};if(tk)hd['X-Firebase-AppCheck']=tk;if(AI_APPID)hd['X-Firebase-Appid']=AI_APPID;return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:hd,body:JSON.stringify(body),signal:ctl?ctl.signal:undefined});})
+      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===401||r.status===403?300000:30000);if(r.status===401)AC.tok=null;return null;}return r.json();})
       .then(function(j){if(!j||!j.candidates)return j===null?null:null;var c=j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||'';}).join(''):'';return aiJSON(t);})
       .catch(function(){clearTimeout(tm);AI.down=now()+20000;return null;});};
   return go();}

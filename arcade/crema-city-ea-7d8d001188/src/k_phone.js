@@ -2,7 +2,7 @@
 /* ---------- your phone ---------- */
 var PH={open:false,app:'home',call:null,ring:null};
 function phoneOpen(){return PH.open;}
-var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['tut','How to play','#e2553f','▶']];
+var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['garage','Garage','#2f5f90','🚗'],['tut','How to play','#e2553f','▶']];
 function openPhone(app){PH.open=true;PH.app=app||'home';if(app!=='msgs')PH.thread=null;$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');renderPhone();try{sfx.pick();}catch(e){}if(app==='msgs'){W4().unread=0;badge();}}
 O.openPhone=openPhone;
 function closePhone(){PH.open=false;$('#o-phone').classList.add('away');setTimeout(function(){if(!PH.open)$('#o-phone').hidden=true;},250);stopRing();}
@@ -12,6 +12,7 @@ function renderPhone(){
   if(a==='home'){h='<div class="ph-wall"><div class="ph-clock">'+esc(clockStrH(clockH))+'</div><div class="ph-date">'+esc(plan?plan.name:'')+' · '+(rain.on?'Rain':'Clear')+'</div></div><div class="ph-grid">'+
     APPS.map(function(x){return '<button type="button" class="ph-app" data-go="'+x[0]+'"><i style="background:'+x[2]+'">'+x[3]+'</i><span>'+x[1]+'</span>'+(x[0]==='msgs'&&W4().unread?'<em>'+W4().unread+'</em>':'')+'</button>';}).join('')+'</div>';}
   else if(a==='calls'){h=phTop('Contacts')+'<div class="ph-list">'+contacts().map(function(c,i){return '<button type="button" class="ph-row" data-call="'+i+'"><i style="background:'+c.col+'">'+esc(c.n.charAt(0))+'</i><div><b>'+esc(c.n)+'</b><small>'+esc(c.r)+'</small></div><span>☎</span></button>';}).join('')+'</div>';}
+  else if(a==='garage'){h=garageApp();PH.vl=veh.slice();}
   else if(a==='stk'){h=stockApp();}else if(a==='club'){h=clubApp();}else if(a==='gig'){h=gigApp();}
   else if(a==='msgs'&&PH.thread){h=threadHTML(PH.thread);}
   else if(a==='msgs'){var ns=W4().notes,TT=texts(),tk=Object.keys(TT).sort(function(x,y){var a1=TT[x].m[TT[x].m.length-1],b1=TT[y].m[TT[y].m.length-1];return (b1?b1.t:0)-(a1?a1.t:0);});h=phTop('Messages')+(tk.length?'<div class="ph-list">'+tk.map(function(k){var th=TT[k],lm=th.m[th.m.length-1];return '<button type="button" class="ph-row" data-th="'+esc(k)+'"><i style="background:#2f8fd0">'+esc(k.charAt(0))+'</i><div><b>'+esc(k)+(th.unread?' •':'')+'</b><small>'+esc(lm?(lm.me?'You: ':'')+lm.x:'')+'</small></div><span>›</span></button>';}).join('')+'</div><div class="ph-sub">Alerts</div>':'')+'<div class="ph-list">'+(ns.length?ns.slice(0,40).map(function(n){return '<div class="ph-msg '+(n.kind||'')+'"><b>'+esc(n.title)+'</b><span>'+esc(n.text)+'</span><small>'+ago(n.t)+'</small></div>';}).join(''):'<p class="ph-empty">No messages yet.</p>')+'</div>';W4().unread=0;badge();}
@@ -25,6 +26,7 @@ function renderPhone(){
   el.innerHTML=h;
   el.querySelectorAll('[data-bz]').forEach(function(bt){bt.onclick=function(){var b=PH.bs[+bt.dataset.bz];dial({n:b.name,col:'#8a5a3a',fn:function(){bizTalk(b,true);}});};});
   el.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){var g=b.dataset.go;if(g==='fly'){closePhone();flightsDesk(false);return;}if(g==='tut'){closePhone();if(P.area!=='city'){toast('Step outside to watch it.','');return;}playTutorial();return;}if(g==='emp'){closePhone();openEmpire();return;}if(g==='cam'){closePhone();photoMode(true);return;}PH.app=g;renderPhone();if(g==='maps')drawPhoneMap();};});
+  el.querySelectorAll('[data-veh]').forEach(function(b){b.onclick=function(){var v=PH.vl&&PH.vl[+b.dataset.veh];if(v)vehMenu(v);};});
   el.querySelectorAll('[data-stk]').forEach(function(b){b.onclick=function(){stockTrade(b.dataset.stk);};});el.querySelectorAll('[data-club]').forEach(function(b){b.onclick=function(){clubAct(b.dataset.club);};});el.querySelectorAll('[data-gig]').forEach(function(b){b.onclick=takeGig;});
   if(a==='msgs'&&PH.thread)bindThread(el,PH.thread);el.querySelectorAll('[data-th]').forEach(function(b){b.onclick=function(){PH.thread=b.dataset.th;renderPhone();};});
   if(a==='cab'){var cf=el.querySelector('.ph-cabq');if(cf)cf.onsubmit=function(e){e.preventDefault();var v=cf.querySelector('input').value.trim();if(!v)return;closePhone();cabTo(v);};}

@@ -153,3 +153,7 @@ body.window #o-acts,body.window #o-joy,body.window #o-goal{visibility:hidden}
 body.tut::after{content:'';position:fixed;left:0;right:0;bottom:0;height:42vh;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none;z-index:5}
 .ph-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.ph-app{min-width:0}.ph-app span{max-width:100%;text-align:center;line-height:1.15}.ph-app i{width:48px;height:48px}
 body.tut #hud,body.tut #o-ui>*:not(#o-tut){visibility:hidden}
+#o-inc{position:absolute;left:14px;top:calc(env(safe-area-inset-top) + 64px);background:#fff6e6;border:2px solid #2a1a12;border-radius:12px;padding:3px 9px;font:800 12px system-ui;color:#2fa860;opacity:0;pointer-events:none;display:flex;gap:6px;align-items:baseline}
+#o-inc span{color:#8a6a54;font-weight:700;font-size:11px}#o-inc.pop{animation:incp 3.2s ease-out}
+@keyframes incp{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+body.incut #o-inc,body.talking #o-inc{display:none}
