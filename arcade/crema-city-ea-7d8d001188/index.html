@@ -5103,7 +5103,7 @@ function findPlace(t){var n=norm(t),w=W4();
 /* ----- the "do anything" box ----- */
 var DO_EX=['take me to the airport','buy a house','call Earl','find FreshMart','show me the whole city','I want to build something','call a cab to the pier','go home','get a loan','fly somewhere','order supplies'];
 function doBox(){var ex=DO_EX.slice().sort(function(){return Math.random()-.5;}).slice(0,4);
-  popup('What do you want to do?','Type anything. Places, people, things to buy, things to build.',ex.map(function(e){return {t:'"'+e+'"',fn:function(){doCmd(e);}};}).concat([{t:'Close',cls:'sec'}]),'',{say:{ph:'e.g. "buy the bakery" or "where is city hall"',fn:function(t){if(!doCmd(t))popup('Hmm','I couldn\'t work out "'+t+'". Try a place ("the bank"), a person ("call Dana"), or an action ("buy a house", "build", "fly", "go home").',[{t:'Try again',fn:doBox},{t:'OK',cls:'sec'}]);}}});
+  popup('What do you want to do?','Type anything. Places, people, things to buy, things to build.',ex.map(function(e){return {t:'"'+e+'"',fn:function(){doCmd(e);}};}).concat([{t:'Close',cls:'sec'}]),'',{say:{ph:'e.g. "buy the bakery" or "where is city hall"',fn:function(t){if(!doCmd(t))aiCommand(t);}}});
   if(!matchMedia('(pointer:coarse)').matches)setTimeout(function(){var i=document.querySelector('#o-pop .pp-say input');if(i)i.focus();},30);}
 function goTo(p,msg){if(P.area!=='city'){toast('Head outside first.');return true;}navTo(p);toast(msg||('Heading to '+p.name),'good');return true;}
 function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))return true;
@@ -5150,6 +5150,12 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
   var pl=findPlace(t);if(pl&&(pl.sc>=1.2||/\b(go|take|where|find|directions|navigate|head|walk|drive|show)\b/.test(n)))return goTo(pl);
   return false;}
 O.doBox=doBox;
+/* when the words don't match anything, the AI works out what you meant and does it (or tells you how) */
+var CMD_EX=['take me to <place>','call <person or business>','buy a house','buy <business name>','buy land','build something on my land','fly to another city','call a cab to <place>','catch the bus','show me the whole city','get a loan','order supplies','hire staff','throw a party','go home','open the stock market','start a franchise','buy a taxi medallion','open crema club','find a gig','enroll in a class','find a lawyer','market report'];
+function aiCommand(t){var fail=function(){popup('Hmm','I couldn\'t work out "'+t+'". Try a place ("the bank"), a person ("call Dana"), or an action ("buy a house", "build", "fly", "go home").',[{t:'Try again',fn:doBox},{t:'OK',cls:'sec'}]);};
+  if(!aiOk()){fail();return;}thinking('Working on it',t,{who:'Crema assistant',col:'#2f8fd0'});var tok=AI.tok,pl=places.filter(function(p){return !areaOfX(p.x);}).map(function(p){return p.name;}).slice(0,60).join('; ');
+  aiCall('You are the in-game assistant of a cozy city-builder coffee tycoon game. Turn the player\'s request into ONE command the game understands, chosen from these patterns: '+CMD_EX.join(' | ')+'. Places in town: '+pl+'. '+cityFacts()+' If the request is advice ("how do I make money fast?"), answer briefly with concrete in-game suggestions and set cmd to null. '+SAFE+'\nReturn only JSON: {"cmd": string|null, "say": short friendly line}.',[],t.slice(0,240)).then(function(r){if(tok!==AI.tok)return;
+    if(!r){closePop();fail();return;}closePop();if(r.cmd&&doCmd(String(r.cmd))){if(r.say)toast(clean(r.say).slice(0,90),'good');return;}popup('Crema assistant',clean(r.say||'Not sure how to do that yet.'),[{t:'Ask something else',fn:doBox},{t:'OK',cls:'sec'}],'',{you:t});});}
 
 
 /* ---------- real AI people (Gemini through Firebase AI Logic) ----------
