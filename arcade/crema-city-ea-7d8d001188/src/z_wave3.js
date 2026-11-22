@@ -65,7 +65,7 @@ function devLot(lot,b,own,D){var d=own.dev||{},r=seeded(hashS(lot.key)),a=d.arch
 
 /* ===== stocks ===== */
 var STK={CRMA:['Crema Coffee Co.',40,.018],BEAN:['Valley Farms Co-op',22,.012],TACO:['Taco Tornado Inc.',15,.03],AIR:['Air Crema',68,.02],MALL:['Galleria REIT',31,.009],GOLD:['Brewport Gold',12,.045],NWND:['Northwind Labs',140,.035],SODA:['Fizzy Pop Bottling',9,.025]};
-function mkt(){var w=W4();if(!w.mkt){w.mkt={px:{},hist:{},own:{},cost:{}};Object.keys(STK).forEach(function(k){w.mkt.px[k]=STK[k][1];w.mkt.hist[k]=[STK[k][1]];});}return w.mkt;}
+function mkt(){var w=W4();if(!w.mkt){w.mkt={px:{},hist:{},own:{},cost:{}};}Object.keys(STK).forEach(function(k){if(w.mkt.px[k]==null){w.mkt.px[k]=STK[k][1];w.mkt.hist[k]=[STK[k][1]];}});return w.mkt;}
 var mktT=0;
 function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(STK).forEach(function(k){var v=STK[k][2],drift=k==='CRMA'?.002+Math.min(.004,ownedBiz().length*.0004):k==='TACO'&&rtrucks.length<1?-.003:.0004;
   var shock=0;if(Math.random()<.004){shock=(Math.random()<.5?-1:1)*rnd(.06,.16);if(O.on)note(k+(shock>0?' jumps ':' drops ')+Math.round(Math.abs(shock)*100)+'%',pick(shock>0?[STK[k][0]+' beat earnings.','Analysts upgraded '+STK[k][0]+'.','A viral video about '+STK[k][0]+'.']:[STK[k][0]+' missed earnings.','A recall at '+STK[k][0]+'.','The CEO of '+STK[k][0]+' said something weird on TV.']),shock>0?'good':'bad');}
@@ -73,8 +73,8 @@ function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(ST
 function stockApp(){var m=mkt(),pv=0;Object.keys(m.own).forEach(function(k){pv+=(m.own[k]||0)*m.px[k];});
   return phTop('Stocks')+'<div class="ph-card"><small>Portfolio</small><b>'+fmt(pv)+'</b><small>Cash</small><b>'+fmt(G.cash)+'</b></div><div class="ph-list">'+Object.keys(STK).map(function(k){var h=m.hist[k],ch=h.length>1?(h[h.length-1]/h[Math.max(0,h.length-11)]-1)*100:0,own=m.own[k]||0;
     return '<button type="button" class="ph-row" data-stk="'+k+'"><i style="background:'+(ch>=0?'#2fa860':'#e2553f')+'">'+k.charAt(0)+'</i><div><b>'+k+' · '+fmt(m.px[k])+'</b><small>'+esc(STK[k][0])+(own?' · you own '+own:'')+'</small></div><span style="color:'+(ch>=0?'#2fa860':'#e2553f')+'">'+(ch>=0?'+':'')+ch.toFixed(1)+'%</span></button>';}).join('')+'</div>';}
-function stockTrade(k){var m=mkt(),px=m.px[k],own=m.own[k]||0,lots=[10,100,1000].map(function(n){return Math.round(n*Math.max(1,tierM()));});
-  popup(k+' · '+STK[k][0],'Price '+fmt(px)+(own?'\nYou own '+own+' shares (avg '+fmt(m.cost[k]||px)+')':''),lots.map(function(n){return {t:'Buy '+n+' · '+fmt(n*px),fn:function(){if(!pay(n*px,'Shares'))return;m.cost[k]=((m.cost[k]||0)*own+n*px)/(own+n);m.own[k]=own+n;insiderCheck(k);save();toast('Bought '+n+' '+k,'good');}};})
+function stockTrade(k){var m=mkt(),px=m.px[k],own=m.own[k]||0,lots=(k==='BIGB'?[100,1000,10000]:[10,100,1000]).map(function(n){return k==='BIGB'?n:Math.round(n*Math.max(1,tierM()));});
+  popup(k+' · '+STK[k][0],'Price '+fmt(px)+(k==='BIGB'?'\nOwn more than 50% ('+(BB_SHARES/2+1)+' shares) and the company is yours. You own '+Math.round(bbPct()*1000)/10+'%.':'')+(own?'\nYou own '+own+' shares (avg '+fmt(m.cost[k]||px)+')':''),lots.map(function(n){return {t:'Buy '+n+' · '+fmt(n*px),fn:function(){if(!pay(n*px,'Shares'))return;m.cost[k]=((m.cost[k]||0)*own+n*px)/(own+n);m.own[k]=own+n;if(k==='BIGB'){m.px[k]*=1+n/250000;bbAfterTrade();}insiderCheck(k);save();toast('Bought '+n+' '+k,'good');}};})
     .concat(own?[{t:'Sell all '+own+' · '+fmt(own*px),fn:function(){G.cash+=own*px;var gain=own*(px-(m.cost[k]||px));m.own[k]=0;insiderCheck(k);save();toast((gain>=0?'Profit ':'Loss ')+fmt(Math.abs(gain)),gain>=0?'good':'bad');}}]:[]).concat([{t:'Done',cls:'sec'}]));}
 function insiderCheck(k){var w=W4();if(w.tip&&w.tip.k===k&&now()-w.tip.t<120000&&Math.random()<.3){w.tip=null;summon('Insider trading','The SEC noticed some suspiciously well-timed trades in '+k+'.',Math.round(20000*tierM()));}}
 

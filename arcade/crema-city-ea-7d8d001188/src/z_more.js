@@ -67,3 +67,17 @@ function celebTalk(){var c=CELEB,who={who:c.name,role:'Very famous',col:'#1a1a1a
   popup(c.name,'"Oh. Hi. Please don\'t make this weird."',[{t:'Offer a free coffee',s:'Smooth',fn:function(){if(Math.random()<.55)win();else popup(c.name,'"I only drink oat-milk cortados made by monks. Sorry."',[{t:'Fair enough'}],'',who);}},{t:'Ask for a selfie',s:'Risky',fn:function(){if(Math.random()<.25)win();else{c.done=true;popup(c.name,'"Security!" (They walk off.)',[{t:'Oops'}],'bad',who);}}},{t:'Leave them alone',cls:'sec'}],'',
     {who:who.who,role:who.role,col:who.col,say:{ph:'Pitch them in your own words…',fn:function(t){if(!aiOk()){if(t.length>40&&Math.random()<.6)win();else popup(c.name,'"Cute. Not today."',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});return;}
       aiCall('You are '+c.name+', a famous, slightly aloof celebrity in a cozy city-builder game. A coffee entrepreneur approaches you on the street. Decide if their pitch is charming, respectful and genuinely appealing enough that you\'d post about their coffee shop. Most pitches fail; creative, funny or kind ones can win. '+SAFE+'\nReturn only JSON: {"say": string, "post": boolean}.',[],t.slice(0,240)).then(function(r){if(r&&r.post){popup(c.name,'"'+clean(r.say).replace(/^"|"$/g,'')+'"',[{t:'!!!',fn:win}],'',{who:who.who,col:who.col,you:t});}else popup(c.name,'"'+clean(r&&r.say?r.say:'Not today.').replace(/^"|"$/g,'')+'"',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});});}}});}
+
+/* ===== the nemesis: Victor Steele and Big Bean Co. You can buy him out from the stock market ===== */
+STK.BIGB=['Big Bean Co.',85,.015];PERSONA['Victor Steele']='Victor Steele, the smug CEO of Big Bean Co., the giant corporate coffee chain. Arrogant, witty, condescending, secretly worried about the player\'s growth. Never admits defeat until he has actually lost his company.';
+var BB_SHARES=100000;
+function bbPct(){var m=mkt();return (m.own.BIGB||0)/BB_SHARES;}
+var vicT=400;
+function victorTick(dt){var w=W4();if(!O.on||G.lvl<8||w.bigbean)return;vicT-=dt;if(vicT>0)return;vicT=rnd(700,1200);var p=bbPct();
+  var lines=p>.25?['Somebody keeps buying my shares. If that\'s you… stop. It\'s embarrassing.','My board is asking questions about you. I don\'t like questions.']:
+    w.f.vic?['Saw your little shop. Adorable. We\'re opening three across the street.','How\'s the "artisan" thing going? We sell more coffee before 9am than you do all year.','Big Bean doesn\'t compete. Big Bean replaces.','Fun fact: I own the building next to yours. Rent\'s going up.']:['Hello, coffee kid. Victor Steele, CEO of Big Bean Co. Enjoy your little shop while it lasts.'];
+  w.f.vic=1;textIn('Victor Steele',pick(lines));}
+function bbAfterTrade(){var w=W4();if(w.bigbean)return;var p=bbPct();if(p>.5){w.bigbean=1;var m=mkt();addFame(80);banner('HOSTILE TAKEOVER','You own Big Bean Co.','good');
+  note('Big Bean Co. is yours','Victor is out. Every Big Bean café now pays you about '+fmt(bbRev())+'/min.','good');setTimeout(function(){textIn('Victor Steele','…Well played. I\'ll be at the beach. Don\'t call me.');},4000);save();}
+  else if(p>.25&&!w.f.bb25){w.f.bb25=1;setTimeout(function(){textIn('Victor Steele','You own '+Math.round(p*100)+'% of my company?! Who ARE you?');},2000);save();}}
+function bbRev(){return Math.round(4200*tierM());}

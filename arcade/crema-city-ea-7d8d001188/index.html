@@ -3814,7 +3814,7 @@ function econTick(dt){
   if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();clubTick(dt);incTick(dt);chimeTick();celebTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -5777,7 +5777,7 @@ function devLot(lot,b,own,D){var d=own.dev||{},r=seeded(hashS(lot.key)),a=d.arch
 
 /* ===== stocks ===== */
 var STK={CRMA:['Crema Coffee Co.',40,.018],BEAN:['Valley Farms Co-op',22,.012],TACO:['Taco Tornado Inc.',15,.03],AIR:['Air Crema',68,.02],MALL:['Galleria REIT',31,.009],GOLD:['Brewport Gold',12,.045],NWND:['Northwind Labs',140,.035],SODA:['Fizzy Pop Bottling',9,.025]};
-function mkt(){var w=W4();if(!w.mkt){w.mkt={px:{},hist:{},own:{},cost:{}};Object.keys(STK).forEach(function(k){w.mkt.px[k]=STK[k][1];w.mkt.hist[k]=[STK[k][1]];});}return w.mkt;}
+function mkt(){var w=W4();if(!w.mkt){w.mkt={px:{},hist:{},own:{},cost:{}};}Object.keys(STK).forEach(function(k){if(w.mkt.px[k]==null){w.mkt.px[k]=STK[k][1];w.mkt.hist[k]=[STK[k][1]];}});return w.mkt;}
 var mktT=0;
 function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(STK).forEach(function(k){var v=STK[k][2],drift=k==='CRMA'?.002+Math.min(.004,ownedBiz().length*.0004):k==='TACO'&&rtrucks.length<1?-.003:.0004;
   var shock=0;if(Math.random()<.004){shock=(Math.random()<.5?-1:1)*rnd(.06,.16);if(O.on)note(k+(shock>0?' jumps ':' drops ')+Math.round(Math.abs(shock)*100)+'%',pick(shock>0?[STK[k][0]+' beat earnings.','Analysts upgraded '+STK[k][0]+'.','A viral video about '+STK[k][0]+'.']:[STK[k][0]+' missed earnings.','A recall at '+STK[k][0]+'.','The CEO of '+STK[k][0]+' said something weird on TV.']),shock>0?'good':'bad');}
@@ -5785,8 +5785,8 @@ function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(ST
 function stockApp(){var m=mkt(),pv=0;Object.keys(m.own).forEach(function(k){pv+=(m.own[k]||0)*m.px[k];});
   return phTop('Stocks')+'<div class="ph-card"><small>Portfolio</small><b>'+fmt(pv)+'</b><small>Cash</small><b>'+fmt(G.cash)+'</b></div><div class="ph-list">'+Object.keys(STK).map(function(k){var h=m.hist[k],ch=h.length>1?(h[h.length-1]/h[Math.max(0,h.length-11)]-1)*100:0,own=m.own[k]||0;
     return '<button type="button" class="ph-row" data-stk="'+k+'"><i style="background:'+(ch>=0?'#2fa860':'#e2553f')+'">'+k.charAt(0)+'</i><div><b>'+k+' · '+fmt(m.px[k])+'</b><small>'+esc(STK[k][0])+(own?' · you own '+own:'')+'</small></div><span style="color:'+(ch>=0?'#2fa860':'#e2553f')+'">'+(ch>=0?'+':'')+ch.toFixed(1)+'%</span></button>';}).join('')+'</div>';}
-function stockTrade(k){var m=mkt(),px=m.px[k],own=m.own[k]||0,lots=[10,100,1000].map(function(n){return Math.round(n*Math.max(1,tierM()));});
-  popup(k+' · '+STK[k][0],'Price '+fmt(px)+(own?'\nYou own '+own+' shares (avg '+fmt(m.cost[k]||px)+')':''),lots.map(function(n){return {t:'Buy '+n+' · '+fmt(n*px),fn:function(){if(!pay(n*px,'Shares'))return;m.cost[k]=((m.cost[k]||0)*own+n*px)/(own+n);m.own[k]=own+n;insiderCheck(k);save();toast('Bought '+n+' '+k,'good');}};})
+function stockTrade(k){var m=mkt(),px=m.px[k],own=m.own[k]||0,lots=(k==='BIGB'?[100,1000,10000]:[10,100,1000]).map(function(n){return k==='BIGB'?n:Math.round(n*Math.max(1,tierM()));});
+  popup(k+' · '+STK[k][0],'Price '+fmt(px)+(k==='BIGB'?'\nOwn more than 50% ('+(BB_SHARES/2+1)+' shares) and the company is yours. You own '+Math.round(bbPct()*1000)/10+'%.':'')+(own?'\nYou own '+own+' shares (avg '+fmt(m.cost[k]||px)+')':''),lots.map(function(n){return {t:'Buy '+n+' · '+fmt(n*px),fn:function(){if(!pay(n*px,'Shares'))return;m.cost[k]=((m.cost[k]||0)*own+n*px)/(own+n);m.own[k]=own+n;if(k==='BIGB'){m.px[k]*=1+n/250000;bbAfterTrade();}insiderCheck(k);save();toast('Bought '+n+' '+k,'good');}};})
     .concat(own?[{t:'Sell all '+own+' · '+fmt(own*px),fn:function(){cityGain(own*px);var gain=own*(px-(m.cost[k]||px));m.own[k]=0;insiderCheck(k);save();toast((gain>=0?'Profit ':'Loss ')+fmt(Math.abs(gain)),gain>=0?'good':'bad');}}]:[]).concat([{t:'Done',cls:'sec'}]));}
 function insiderCheck(k){var w=W4();if(w.tip&&w.tip.k===k&&now()-w.tip.t<120000&&Math.random()<.3){w.tip=null;summon('Insider trading','The SEC noticed some suspiciously well-timed trades in '+k+'.',Math.round(20000*tierM()));}}
 
@@ -5939,7 +5939,7 @@ function gigApp(){var w=W4(),g=w.gig;return phTop('CremaDash')+(g&&g.state?'<div
 function takeGig(){var rs=BUS.filter(function(b){return isEatery(b)&&b.door;}),hs=HOMES.filter(function(h){return h.door;});if(!rs.length||!hs.length){toast('No gigs nearby.','');return;}var a=pick(rs),b=pick(hs),pa=placeById('biz:'+a.key),pb=placeById('home:'+b.key);
   W4().gig={state:'pick',what:pick(['2 burritos','A family pizza','Sushi for 4','Pad thai','A brisket plate']),from:{x:pa.x,z:pa.z},fromN:a.name,to:{x:pb.x,z:pb.z},toN:b.name,t:now(),pay:Math.round(rnd(25,70)*tierM())};closePhone();navTo({x:pa.x,z:pa.z,name:a.name});note('Gig accepted','Pick up at '+a.name+'.','good');save();}
 function gigActs(){var g=W4().gig;if(!g||!g.state||P.area!=='city')return [];var p=g.state==='pick'?g.from:g.to;return [{x:p.x,z:p.z,r:2.6,label:g.state==='pick'?'Pick up '+g.what:'Deliver '+g.what,sub:'CremaDash · '+fmt(g.pay),fn:function(){if(g.state==='pick'){g.state='drop';g.t2=now();navTo({x:g.to.x,z:g.to.z,name:g.toN});toast('Picked up. Go!','good');}else{var fast=(now()-g.t2)<60000,tip=fast?Math.round(g.pay*.4):0;cityGain(g.pay+tip);W4().gig=null;banner('Delivered',fmt(g.pay)+(tip?' + '+fmt(tip)+' tip':''),'good');addXP(10);}save();}}];}
-function extraIncome(){var w=W4();return vendIncome()+clubIncome()+frIncome()+(w.taxi||0)*Math.round(60*tierM());}
+function extraIncome(){var w=W4();return vendIncome()+clubIncome()+frIncome()+(w.taxi||0)*Math.round(60*tierM())+(w.bigbean?bbRev():0);}
 
 
 /* ---------- your garage, money you can feel, and things the tutorial never mentions ---------- */
@@ -6010,6 +6010,20 @@ function celebTalk(){var c=CELEB,who={who:c.name,role:'Very famous',col:'#1a1a1a
   popup(c.name,'"Oh. Hi. Please don\'t make this weird."',[{t:'Offer a free coffee',s:'Smooth',fn:function(){if(Math.random()<.55)win();else popup(c.name,'"I only drink oat-milk cortados made by monks. Sorry."',[{t:'Fair enough'}],'',who);}},{t:'Ask for a selfie',s:'Risky',fn:function(){if(Math.random()<.25)win();else{c.done=true;popup(c.name,'"Security!" (They walk off.)',[{t:'Oops'}],'bad',who);}}},{t:'Leave them alone',cls:'sec'}],'',
     {who:who.who,role:who.role,col:who.col,say:{ph:'Pitch them in your own words…',fn:function(t){if(!aiOk()){if(t.length>40&&Math.random()<.6)win();else popup(c.name,'"Cute. Not today."',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});return;}
       aiCall('You are '+c.name+', a famous, slightly aloof celebrity in a cozy city-builder game. A coffee entrepreneur approaches you on the street. Decide if their pitch is charming, respectful and genuinely appealing enough that you\'d post about their coffee shop. Most pitches fail; creative, funny or kind ones can win. '+SAFE+'\nReturn only JSON: {"say": string, "post": boolean}.',[],t.slice(0,240)).then(function(r){if(r&&r.post){popup(c.name,'"'+clean(r.say).replace(/^"|"$/g,'')+'"',[{t:'!!!',fn:win}],'',{who:who.who,col:who.col,you:t});}else popup(c.name,'"'+clean(r&&r.say?r.say:'Not today.').replace(/^"|"$/g,'')+'"',[{t:'OK'}],'',{who:who.who,col:who.col,you:t});});}}});}
+
+/* ===== the nemesis: Victor Steele and Big Bean Co. You can buy him out from the stock market ===== */
+STK.BIGB=['Big Bean Co.',85,.015];PERSONA['Victor Steele']='Victor Steele, the smug CEO of Big Bean Co., the giant corporate coffee chain. Arrogant, witty, condescending, secretly worried about the player\'s growth. Never admits defeat until he has actually lost his company.';
+var BB_SHARES=100000;
+function bbPct(){var m=mkt();return (m.own.BIGB||0)/BB_SHARES;}
+var vicT=400;
+function victorTick(dt){var w=W4();if(!O.on||G.lvl<8||w.bigbean)return;vicT-=dt;if(vicT>0)return;vicT=rnd(700,1200);var p=bbPct();
+  var lines=p>.25?['Somebody keeps buying my shares. If that\'s you… stop. It\'s embarrassing.','My board is asking questions about you. I don\'t like questions.']:
+    w.f.vic?['Saw your little shop. Adorable. We\'re opening three across the street.','How\'s the "artisan" thing going? We sell more coffee before 9am than you do all year.','Big Bean doesn\'t compete. Big Bean replaces.','Fun fact: I own the building next to yours. Rent\'s going up.']:['Hello, coffee kid. Victor Steele, CEO of Big Bean Co. Enjoy your little shop while it lasts.'];
+  w.f.vic=1;textIn('Victor Steele',pick(lines));}
+function bbAfterTrade(){var w=W4();if(w.bigbean)return;var p=bbPct();if(p>.5){w.bigbean=1;var m=mkt();addFame(80);banner('HOSTILE TAKEOVER','You own Big Bean Co.','good');
+  note('Big Bean Co. is yours','Victor is out. Every Big Bean café now pays you about '+fmt(bbRev())+'/min.','good');setTimeout(function(){textIn('Victor Steele','…Well played. I\'ll be at the beach. Don\'t call me.');},4000);save();}
+  else if(p>.25&&!w.f.bb25){w.f.bb25=1;setTimeout(function(){textIn('Victor Steele','You own '+Math.round(p*100)+'% of my company?! Who ARE you?');},2000);save();}}
+function bbRev(){return Math.round(4200*tierM());}
 
 
 /* ---------- build a city ---------- */
