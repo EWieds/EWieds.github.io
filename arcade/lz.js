@@ -262,6 +262,10 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
    Progress (which days you played, what you played, what you've unlocked or claimed) lives locally per owner
    and, when signed in, on your leaderboard row as "prog" so it follows the account. */
 const today = (d) => { const x = d || new Date(); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+// Candle-lighting Date for an event today (local), from its "candleLighting" HH:MM, else null.
+function candleAt(e, base) { if (!e || !e.candleLighting) return null; const p = String(e.candleLighting).split(":"); const c = base ? new Date(base) : new Date(); c.setHours(+p[0] || 0, +p[1] || 0, 0, 0); return c; }
+// Sundown-aware day for an event: after candle-lighting, the Jewish day has rolled to tomorrow.
+function eventDay(e) { const c = candleAt(e); if (c && new Date() >= c) { const t = new Date(); t.setDate(t.getDate() + 1); return today(t); } return today(); }
 const dayNum = (s) => Math.round(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5);
 let extrasP = null;
 function extras() {
@@ -400,13 +404,14 @@ async function progress() {
     return Object.assign({}, e, {
       live: e.start <= day, daysLeft: dayNum(e.end) - dayNum(day), startsIn: dayNum(e.start) - dayNum(day),
       missions: (e.missions || []).map((m) => ({ ...m, have: Math.min(measure(m.type, w, m.target, n), m.target), done: !!p.ach["ev:" + e.id + ":" + m.id] })),
-      doors: e.calendar ? e.calendar.doors.map((d, i) => ({ ...d, i, open: d.date <= day && day <= e.end, claimed: !!p.claims[e.id + ":" + i] })) : null
+      doors: e.calendar ? (function () { const edy = eventDay(e); return e.calendar.doors.map((d, i) => ({ ...d, i, open: d.date <= edy && edy <= e.end, claimed: !!p.claims[e.id + ":" + i] })); })() : null
     });
   });
   return { achievements: ach, events, today: p.days[day] || { g: [], n: 0, lp: 0 } };
 }
 // Record a finished session and return any newly completed achievements and missions.
 async function recordSession(id, lp, isGotd) {
+  try { localStorage.setItem("lzLastPlay", String(Date.now())); } catch (e) {}
   const [x, c] = await Promise.all([extras(), catalog()]);
   if (signedIn() && !state.row) await within(syncProg(), 4000, null).catch(() => {});
   const p = getProg(), d = today(), n = c.games.length, ids = new Set(c.games.map((g) => g.id));
@@ -425,13 +430,94 @@ async function recordSession(id, lp, isGotd) {
   return won;
 }
 async function claimDoor(eventId, i) {
-  const x = await extras(), e = x.events.find((v) => v.id === eventId), d = today();
+  const x = await extras(), e = x.events.find((v) => v.id === eventId), d = eventDay(e);
   if (!e || !e.calendar) return 0;
   const door = e.calendar.doors[i], p = getProg(), k = eventId + ":" + i;
   if (!door || p.claims[k] || door.date > d || d > e.end) return 0;
   p.claims[k] = d; setProg(p);
   await creditBonus(door.bonus);
   return door.bonus;
+}
+
+// ---- Chanukah candle-lighting check-in ----
+// Subtract LP (penalty). Only decreases, clamped at 0; increases go through creditBonus.
+async function adjustLP(delta) {
+  delta = Math.round(delta || 0);
+  if (!delta || !signedIn()) return;
+  try {
+    const ref = doc(db, "arcadePlayers", state.user.uid);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) return;
+      const lp = Math.max(0, Math.round((snap.data().lp || 0) + delta));
+      tx.update(ref, { lp, updatedAt: serverTimestamp() });
+    });
+  } catch (e) { console.warn("adjustLP", e.code || e); }
+}
+async function claimCandle(night, outcome) {
+  const p = getProg(), k = "candle:" + night;
+  if (p.claims[k]) return { already: true };
+  const ev = (((await extras()).events) || []).find((e) => e.theme === "chanukah") || {};
+  const reward = ev.candleReward || 600, penalty = ev.candlePenalty || 400;
+  p.claims[k] = outcome; setProg(p);
+  if (outcome === "clean") { await creditBonus(reward); return { lp: reward }; }
+  if (outcome === "played") { await adjustLP(-penalty); return { lp: -penalty }; }
+  return { lp: 0 };
+}
+// If tonight is a candle-lighting night, which day of Chanukah is it?
+function candleNightInfo(ev) {
+  if (!ev || !ev.calendar) return null;
+  const nd = today();
+  for (let i = 0; i < ev.calendar.doors.length; i++) {
+    const lit = today(new Date(new Date(ev.calendar.doors[i].date + "T12:00").getTime() - 864e5));
+    if (lit === nd) return { night: nd, dayNum: i + 1 };
+  }
+  return null;
+}
+let candleShown = false;
+async function candleWatch() {
+  if (candleShown) return;
+  let x; try { x = await extras(); } catch (e) { return; }
+  const ev = ((x && x.events) || []).find((e) => e.theme === "chanukah" && e.candleLighting);
+  if (!ev) return;
+  const info = candleNightInfo(ev); if (!info) return;
+  if (getProg().claims["candle:" + info.night]) return;
+  const c = candleAt(ev); if (!c) return;
+  const now = new Date();
+  if (now.getTime() < c.getTime() + 30 * 60000) return; // first half-hour not over yet
+  let snz = 0; try { snz = +(localStorage.getItem("lzCandleSnooze:" + info.night) || 0); } catch (e) {}
+  if (now.getTime() < snz) return;
+  candleShown = true;
+  showCandleModal(ev, info);
+}
+function showCandleModal(ev, info) {
+  const back = document.createElement("div");
+  back.setAttribute("style", "position:fixed;inset:0;z-index:2147483600;background:rgba(4,6,16,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,-apple-system,sans-serif");
+  back.innerHTML =
+    '<div style="max-width:420px;width:100%;background:linear-gradient(180deg,#141a2e,#0e1322);border:1px solid rgba(255,210,63,.4);border-radius:18px;padding:26px;text-align:center;color:#eaf2ff;box-shadow:0 20px 60px rgba(0,0,0,.6)">'
+    + '<div style="font-size:42px;line-height:1">🕎</div>'
+    + '<h2 style="margin:8px 0 4px;font-size:22px;color:#ffd23f">Day ' + info.dayNum + ' of Chanukah</h2>'
+    + '<p style="margin:0 0 18px;color:#c2d2ee;font-size:15px;line-height:1.5">Did you keep away from the arcade for the first half hour after candle-lighting?</p>'
+    + '<div style="display:flex;flex-direction:column;gap:10px">'
+    + '<button data-a="clean" style="padding:12px;border:none;border-radius:11px;background:linear-gradient(90deg,#ffd54a,#ff9f1c);color:#2a1500;font-weight:800;font-size:15px;cursor:pointer">🕯️ Yes — I held off</button>'
+    + '<button data-a="snooze" style="padding:12px;border:1px solid #38406a;border-radius:11px;background:#1a2138;color:#cdd8f3;font-weight:600;font-size:14px;cursor:pointer">I haven\'t lit yet — ask me later</button>'
+    + '<button data-a="played" style="padding:12px;border:1px solid rgba(255,90,120,.4);border-radius:11px;background:transparent;color:#ff8aa0;font-weight:600;font-size:14px;cursor:pointer">I did play</button>'
+    + '</div><p id="lzCandleMsg" style="margin:14px 0 0;min-height:18px;font-size:13px;color:#9ad"></p></div>';
+  document.body.appendChild(back);
+  const close = () => { back.remove(); };
+  back.querySelectorAll("button[data-a]").forEach((b) => b.onclick = async () => {
+    const a = b.dataset.a;
+    if (a === "snooze") { try { localStorage.setItem("lzCandleSnooze:" + info.night, String(Date.now() + 20 * 60000)); } catch (e) {} candleShown = false; return close(); }
+    back.querySelectorAll("button").forEach((x) => (x.disabled = true));
+    let outcome = a;
+    if (a === "clean") { let last = 0; try { last = +(localStorage.getItem("lzLastPlay") || 0); } catch (e) {} const c = candleAt(ev); if (c && last >= c.getTime()) outcome = "played"; }
+    const r = await claimCandle(info.night, outcome);
+    const el = back.querySelector("#lzCandleMsg");
+    if (outcome === "clean") { el.style.color = "#7ee081"; el.textContent = "+" + (r.lp || 0) + " Lazer Points — a lichtige Chanukah! 🕯️"; }
+    else if (a === "clean") { el.style.color = "#ff8aa0"; el.textContent = (r.lp || 0) + " LP — looks like you did play. Next light!"; }
+    else { el.style.color = "#ff8aa0"; el.textContent = (r.lp || 0) + " Lazer Points. Catch the next light."; }
+    setTimeout(close, 2100);
+  });
 }
 async function creditBonus(lp) {
   const entry = { bonus: { lp, best: 0, plays: 0, last: 0 } };
@@ -941,6 +1027,7 @@ async function addTime() {
   });
 }
 readyP.then(startTime);
+readyP.then(() => { setTimeout(candleWatch, 2500); setInterval(candleWatch, 5 * 60000); document.addEventListener("visibilitychange", () => { if (!document.hidden) candleWatch(); }); });
 
 // One site visit per browser session (feeds creator earnings).
 try { if (!sessionStorage.getItem("cz.visit")) { sessionStorage.setItem("cz.visit", "1"); setDoc(doc(db, "arcadeStats", "site"), { plays: increment(1) }, { merge: true }).catch(() => {}); } } catch (e) {}
