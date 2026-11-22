@@ -62,7 +62,7 @@ function speak(t,force){if(!W4().voice&&!force)return;if(t===lastSay)return;last
 
 /* ---------- bird's-eye view of the whole city ---------- */
 var BIRD=null,birdLbl=[];
-function birdOn(){if(BIRD)return;closePhone();O.cam.far=3000;O.cam.updateProjectionMatrix();BIRD={x:P.area==='city'?P.x:(placeById(ENTRANCE[P.area])||P).x,z:P.area==='city'?P.z:(placeById(ENTRANCE[P.area])||P).z,h:150,area:P.area,tx:0,tz:0};
+function birdOn(){if(BIRD)return;if(plan.mtn&&(clockH>21||clockH<4)){var wu=W4();if(!wu.f.ufo)setTimeout(function(){if(!BIRD)return;wu.f.ufo=1;addFame(10);banner('What was that?','Three lights over the mountains. No sound. Then nothing.','good');save();},2500);}closePhone();O.cam.far=3000;O.cam.updateProjectionMatrix();BIRD={x:P.area==='city'?P.x:(placeById(ENTRANCE[P.area])||P).x,z:P.area==='city'?P.z:(placeById(ENTRANCE[P.area])||P).z,h:150,area:P.area,tx:0,tz:0};
   if(P.area!=='city'){P.area='city';}document.body.classList.add('bird');$('#o-bird').hidden=false;
   var box=$('#o-blbl');box.innerHTML='';birdLbl=[];
   plan.blocks.forEach(function(b){addBL(blockName(b),b.x,b.z,'dist',null);});

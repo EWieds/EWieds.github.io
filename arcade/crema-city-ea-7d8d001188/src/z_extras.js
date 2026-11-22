@@ -8,10 +8,10 @@ function goldBeans(){GBEANS=[];var p=plan,r=seeded(p.city*977+5),spots=[];
   ['pier','lift','uni','park','mall','airport'].forEach(function(id){var q=placeById(id);if(q)spots.push({x:q.x+rnd(-4,4),z:q.z+rnd(-3,3)});});
   spots.push({x:p.xs[0]-30,z:p.zs[1]});spots.push({x:p.xs[p.C]+8,z:p.zs[p.R]+6});
   spots.sort(function(){return r()-.5;});spots=spots.slice(0,12);var got=(W4().beans||{})[p.city]||[];
-  if(!gbM)gbM=toon(0xffd24a,{e:0xffb000,ei:.8});
-  spots.forEach(function(s,i){if(got.indexOf(i)>=0)return;var g=new T.Group();g.position.set(s.x,.6,s.z);dyn.add(g);var b=sp(.16,gbM,0,0,0,g,8);b.scale.set(1,1.35,.8);bx(.02,.2,.1,toon(0x8a5a14),0,0,.13,g);anim.push({spin:g});
+  if(!gbM)gbM=toon(0xd4a83a,{e:0x6a4a00,ei:.25});
+  spots.forEach(function(s,i){if(got.indexOf(i)>=0)return;var g=new T.Group();g.position.set(s.x,.28,s.z);dyn.add(g);var b=sp(.1,gbM,0,0,0,g,8);b.scale.set(1,1.35,.8);bx(.02,.2,.1,toon(0x8a5a14),0,0,.13,g);anim.push({spin:g});
     GBEANS.push({i:i,x:s.x,z:s.z,g:g});});}
-function beanActs(){if(P.area!=='city'||drv)return [];var out=[];GBEANS.forEach(function(b){if(Math.hypot(b.x-P.x,b.z-P.z)<2.2)out.push({x:b.x,z:b.z,r:2.2,label:'A golden coffee bean?!',sub:'Pick it up',fn:function(){grabBean(b);}});});return out;}
+function beanActs(){if(P.area!=='city'||drv)return [];var out=[];GBEANS.forEach(function(b){if(Math.hypot(b.x-P.x,b.z-P.z)<1.1)out.push({x:b.x,z:b.z,r:1.1,label:'Something shiny',sub:'',fn:function(){grabBean(b);}});});return out;}
 function grabBean(b){var w=W4();w.beans=w.beans||{};var got=w.beans[O.city]=w.beans[O.city]||[];if(got.indexOf(b.i)>=0)return;got.push(b.i);dyn.remove(b.g);GBEANS=GBEANS.filter(function(q){return q!==b;});
   try{tone(1046,.08,'sine',.04);tone(1318,.08,'sine',.04,.08);tone(1568,.14,'sine',.04,.16);}catch(e){}var c=Math.round(250*tierM());G.cash+=c;
   if(got.length===12){var big=Math.round(25000*tierM());G.cash+=big;addFame(25);banner('All 12 golden beans!','+'+fmt(big)+' · the Golden Bean trophy is yours','good');w.items=w.items||{};w.items['Golden Bean trophy']=1;}
@@ -36,10 +36,10 @@ function secretCmd(n){var w=W4();w.f=w.f||{};
   return false;}
 
 /* night lights over the mountains, Josiah's statue, the pier fortune teller */
-function oddities(){var u=placeById('uni');if(u)ACTS.city.push({x:u.x,z:u.z-4,r:2.2,label:'Josiah Crema\'s statue',sub:'His left shoe is polished from all the rubbing',fn:function(){var w=W4();if(w.rub&&now()-w.rub<300000){toast('You already rubbed it. Don\'t be weird.','');return;}w.rub=now();if(Math.random()<.25){var c=Math.round(400*tierM());G.cash+=c;banner('Lucky!','A tourist drops '+fmt(c)+' and runs. Finders keepers?','good');}else bubble(P.x,2.7,P.z,'You feel a little luckier','good');rain.next=Math.max(rain.next,300);save();}});
+function oddities(){var u=placeById('uni');if(u)ACTS.city.push({x:u.x,z:u.z-4,r:2.2,label:'Statue of Josiah Crema',sub:'Founder, 1871',fn:function(){var w=W4();if(w.rub&&now()-w.rub<300000){toast('You already rubbed it. Don\'t be weird.','');return;}w.rub=now();if(Math.random()<.25){var c=Math.round(400*tierM());G.cash+=c;banner('Lucky!','A tourist drops '+fmt(c)+' and runs. Finders keepers?','good');}else bubble(P.x,2.7,P.z,'You feel a little luckier','good');rain.next=Math.max(rain.next,300);save();}});
   var pr=placeById('pier');if(pr)ACTS.city.push({x:pr.x+3,z:pr.z,r:2,label:'Madame Zuzu · fortunes',sub:'$5',fn:fortune});
-  if(plan.mtn)ACTS.city.push({x:(plan.xs[0]+plan.xs[plan.C])/2,z:plan.zs[0]-RH-4,r:6,label:'Look at the mountains',sub:function(){return clockH>20||clockH<5?'Something is blinking up there':'Pretty view';},fn:function(){if(clockH>20||clockH<5){var w=W4();if(!w.f.ufo){w.f.ufo=1;addFame(10);banner('You saw it.','Three lights. No sound. The Courier won\'t believe you.','good');save();}else toast('The lights blink twice. Like they recognize you.','');}else toast('Snow on the peaks. Ski Lodge business must be good.','');}});}
-function fortune(){if(!pay(5,'Madame Zuzu'))return;var f=['"You will make a deal with a proud person. Do not lowball them."','"Something golden hides where the coffee shops can\'t see."','"Round doors lead to old money."','"A cat is waiting for you. An orange one."','"The old men in the back room are watching you."','"Buy low. Sell high. That one is free advice."','"The tallest building is not the richest one. Ask an analyst."'];
+}
+function fortune(){if(!pay(5,'Madame Zuzu'))return;var f=['"You will make a deal with a proud person. Do not lowball them."','"Look down more often."','"Not every door has a handle."','"Someone is missing someone. Keep your eyes open."','"Old men drink espresso in rooms with no windows."','"Buy low. Sell high. That one is free advice."','"The tallest building is not the richest one. Ask an analyst."'];
   popup('Madame Zuzu','She stares into a cup of espresso grounds.\n'+pick(f),[{t:'Spooky',cls:'sec'}],'',{who:'Madame Zuzu',role:'Fortunes',col:'#7a5ad8'});}
 
 /* new money: vending machines, the Crema Club app, franchises, taxi medallions, lottery, flipping antiques, gig deliveries */

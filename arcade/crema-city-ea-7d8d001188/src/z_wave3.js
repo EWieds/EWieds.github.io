@@ -117,7 +117,7 @@ function jailRoom(){var g=room('jail',{name:'County Jail',w:16,d:12,floor:floorT
   var inm=npc(g,5,-3.2,0,{shirt:0xff8a3d});addCol(ox-7,ox+7,-1.8,-1.4,'jail');
   ACTS.jail.push({x:ox+5,z:-.6,r:1.8,label:'Talk to Vinnie',sub:'Cell 3 · orange is his color',fn:vinnie});
   ACTS.jail.push({x:ox-5,z:-.6,r:1.6,label:function(){var j=W4().jail;return j&&j.until>now()?'Wait out your time ('+Math.ceil((j.until-now())/1000)+'s)':'An empty cell';},sub:function(){var j=W4().jail;return j&&j.until>now()?'Or post bail':'';},fn:function(){var w=W4(),j=w.jail;if(!j||j.until<now())return;var bail=Math.round(1500*tierM());popup('Lockup','"Sit tight."',[{t:'Post bail · '+fmt(bail),fn:function(){if(!pay(bail,'Bail'))return;w.jail=null;save();leaveArea();}},{t:'Wait it out',cls:'sec'}],'',{who:'Guard',col:'#5a5f6a'});}});
-  ACTS.jail.push({x:ox,z:-4.8,r:1.3,label:'A loose floor tile',sub:'Hmm.',fn:function(){var w=W4();w.f.tile=(w.f.tile||0)+1;if(w.f.tile<3){toast('You scrape at it with a spoon. It moves a little. ('+w.f.tile+'/3)','');save();return;}
+  ACTS.jail.push({x:ox,z:-4.8,r:.9,label:'…',sub:'',fn:function(){var w=W4();w.f.tile=(w.f.tile||0)+1;if(w.f.tile<3){toast('You scrape at it with a spoon. It moves a little. ('+w.f.tile+'/3)','');save();return;}
     w.f.tile=0;w.jail=null;addFame(-10);var due=Math.round(3000*tierM());G.cash-=due;save();fade(function(){P.area='sewer';var A=AREAS.sewer;P.x=A.ox;P.z=0;O.snap=true;updDaylight();},function(){note('You escaped through the storm tunnels','Classic. The county billed you '+fmt(due)+' for the floor. Fame −10.','bad');});}});
   if(!W4().jail||W4().jail.until<now())return;}
 function jailLocked(){var j=W4().jail;return P.area==='jail'&&j&&j.until>now();}
