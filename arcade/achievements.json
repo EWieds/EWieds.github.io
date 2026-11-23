@@ -146,12 +146,39 @@
       "icon": "fire"
     },
     {
+      "id": "gotd1",
+      "name": "Daily special",
+      "desc": "Play the Game of the Day",
+      "type": "gotdDays",
+      "target": 1,
+      "bonus": 200,
+      "icon": "star"
+    },
+    {
+      "id": "gotd3",
+      "name": "Picking favorites",
+      "desc": "Play the Game of the Day on 3 different days",
+      "type": "gotdDays",
+      "target": 3,
+      "bonus": 500,
+      "icon": "star"
+    },
+    {
       "id": "gotd10",
       "name": "Daily pick",
       "desc": "Play the Game of the Day on 10 different days",
       "type": "gotdDays",
       "target": 10,
       "bonus": 1000,
+      "icon": "star"
+    },
+    {
+      "id": "gotd25",
+      "name": "Picky eater",
+      "desc": "Play the Game of the Day on 25 different days",
+      "type": "gotdDays",
+      "target": 25,
+      "bonus": 3000,
       "icon": "star"
     },
     {

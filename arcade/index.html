@@ -402,7 +402,9 @@ async function spotlight() {
     const pool = [...Object.values(C.BUILTIN), ...live].filter((g, i, a) => a.findIndex((y) => y.id === g.id) === i && g.title);
     if (!pool.length) return;
     const cfg = ev.communitySpotlight || {}, days = cfg.days || 7, n = new Date(), dn = Math.floor((Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())) / 864e5);
-    const pinned = cfg.pin && pool.find((g) => g.id === cfg.pin);
+    const todayStr = new Date(dn * 864e5).toISOString().slice(0, 10);
+    const pinActive = cfg.pin && (!cfg.pinUntil || todayStr <= cfg.pinUntil);
+    const pinned = pinActive && pool.find((g) => g.id === cfg.pin);
     const sorted = pool.slice().sort((a, b) => a.id.localeCompare(b.id));
     const g = pinned || sorted[Math.floor(dn / days) % sorted.length];
     const left = days - (dn % days);

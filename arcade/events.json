@@ -126,6 +126,8 @@
     }
   ],
   "communitySpotlight": {
-    "days": 7
+    "days": 7,
+    "pin": "mwpg4qh3jnmui7",
+    "pinUntil": "2026-11-25"
   }
 }
