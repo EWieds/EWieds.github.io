@@ -130,6 +130,8 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var tq=n.replace(/.*\bto\b/,'');if(/\bto\b/.test(n)){cabTo(tq);return true;}hailBox();return true;}
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var cp=findPlace(n.replace(/.*\bto\b/,''));if(cp&&/\bto\b/.test(n)){callCab(cp);}else openPhone('cab');return true;}
   if(/bird|whole city|city view|overview|from above|map view|see everything|zoom out/.test(n)){if(P.area==='city')birdOn();else toast('Step outside first.');return true;}
+  if(/\b(graphics|shadows|quality settings?)\b/.test(n)){gfxToggle();return true;}
+  if(/\b(metro chat|city chat|chat with players)\b/.test(n)){mpChatPanel();return true;}
   if(/\b(loan|borrow|financ|invest(or|ment)? money)\b/.test(n)&&(/plan|pitch|million|\d{3},?\d{3}|\d+ ?(k|m)\b|big|more than|business loan/.test(n))){pitchLoan();return true;}
   if(/\b(loan|borrow|bank account|deposit|withdraw|briefcase)\b/.test(n)){bankWindow();return true;}
   if(/\b(tax|taxes|permit|election|council)\b/.test(n)){cityHallCall();return true;}

@@ -22,7 +22,7 @@ function build(city){
   P.hand=new T.Group();P.hand.position.set(0,.72,.5);P.me.root.add(P.hand);carryView();
   P.phone=new T.Group();P.phone.position.set(0,-.42,.1);P.me.arms[1].add(P.phone);rb(.12,.22,.03,.02,toon(0x1a1a1e),0,0,0,P.phone);plane(.1,.18,flat(0x8fd3ff),0,0,.017,P.phone);P.phone.visible=false;
   initTraffic();initLaw();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();brickDecor();mpRebuild();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
-  O.dirty=false;
+  O.dirty=false;gfxSetup();
   if(lowEnd()){sc.fog.far=140;}
 }
 function rebuild(){if(!O.scene)return;var st={x:P.x,z:P.z,ry:P.ry,area:P.area,dv:drv?drv.v.sv:null,yaw:yaw},nav=NAV;
@@ -81,7 +81,8 @@ var slowT=0,inAcc=0,callT=0;
 O.frame=function(dt){
   if(!G||!G.locs||!G.locs.length)return false;var tl=(O.tl=(O.tl||0)+dt);W4();
   econTick(dt);slowT+=dt;if(slowT>1){slowT=0;finishBuilds();campaignTick();syncBizRev();if(hallBoard&&Math.random()<.06){hallBoard.n++;drawBoard();}if(depBoard&&tl-depBoard.last>15){depBoard.last=tl;drawDepartures();}}
-  if(O.on){
+  var wantSh=!!(O.on&&GFX.on);if(renderer.shadowMap.enabled!==wantSh)renderer.shadowMap.enabled=wantSh;
+  if(O.on){gfxTick(dt);
     if(bgShift()){simT+=dt;updShift(dt,simT);updTW(dt);}
     if(O.dirty&&!CUT)rebuild();
     doorCD=Math.max(0,doorCD-dt);updClock(dt);updSignals(tl);
