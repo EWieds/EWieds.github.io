@@ -23,18 +23,18 @@ function buildCabin(to){
   var clouds=[];var nC=lowEnd()?24:48;for(var i=0;i<nC;i++){var c=new T.Sprite(new T.SpriteMaterial({map:cloudTex(),transparent:true,depthWrite:false,opacity:.9}));var s2=rnd(40,120);c.scale.set(s2*1.6,s2,1);c.position.set(rnd(-900,900),rnd(-260,60),rnd(-500,500));sky.add(c);clouds.push(c);}
   var wcam=new T.PerspectiveCamera(60,1,1,2000);
   var cam=new T.PerspectiveCamera(70,W/H,.05,60);
-  CAB={sc:sc,sky:sky,rt:rt,cam:cam,wcam:wcam,clouds:clouds,ground:ground,att:att,cart:cart,t:0,seat:{x:.2,z:1.5},look:0,yaw:-Math.PI/2+.45,pitch:-.08,to:to,said:0};
+  CAB={sc:sc,sky:sky,rt:rt,cam:cam,wcam:wcam,clouds:clouds,ground:ground,att:att,cart:cart,t:0,seat:{x:.2,z:1.5},look:0,yaw:-Math.PI/2+.45,pitch:-.08,to:to,said:0};cabinExtras();
 }
 function cabinFrame(dt){var c=CAB;c.t+=dt;
   c.clouds.forEach(function(cl){cl.position.x+=dt*160;if(cl.position.x>900)cl.position.x-=1800;});c.ground.position.x=(c.ground.position.x+dt*60)%250;
-  c.att.root.position.x=-6+Math.sin(c.t*.15)*5;c.cart.position.x=c.att.root.position.x+.8;animLite(c.att,dt,true,.4);
+  c.att.root.position.x=Math.min(12,-11+c.t*.7);c.cart.position.x=c.att.root.position.x+.8;animLite(c.att,dt,true,.4);
   // you sit by the window on the right; drag to look around, or press the button to lean into the window
   var px=c.seat.x,pz=c.seat.z;if(c.look){c.cam.position.set(px+.4,1.55,1.95);c.cam.lookAt(px+.4,1.42,6);}else{c.cam.position.set(px,1.45,pz);c.cam.lookAt(px+Math.sin(c.yaw)*Math.cos(c.pitch),1.45+Math.sin(c.pitch),pz+Math.cos(c.yaw)*Math.cos(c.pitch));}
-  c.cam.aspect=W/H;c.cam.updateProjectionMatrix();
+  cabinTick2(dt);c.cam.aspect=W/H;c.cam.updateProjectionMatrix();
   c.wcam.position.set(0,0,0);c.wcam.lookAt(-.3,-.35,1);renderer.setRenderTarget(c.rt);renderer.render(c.sky,c.wcam);renderer.setRenderTarget(null);
   renderer.render(c.sc,c.cam);
   if(c.t>2&&c.said===0){c.said=1;captain('Ladies and gentlemen, welcome aboard Air Crema flight '+(10+c.to*7)+' to '+cityName(c.to)+'. Sit back and enjoy the view.');}
-  if(c.t>12&&c.said===1){c.said=2;captain('Something to drink? Coffee, tea... Crema, of course.');}
-  if(c.t>22&&c.said===2){c.said=3;captain('We\'re beginning our descent into '+cityName(c.to)+'. Please return to your seat.');}
+  if(c.t>10&&c.said===1){c.said=2;captain('The cart is coming down the aisle. WiFi is available for $8 if you need your phone.');}
+  if(c.t>32&&c.said===2){c.said=3;captain('We\'re beginning our descent into '+cityName(c.to)+'. Please return to your seat.');}
 }
 function captain(t){var el=$('#o-cap');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(function(){el.hidden=true;},5200);try{tone(880,.2,'sine',.02);tone(660,.3,'sine',.02,.22);}catch(e){}}

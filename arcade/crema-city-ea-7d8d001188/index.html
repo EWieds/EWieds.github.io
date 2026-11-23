@@ -471,6 +471,8 @@ body.mini #o-acts,body.mini #o-joy,body.mini #o-goal,body.mini #o-nav,body.mini 
 @media (max-width:640px){#o-goal button{position:static;transform:none;margin:0}#o-goal .g-b{position:absolute;right:10px;top:50%;transform:translateY(-50%)}#o-goal b{display:block;padding-right:150px}}
 #o-mpc{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 330px);background:#7a5ad8;color:#fff;border:3px solid #2a1a12;border-radius:16px;padding:6px 10px;font:800 13px system-ui;display:flex;flex-direction:column;align-items:center;box-shadow:0 4px 0 #2a1a12;z-index:6}
 #o-mpc span{font-size:10px;font-weight:700;opacity:.9}#o-mpc:not(.on){background:#9a8fb0}
+#o-cabui{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 168px);transform:translateX(-50%);display:flex;gap:8px;z-index:30}
+#o-cabui button{background:#fff6e6;border:3px solid #2a1a12;border-radius:14px;padding:9px 12px;font:800 13px system-ui;box-shadow:0 3px 0 #2a1a12;white-space:nowrap}
 </style>
 
 </head>
@@ -4183,8 +4185,8 @@ function myTicket(){return W4().tickets.filter(function(t){return t.from===O.cit
 function flightsDesk(atCounter){
   var fl=flightList();if(!fl.length){popup('Air Crema','No routes yet.',[{t:'OK'}]);return;}
   popup('Air Crema','"Where are we flying today?"'+(atCounter?'':'\nTickets bought here are waiting at the counter; your gate is B4.'),fl.map(function(f){return {t:f.name+' · '+fmt(f.cost),s:f.mp?'Other players are there. Everything is shared'+(mpFare()?' · includes '+fmt(mpFare())+' airport fee':''):f.ok?(f.scout?'Scouting trip · open a regional office at their City Hall':'You have shops there')+'':'Needs level '+f.req,off:!f.ok,why:'Reach level '+f.req+' first.',fn:function(){
-    if(!pay(f.cost,'The flight'))return;if(f.to===MPC||O.city===MPC)mpPayFare();if(f.to===MPC)W4().mpVisited=1;W4().tickets=W4().tickets.filter(function(t){return t.from!==O.city;});W4().tickets.push({from:O.city,to:f.to,at:now()});save();
-    note('Boarding pass: '+f.name,'Gate B4 at '+plan.name+' International. Go through security and board.','good',{label:'Directions',fn:function(){navTo(placeById('airport'));}});}};}).concat([{t:'Not today',cls:'sec'}]),'',{who:'Air Crema',role:'Ticketing',col:'#2f8fd0'});
+    flyClass(f,function(cost,cls){if(!pay(cost,'The flight'))return;W4().flyCls=cls;if(f.to===MPC||O.city===MPC)mpPayFare();if(f.to===MPC)W4().mpVisited=1;W4().tickets=W4().tickets.filter(function(t){return t.from!==O.city;});W4().tickets.push({from:O.city,to:f.to,at:now()});save();
+    note('Boarding pass: '+f.name,'Gate B4 at '+plan.name+' International. Go through security and board.','good',{label:'Directions',fn:function(){navTo(placeById('airport'));}});});}};}).concat([{t:'Not today',cls:'sec'}]),'',{who:'Air Crema',role:'Ticketing',col:'#2f8fd0'});
 }
 function rentalCost(){return Math.round(600*tierM());}
 function rentCar(){if(myVeh()){toast('You already have a car here.');return;}var c=rentalCost();popup('Rent-a-car','"A clean pickup with a full tank. Keep it as long as you\'re in '+plan.name+'. It\'ll be at the curb out front."',[{t:'Rent it · '+fmt(c),fn:function(){if(!pay(c,'The rental'))return;W4().cars[O.city]={x:plan.CX+RH-1.2,z:plan.AZ-12,ry:Math.PI,rental:1};initVehicles();note('Rental ready','At the curb outside the terminal.','good');}},{t:'No thanks',cls:'sec'}],'',{who:'Rent-a-car',col:'#ffc63d'});}
@@ -4196,7 +4198,7 @@ var cutPlane=null;
 function updCut(dt){if(!CUT||!cutPlane)return;CUT.t+=dt;var c=CUT;
   if(c.st==='out'){var k=c.t,x=plan.AX+80,z=plan.AZ+200-k*k*7,y=k>3?(k-3)*(k-3)*1.6:0;cutPlane.position.set(x,y,z);cutPlane.rotation.y=Math.PI;cutPlane.rotation.x=k>3?-.15:0;
     O.cam.position.set(x-36,6+y*.6,plan.AZ+80);O.cam.lookAt(x,y+3,z);if(c.t>6.5||c.skip){c.st='swap';c.skip=false;fade(function(){buildCabin(c.to);c.t=0;c.st='cabin';$('#o-look').hidden=false;});}}
-  else if(c.st==='cabin'){if(CAB.t>30||c.skip){c.st='swap';c.skip=false;$('#o-look').hidden=true;fade(function(){CAB=null;O.scene.remove(cutPlane);build(c.to);P.area='terminal';cutPlane=planeModel(0x2f8fd0);O.scene.add(cutPlane);c.t=0;c.st='in';});}}
+  else if(c.st==='cabin'){if(CAB.t>40||c.skip){c.st='swap';c.skip=false;cabinEnd();$('#o-look').hidden=true;fade(function(){CAB=null;O.scene.remove(cutPlane);build(c.to);P.area='terminal';cutPlane=planeModel(0x2f8fd0);O.scene.add(cutPlane);c.t=0;c.st='in';});}}
   else if(c.st==='in'){var k2=c.t,x2=plan.AX+80,z2=plan.AZ-260+k2*60,y2=Math.max(0,30-k2*8);cutPlane.position.set(x2,y2,z2);cutPlane.rotation.y=0;cutPlane.rotation.x=y2>0?.06:0;
     O.cam.position.set(x2-40,8,plan.AZ-60);O.cam.lookAt(x2,y2+3,z2);if(c.t>5||c.skip){c.st='done';fade(function(){O.scene.remove(cutPlane);cutPlane=null;var A=AREAS.terminal;P.area='terminal';P.x=A.ox+26;P.z=6;yaw=Math.PI/2;P.me.root.visible=true;O.snap=true;CUT=null;$('#o-cut').hidden=true;document.body.classList.remove('incut');
       banner('Welcome to '+plan.name,'Air Crema flight complete','good');note('Landed in '+plan.name,(G.locs.some(function(l){return l.city===O.city;})?'Your shops here are on the map.':'Scout it out. Open a regional office at City Hall to build here.'),'good',{label:'City Hall',fn:function(){navTo(placeById('hall'));}});});}}
@@ -4639,19 +4641,19 @@ function buildCabin(to){
   var clouds=[];var nC=lowEnd()?24:48;for(var i=0;i<nC;i++){var c=new T.Sprite(new T.SpriteMaterial({map:cloudTex(),transparent:true,depthWrite:false,opacity:.9}));var s2=rnd(40,120);c.scale.set(s2*1.6,s2,1);c.position.set(rnd(-900,900),rnd(-260,60),rnd(-500,500));sky.add(c);clouds.push(c);}
   var wcam=new T.PerspectiveCamera(60,1,1,2000);
   var cam=new T.PerspectiveCamera(70,W/H,.05,60);
-  CAB={sc:sc,sky:sky,rt:rt,cam:cam,wcam:wcam,clouds:clouds,ground:ground,att:att,cart:cart,t:0,seat:{x:.2,z:1.5},look:0,yaw:-Math.PI/2+.45,pitch:-.08,to:to,said:0};
+  CAB={sc:sc,sky:sky,rt:rt,cam:cam,wcam:wcam,clouds:clouds,ground:ground,att:att,cart:cart,t:0,seat:{x:.2,z:1.5},look:0,yaw:-Math.PI/2+.45,pitch:-.08,to:to,said:0};cabinExtras();
 }
 function cabinFrame(dt){var c=CAB;c.t+=dt;
   c.clouds.forEach(function(cl){cl.position.x+=dt*160;if(cl.position.x>900)cl.position.x-=1800;});c.ground.position.x=(c.ground.position.x+dt*60)%250;
-  c.att.root.position.x=-6+Math.sin(c.t*.15)*5;c.cart.position.x=c.att.root.position.x+.8;animLite(c.att,dt,true,.4);
+  c.att.root.position.x=Math.min(12,-11+c.t*.7);c.cart.position.x=c.att.root.position.x+.8;animLite(c.att,dt,true,.4);
   // you sit by the window on the right; drag to look around, or press the button to lean into the window
   var px=c.seat.x,pz=c.seat.z;if(c.look){c.cam.position.set(px+.4,1.55,1.95);c.cam.lookAt(px+.4,1.42,6);}else{c.cam.position.set(px,1.45,pz);c.cam.lookAt(px+Math.sin(c.yaw)*Math.cos(c.pitch),1.45+Math.sin(c.pitch),pz+Math.cos(c.yaw)*Math.cos(c.pitch));}
-  c.cam.aspect=W/H;c.cam.updateProjectionMatrix();
+  cabinTick2(dt);c.cam.aspect=W/H;c.cam.updateProjectionMatrix();
   c.wcam.position.set(0,0,0);c.wcam.lookAt(-.3,-.35,1);renderer.setRenderTarget(c.rt);renderer.render(c.sky,c.wcam);renderer.setRenderTarget(null);
   renderer.render(c.sc,c.cam);
   if(c.t>2&&c.said===0){c.said=1;captain('Ladies and gentlemen, welcome aboard Air Crema flight '+(10+c.to*7)+' to '+cityName(c.to)+'. Sit back and enjoy the view.');}
-  if(c.t>12&&c.said===1){c.said=2;captain('Something to drink? Coffee, tea... Crema, of course.');}
-  if(c.t>22&&c.said===2){c.said=3;captain('We\'re beginning our descent into '+cityName(c.to)+'. Please return to your seat.');}
+  if(c.t>10&&c.said===1){c.said=2;captain('The cart is coming down the aisle. WiFi is available for $8 if you need your phone.');}
+  if(c.t>32&&c.said===2){c.said=3;captain('We\'re beginning our descent into '+cityName(c.to)+'. Please return to your seat.');}
 }
 function captain(t){var el=$('#o-cap');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(function(){el.hidden=true;},5200);try{tone(880,.2,'sine',.02);tone(660,.3,'sine',.02,.22);}catch(e){}}
 
@@ -7279,6 +7281,38 @@ function subwayRoom(){var g=room('subway',{name:'Metro Subway',w:30,d:10,floor:f
 function rideSub(a,b){fade(function(){P.area='subway';var A=AREAS.subway;P.x=A.ox+rnd(-6,6);P.z=0;P.ry=Math.PI;O.snap=true;updDaylight();SUBRIDE.go={t:0,to:b};SUBRIDE.tr.position.x=SUBRIDE.x0;try{tone(80,1.5,'sawtooth',.03);}catch(e){}});}
 function updSub(dt){var S=SUBRIDE;if(!S||!S.go||P.area!=='subway')return;S.go.t+=dt;var t=S.go.t,ox=IOX.subway;S.tr.position.x=t<3?S.x0+(ox+14-S.x0)*Math.min(1,t/3)*(2-Math.min(1,t/3)):t<5?ox+14:ox+14+(t-5)*(t-5)*6;
   if(t>3.4&&!S.go.board){S.go.board=1;bubble(P.x,2.5,P.z,'Doors opening','');}if(t>5.6&&!S.go.done){S.go.done=1;var to=S.go.to;fade(function(){P.area='city';P.x=to.x;P.z=to.z+2.6;O.snap=true;updDaylight();S.go=null;},function(){note('Arrived',to.n,'good');});}}
+
+
+/* ---------- a better flight: first class up front, seatback screens, a drink cart that stops at your row, turbulence, and WiFi for your phone ---------- */
+function cabinExtras(){var c=CAB;if(!c)return;var sc=c.sc,w=W4();c.first=w.flyCls==='first';w.flyCls='';c.served=0;c.wifi=0;c.items=[];
+  sc.children.filter(function(o){return o.type==='Group'&&o.position.x<-9.3;}).forEach(function(o){sc.remove(o);});
+  if(c.first){c.seat={x:-11.9,z:1.2};c.yaw=Math.PI/2-.5;}
+  // first-class cabin: four big leather seats behind a curtain
+  for(var r=0;r<2;r++)[-1.2,1.2].forEach(function(z){var s=new T.Group();s.position.set(-12.2+r*2.6,0,z);sc.add(s);rb(1,.5,.95,.12,toon(0x6a3a28),0,.45,0,s);rb(.2,1.1,.95,.1,toon(0x6a3a28),-.45,1.05,0,s);rb(.4,.12,.25,.05,toon(0xd4af37),.1,.75,.5*Math.sign(z),s);});
+  var cur=plane(3,2.6,toon(0x2a3a6a),-8.95,1.5,0,sc);cur.rotation.y=Math.PI/2;
+  // seatback screens and row numbers
+  for(var k=0;k<12;k++){var x=-13+k*2.2;if(x<-9)continue;[-1.55,-.95,.95,1.55].forEach(function(z){var scr=plane(.22,.16,toon(0x2f8fd0,{e:0x2f8fd0,ei:.8}),x+.27,1.25,z,sc);scr.rotation.y=-Math.PI/2;});
+    [-1.6,1.6].forEach(function(z){var n=plane(.3,.16,flat(0xffffff,{map:signT(String(k+1),{bg:'#e8e4dc',fg:'#2a2a2a',w:64,h:32})}),x,2.82,z,sc);n.rotation.x=Math.PI/2.4;});}
+  for(var e=0;e<2;e++){var ex=plane(.6,.22,toon(0x2fa860,{e:0x2fa860,ei:1}),[-6,8][e],2.4,0,sc);ex.rotation.y=Math.PI/2;}
+  for(var l=-14;l<15;l+=1.4)bx(.6,.03,.05,toon(0xfff2c0,{e:0xffe0a0,ei:.9}),l,3.32,0,sc);
+  // your tray table
+  c.tray=bx(.42,.03,.32,toon(0x3a3f4b),c.seat.x+.45,.95,c.seat.z,sc);
+  cabUI();}
+function cabUI(){var el=$('#o-cabui');if(!el){el=document.createElement('div');el.id='o-cabui';document.body.appendChild(el);}el.hidden=false;var c=CAB;
+  el.innerHTML='<button type="button" data-k="wifi">'+(c.wifi?'📶 WiFi on':'📶 WiFi · $8')+'</button><button type="button" data-k="ph">📱 Phone</button><button type="button" data-k="cart">🥤 Attendant</button>';
+  el.querySelector('[data-k=wifi]').onclick=function(){if(c.wifi)return;if(!pay(8,'In-flight WiFi'))return;c.wifi=1;toast('Connected. Your phone works up here now.','good');cabUI();};
+  el.querySelector('[data-k=ph]').onclick=function(){if(!c.wifi){popup('Airplane mode','No signal at 35,000 feet. Buy in-flight WiFi to use your phone.',[{t:'Buy WiFi · $8',fn:function(){if(!pay(8,'In-flight WiFi'))return;c.wifi=1;cabUI();openPhone();}},{t:'Never mind',cls:'sec'}]);return;}openPhone();};
+  el.querySelector('[data-k=cart]').onclick=function(){drinkMenu(true);};}
+function drinkMenu(called){var c=CAB;if(!c)return;var f=c.first,free=function(p){return f?0:p;};var items=[['Coffee',0,null],['Crema cold brew',free(6),'fast'],['Orange juice',free(4),null],['Snack box',free(9),'full'],['Champagne',free(18),'fame'],['Warm cookie',free(3),null]];
+  popup(f?'First class service':'The drink cart','"'+(f?'Anything at all. It\'s on the house.':called?'You rang? What can I get you?':'Something to drink?')+'"',items.map(function(it){return {t:it[0]+(it[1]?' · $'+it[1]:' · free'),fn:function(){if(it[1]&&!pay(it[1],it[0]))return;serve(it[0],it[2]);}};}).concat([{t:'No thanks',cls:'sec'}]),'',{who:'Flight attendant',role:'Air Crema',col:'#2f8fd0'});}
+function serve(n,perk){var c=CAB;if(!c)return;var col=/Coffee|cold brew/.test(n)?0x5a3018:/juice/.test(n)?0xff8a3d:/Champagne/.test(n)?0xffe38a:0xd8a45a;var cup=/Snack|cookie/.test(n)?bx(.16,.06,.12,toon(col),c.tray.position.x+(c.items.length*.1-.1),.99,c.tray.position.z,c.sc):cy(.04,.035,.12,toon(col),c.tray.position.x+(c.items.length*.1-.1),1.02,c.tray.position.z,c.sc,8);c.items.push(cup);
+  var w=W4();w.buff=w.buff||{};if(perk==='fast')w.buff.fast=now()+180000;if(perk==='full')w.buff.full=now()+900000;if(perk==='fame')addFame(1);w.stats.flights=(w.stats.flights||0);try{tone(660,.08,'sine',.03);}catch(e){}captainSay(pick(['"Enjoy."','"There you go."','"Careful, it\'s hot."']));}
+function captainSay(t){var el=$('#o-cap');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(function(){el.hidden=true;},3000);}
+function cabinTick2(dt){var c=CAB;if(!c||!c.tray)return;
+  if(!c.served&&(Math.abs(c.cart.position.x-c.seat.x)<1.2||(c.first&&c.t>6))&&c.t>4&&!popOpen()){c.served=1;drinkMenu(false);}
+  if(c.t>16&&c.t<20){var k=Math.sin(c.t*40)*.012;c.cam.position.y+=k;c.cam.rotation.z+=k*.4;if(!c.bump){c.bump=1;captain('Folks, we\'re heading through a little turbulence. Please keep your seatbelts fastened.');}}}
+function cabinEnd(){var el=$('#o-cabui');if(el)el.hidden=true;var w=W4();w.stats.flights=(w.stats.flights||0)+1;}
+function flyClass(f,go){var fc=Math.round(Math.max(f.cost,200)*3);popup(f.name,'Which seat?',[{t:'Economy · '+fmt(f.cost),s:'A window seat in the back. Drinks from the cart',fn:function(){go(f.cost,'eco');}},{t:'First class · '+fmt(fc),s:'Big leather seat up front, free drinks, champagne',fn:function(){go(fc,'first');}},{t:'Never mind',cls:'sec'}],'',{who:'Air Crema',role:'Ticketing',col:'#2f8fd0'});}
 
 
 /* ---------- build a city ---------- */

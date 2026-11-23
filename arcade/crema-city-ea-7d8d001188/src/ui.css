@@ -179,3 +179,5 @@ body.mini #o-acts,body.mini #o-joy,body.mini #o-goal,body.mini #o-nav,body.mini 
 @media (max-width:640px){#o-goal button{position:static;transform:none;margin:0}#o-goal .g-b{position:absolute;right:10px;top:50%;transform:translateY(-50%)}#o-goal b{display:block;padding-right:150px}}
 #o-mpc{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 330px);background:#7a5ad8;color:#fff;border:3px solid #2a1a12;border-radius:16px;padding:6px 10px;font:800 13px system-ui;display:flex;flex-direction:column;align-items:center;box-shadow:0 4px 0 #2a1a12;z-index:6}
 #o-mpc span{font-size:10px;font-weight:700;opacity:.9}#o-mpc:not(.on){background:#9a8fb0}
+#o-cabui{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 168px);transform:translateX(-50%);display:flex;gap:8px;z-index:30}
+#o-cabui button{background:#fff6e6;border:3px solid #2a1a12;border-radius:14px;padding:9px 12px;font:800 13px system-ui;box-shadow:0 3px 0 #2a1a12;white-space:nowrap}
