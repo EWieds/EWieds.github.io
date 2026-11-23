@@ -9,7 +9,7 @@ function roastRoom(){var g=room('roast',{name:'The back room',w:16,d:12,floor:fl
   [[-5.6,2.4,0x2a2a2a],[-5.4,-3.4,0x3a3a3a],[5,3.4,0x1a1a2a]].forEach(function(q){var cp=liteMe({shirt:q[2],pant:0x1a1a1a});cp.root.position.set(q[0],0,q[1]);cp.root.rotation.y=Math.atan2(-q[0],-q[1]);g.add(cp.root);});
   for(var cd=0;cd<2;cd++){var cx2=-1.5+cd*3;cy(.06,.08,.3,toon(0xd4af37),cx2,1.2,-.5,g,6);for(var f=0;f<3;f++){var fl=sp(.04,toon(0xffd24a,{e:0xffa020,ei:1}),cx2-.12+f*.12,1.42,-.5,g,5);}}
   // fireplace with the founder's portrait above it
-  bx(2.6,2.2,.6,toon(0x8a8a8a),0,1.1,-5.7,g);bx(1.6,1.2,.2,toon(0x1a0a06),0,.8,-5.5,g);var fire=plane(1.3,.9,toon(0xff6a20,{e:0xff5a10,ei:1}),0,.75,-5.38,g);anim.push({flick:fire});
+  bx(2.6,2.2,.6,toon(0x8a8a8a),0,1.1,-5.7,g);bx(1.6,1.2,.2,toon(0x1a0a06),0,.8,-5.5,g);var fire=plane(1.3,.9,toon(0xff6a20,{e:0xff5a10,ei:1}),ox,.75,-5.38,dyn);anim.push({flick:fire});
   var por=plane(1.6,2,toon(0xffffff,{map:canvasTex(160,200,function(c,w,h){c.fillStyle='#3a2418';c.fillRect(0,0,w,h);c.fillStyle='#d4af37';c.fillRect(6,6,w-12,h-12);c.fillStyle='#2a1a12';c.fillRect(12,12,w-24,h-24);c.fillStyle='#e8c8a0';c.beginPath();c.arc(w/2,78,30,0,7);c.fill();c.fillStyle='#1a1a1a';c.fillRect(w/2-34,40,68,18);c.fillRect(w/2-20,20,40,26);c.fillRect(w/2-42,110,84,80);c.fillStyle='#d4af37';c.font='bold 11px serif';c.textAlign='center';c.fillText('J.C. 1871',w/2,186);},null,'portJC')}),0,3.4,-5.62,g);
   // bar cart, espresso machine, bookshelf, globe, chandelier
   bx(1.6,.9,.6,toon(0x8a5a3a),5.8,.45,-5.2,g);for(var b=0;b<6;b++)cy(.07,.07,.34,toon([0x2f7a4a,0x8a3a10,0xd4af37][b%3]),5.2+b*.22,1.07,-5.2,g,6);
@@ -114,3 +114,15 @@ function turfIncome(){var s=W4().syn;if(!s||!s.turf)return 0;return Object.keys(
 var chaiT=900;
 function chaiTick(dt){var s=W4().syn;if(!s||!s.turf||!s.turf[O.city]||!O.on)return;chaiT-=dt;if(chaiT>0)return;chaiT=rnd(900,1500);var t=s.turf[O.city],c=Math.round(6000*tierM());
   textIn('Madame Chai','Lovely neighborhood, '+t+'. The Chai Syndicate would like a piece. '+fmt(c)+' and we leave quietly.',[{t:'Pay her · '+fmt(c),fn:function(){if(pay(c,'Tribute'))toast('Madame Chai sends a thank-you tea.','');}},{t:'Stand firm',fn:function(){if(Math.random()<.6+.08*s.inf){s.inf++;note('The Chai Syndicate backed off',t+' stays yours. Influence +1.','good');}else{delete s.turf[O.city];note('You lost '+t,'The Chai Syndicate moved in. Talk to the Don about new territory.','bad');}save();}}]);}
+/* loose lips: talk about the family in the street and the family hears about it */
+var lipT=0;
+function looseLips(t){var n=norm(t);if(!/roastery|don arabica|the family business|\bmafia\b|\bmob\b|\bmobster|sal the ledger|crime family|back room at luigi/.test(n))return false;if(now()-lipT<4000)return true;lipT=now();
+  var w=W4(),s=syn();w.lips=(w.lips||0)+1;var first=w.lips===1&&s.rank>0;
+  setTimeout(function(){if(first){textIn('Unknown','A friend says you\'ve been talking about things you shouldn\'t. Don\'t.');return;}brick();},rnd(20000,45000));return true;}
+function brick(){var w=W4(),mine=G.locs.filter(function(l){return l.city===O.city;}),loc=pick(mine);if(!loc)return;w.broken=w.broken||{};w.broken[loc.id]={t:now()};if(syn().rank)syn().heat=Math.min(10,syn().heat+1);
+  try{tone(1800,.08,'square',.06);tone(900,.25,'sawtooth',.05,.05);}catch(e){}
+  note('A brick through the window','At '+loc.name+'. Tied to it, a note: "We don\'t talk about the Roastery." Customers are staying away until you fix it.','bad',{label:'Directions',fn:function(){navTo(placeById('shop:'+loc.id));}});O.dirty=true;save();}
+function brickMult(loc){var b=W4().broken;return b&&b[loc.id]?.8:1;}
+function brickActs(){var b=W4().broken;if(!b||P.area!=='city')return [];var out=[];Object.keys(b).forEach(function(id){var p=placeById('shop:'+id);if(!p||Math.hypot(p.x-P.x,p.z-P.z)>4)return;var c=Math.round(900*tierM());
+  out.push({x:p.x,z:p.z,r:4,label:'Fix the broken window',sub:fmt(c)+' · glass guy comes right away',fn:function(){if(!pay(c,'New glass'))return;delete b[id];O.dirty=true;toast('Good as new.','good');save();}});});return out;}
+function brickDecor(){var b=W4().broken;if(!b)return;Object.keys(b).forEach(function(id){var p=placeById('shop:'+id);if(!p)return;var g=new T.Group();g.position.set(p.x,0,p.z);dyn.add(g);bx(.3,.14,.16,toon(0xa8452a),.6,.3,.4,g).rotation.y=.6;for(var i=0;i<9;i++){var sh=plane(.12+Math.random()*.15,.1,glass(0xcfe8f4,.7),-.8+Math.random()*1.8,.24,-.2+Math.random()*.9,g);sh.rotation.x=-Math.PI/2;sh.rotation.z=Math.random()*3;}});}

@@ -2,25 +2,28 @@
 /* ---------- real AI people (Gemini through Firebase AI Logic) ----------
    The model only talks. The game decides every price, sale and ban, so nobody can be sweet-talked
    below their real minimum. If the AI is off, slow or out of quota, the scripted brain answers instead. */
-var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite'],mi:0,hist:{},tok:0};
+var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite'],mi:0,fails:0,win:[],hist:{},tok:0};
 var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade',AI_APPID='',AI_SITEKEY='',AC={tok:null,exp:0,p:null,ac:null};
 /* App Check: proves requests come from the real game page (reCAPTCHA v3, invisible) */
 function acToken(){if(!AI_SITEKEY||!AI_APPID)return Promise.resolve(null);if(AC.tok&&AC.exp>now()+60000)return Promise.resolve(AC.tok);if(AC.p)return AC.p;
   AC.p=Promise.all([import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js')]).then(function(m){var A=m[0],C=m[1],app=A.getApps().filter(function(a){return a.name==='crema-ai';})[0]||A.initializeApp({apiKey:AI_KEY,projectId:AI_PROJ,appId:AI_APPID,authDomain:'lazer-arcade.firebaseapp.com'},'crema-ai');
     if(!AC.ac)AC.ac=C.initializeAppCheck(app,{provider:new C.ReCaptchaV3Provider(AI_SITEKEY),isTokenAutoRefreshEnabled:true});return C.getToken(AC.ac,false);})
     .then(function(r){AC.tok=r&&r.token;AC.exp=now()+25*60000;AC.p=null;return AC.tok;}).catch(function(e){AC.p=null;console.warn('App Check',e&&e.message);return null;});return AC.p;}
-function aiOk(){return AI.on&&AI.calls<400&&now()>AI.down&&navigator.onLine!==false;}
+function aiOk(){var t=now();AI.win=AI.win.filter(function(x){return t-x<60000;});return AI.on&&AI.win.length<30&&t>AI.down&&navigator.onLine!==false;}
 function aiCall(sys,hist,user){
-  if(!aiOk())return Promise.resolve(null);AI.calls++;
+  if(!aiOk())return Promise.resolve(null);AI.calls++;AI.win.push(now());var tries=0;
   var contents=hist.slice(-10).map(function(h){return {role:h.r,parts:[{text:h.t}]};}).concat([{role:'user',parts:[{text:user}]}]);
-  var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:400,responseMimeType:'application/json'},
+  var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:1200,responseMimeType:'application/json'},
     safetySettings:['HARM_CATEGORY_HARASSMENT','HARM_CATEGORY_HATE_SPEECH','HARM_CATEGORY_SEXUALLY_EXPLICIT','HARM_CATEGORY_DANGEROUS_CONTENT'].map(function(c){return {category:c,threshold:'BLOCK_MEDIUM_AND_ABOVE'};})};
-  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},11000);
+  var once=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},16000);tries++;
     return acToken().then(function(tk){var hd={'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'};if(tk)hd['X-Firebase-AppCheck']=tk;if(AI_APPID)hd['X-Firebase-Appid']=AI_APPID;return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:hd,body:JSON.stringify(body),signal:ctl?ctl.signal:undefined});})
-      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===401||r.status===403?300000:30000);if(r.status===401)AC.tok=null;return null;}return r.json();})
-      .then(function(j){if(!j||!j.candidates)return j===null?null:null;var c=j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||'';}).join(''):'';return aiJSON(t);})
-      .catch(function(){clearTimeout(tm);AI.down=now()+20000;return null;});};
-  return go();}
+      .then(function(r){clearTimeout(tm);if(!r.ok)return {err:r.status};return r.json().then(function(j){var c=j&&j.candidates&&j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.filter(function(p){return !p.thought;}).map(function(p){return p.text||'';}).join(''):'';var o=aiJSON(t);return o?{ok:o}:{err:'parse'};});})
+      .catch(function(){clearTimeout(tm);return {err:'net'};});};
+  var run=function(){return once().then(function(res){if(res.ok){AI.fails=0;return res.ok;}var e=res.err;
+    if(e===404&&AI.mi<AI.models.length-1){AI.mi++;return run();}
+    if(tries<3&&e!==401&&e!==403){if(e!=='parse')AI.mi=(AI.mi+1)%AI.models.length;return run();}
+    AI.fails++;AI.down=now()+(e===429?20000:e===401||e===403?120000:6000);if(e===401)AC.tok=null;return null;});};
+  return run();}
 function aiJSON(t){if(!t)return null;t=t.replace(/^```(json)?/,'').replace(/```$/,'').trim();try{return JSON.parse(t);}catch(e){var m=t.match(/\{[\s\S]*\}/);if(m)try{return JSON.parse(m[0]);}catch(e2){}}return null;}
 function clean(s){s=String(s||'').replace(/\s+/g,' ').trim();if(s.length>260)s=s.slice(0,257)+'…';return s;}
 function remember(key,r,t){var h=AI.hist[key]=AI.hist[key]||[];h.push({r:r,t:t});if(h.length>14)h.splice(0,h.length-14);}
@@ -80,7 +83,7 @@ function showVerdict(b,phone,v,said){var s=dState(b),who={who:b.owner,role:b.hom
   bizTalk(b,phone,said||(v.k==='broke'?line('broke',b):v.k==='heart'?line('heart',b):v.k==='counter'?line('counter',b,{n:fmt(s.ask)}):v.k==='firm'?line('firm',b,{n:fmt(s.ask)}):line('insult',b)));}
 
 /* ----- people on the street ----- */
-function aiPed(p,t){var tok=++AI.tok,key='p:'+p.me.root.id,loc=nearestMine(p.x,p.z);if(!aiOk()){pedSay(p,t);return;}
+function aiPed(p,t){var tok=++AI.tok,key='p:'+p.me.root.id,loc=nearestMine(p.x,p.z);if(!aiOk()){pedSay(p,t);return;}looseLips(t);
   var names=[];places.forEach(function(q){if(areaOfX(q.x))return;if(names.indexOf(q.name)<0&&names.length<46)names.push(q.name);});plan.blocks.forEach(function(b){var nm=blockName(b);if(names.indexOf(nm)<0)names.push(nm);});
   var gossip=[];for(var i=0;i<3;i++){var g=rumor(p);if(gossip.indexOf(g)<0&&!/Nothing new/.test(g))gossip.push(g.replace(/"/g,''));}
   var sys='You are '+p.name+', a local walking down '+(streetAt(p.x,p.z)||'the street')+' in a cozy city-builder game. Invent a consistent little life for yourself (job, family, opinions). '+cityFacts()+

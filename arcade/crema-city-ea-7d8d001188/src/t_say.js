@@ -66,7 +66,7 @@ function dealSay0(b,phone,t){var s=dState(b),n=norm(t),p=b.pers,amt=parseAmt(t),
 
 /* ----- people on the street ----- */
 function pedSay(p,t){try{pedSay0(p,t);}finally{YOU=null;}}
-function pedSay0(p,t){var n=norm(t),loc=nearestMine(p.x,p.z);YOU=t;
+function pedSay0(p,t){var n=norm(t),loc=nearestMine(p.x,p.z);YOU=t;looseLips(t);
   var reply=function(m,after){say(p,m,after);};
   if(/^(bye|goodbye|see ya|see you|later|thanks|thank you|cheers)\b/.test(n)){YOU=null;p.stop=rnd(.5,1.2);bubble(p.x,2.4,p.z,'Bye!','');return;}
   var pl=findPlace(t);if(pl&&(/where|how (do|can) i get|directions|way to|take me|find|looking for|know where|which way/.test(n)||pl.sc>=2)){reply('"'+pl.name+'? '+pick(['That way. Here, I\'ll show you.','Sure, it\'s not far. Follow the arrows.','Oh, easy. This way.'])+'"',function(){navTo(pl);});return;}
@@ -130,6 +130,7 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var tq=n.replace(/.*\bto\b/,'');if(/\bto\b/.test(n)){cabTo(tq);return true;}hailBox();return true;}
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var cp=findPlace(n.replace(/.*\bto\b/,''));if(cp&&/\bto\b/.test(n)){callCab(cp);}else openPhone('cab');return true;}
   if(/bird|whole city|city view|overview|from above|map view|see everything|zoom out/.test(n)){if(P.area==='city')birdOn();else toast('Step outside first.');return true;}
+  if(/\b(loan|borrow|financ|invest(or|ment)? money)\b/.test(n)&&(/plan|pitch|million|\d{3},?\d{3}|\d+ ?(k|m)\b|big|more than|business loan/.test(n))){pitchLoan();return true;}
   if(/\b(loan|borrow|bank account|deposit|withdraw|briefcase)\b/.test(n)){bankWindow();return true;}
   if(/\b(tax|taxes|permit|election|council)\b/.test(n)){cityHallCall();return true;}
   if(/order (supplies|crates|delivery)|deliver/.test(n)){orderDelivery();return true;}

@@ -137,7 +137,7 @@ function econTick(dt){
   if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -151,15 +151,20 @@ function taxCredits(c){var v=civ(c),staff=0,dec=0,l=[];G.locs.forEach(function(x
 function periodEnd(){
   var w=W4(),amt=0;for(var c=0;c<Math.max(1,G.cities||1);c++)amt+=cityTax(c);amt=Math.round(amt);
   if(amt>0){var bill={id:now(),amt:amt,due:now()+PERIOD*1000,paid:false,late:false};w.tax.bills.push(bill);
-    if(w.tax.auto&&G.cash>=amt){G.cash-=amt;bill.paid=true;w.tax.paid+=amt;note('Taxes paid','Autopay sent '+fmt(amt)+' to the city.','info');}
-    else note('Tax bill: '+fmt(amt),'Due in '+mmssS(PERIOD)+'. Pay at City Hall'+(w.tax.visited?' or on your phone':'')+'.','info',{label:w.tax.visited?'Pay now':'Directions',fn:function(){if(w.tax.visited)payTaxes();else navTo(placeById('hall'));}});}
+    if(w.tax.auto&&G.cash>=amt){G.cash-=amt;bill.paid=true;w.tax.paid+=amt;}
+    else if(!w.tax.auto)note('Tax bill: '+fmt(amt),'Due in '+mmssS(PERIOD)+'. Pay at City Hall'+(w.tax.visited?' or on your phone':'')+'.','info',{label:w.tax.visited?'Pay now':'Directions',fn:function(){if(w.tax.visited)payTaxes();else navTo(placeById('hall'));}});}
   w.tax.bills.forEach(function(b){if(!b.paid&&!b.late&&b.due<now()){b.late=true;b.amt=Math.round(b.amt*1.1);note('Late fee','A tax bill is overdue: +10%. Three unpaid bills and the city stops issuing building permits.','bad');}});
   w.tax.bills=w.tax.bills.filter(function(b){return !b.paid||now()-b.id<PERIOD*3000;});
-  var b=w.bank;if(b.loan>0){var i=Math.round(b.loan*.025);if(G.cash>=i){G.cash-=i;}else b.loan+=i;b.intPaid=(b.intPaid||0)+i;}
-  if(b.sav>0){var si=Math.min(25000*TM(Math.max(0,(G.cities||1)-1)).pm,Math.round(b.sav*.006));b.sav+=si;}
-  if(b.ins){var pr=insPremium();G.cash-=pr;}
+  var b=w.bank,lines=[],took=0;if(amt>0){var pd=w.tax.auto&&bill&&bill.paid;lines.push('City taxes: '+fmt(amt)+(pd?' (autopay)':' (bill, not paid yet)'));if(pd)took+=amt;}
+  if(b.loan>0){var i=Math.round(b.loan*bankRate());if(G.cash>=i){G.cash-=i;took+=i;lines.push('Bank loan interest ('+(bankRate()*100).toFixed(1)+'%): '+fmt(i));}else{b.loan+=i;lines.push('Loan interest added to your balance: '+fmt(i));}b.intPaid=(b.intPaid||0)+i;}
+  if(b.sav>0){var si=Math.min(25000*TM(Math.max(0,(G.cities||1)-1)).pm,Math.round(b.sav*.006));b.sav+=si;lines.push('Savings interest earned: +'+fmt(si));}
+  if(b.ins){var pr=insPremium();G.cash-=pr;took+=pr;lines.push('Insurance premium: '+fmt(pr));}
+  w.stmt={t:now(),lines:lines,took:took};w.stmts=(w.stmts||[]);w.stmts.unshift(w.stmt);if(w.stmts.length>12)w.stmts.length=12;
+  if(lines.length)note('Statement'+(took?': −'+fmt(took):''),lines.join(' · '),'info',{label:'Details',fn:showStatements});
   save();
 }
+function showStatements(){var w=W4(),s=w.stmts||[];popup('Your statements',s.length?s.slice(0,6).map(function(q){return new Date(q.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(q.took?'  −'+fmt(q.took):'')+'\n  '+q.lines.join('\n  ');}).join('\n\n'):'Nothing yet. Every 8 minutes the city bills taxes, and the bank charges loan interest and insurance.',[{t:'OK'}]);}
+function allTax(){var t=0;for(var c=0;c<Math.max(1,G.cities||1);c++)t+=cityTax(c);return Math.round(t);}
 function unpaid(){return W4().tax.bills.filter(function(b){return !b.paid;});}
 function payTaxes(){var u=unpaid(),tot=u.reduce(function(s,b){return s+b.amt;},0);if(!tot){toast('You\'re all paid up.','good');return;}if(!pay(tot,'Your tax bills'))return;u.forEach(function(b){b.paid=true;});W4().tax.paid+=tot;note('Taxes paid',fmt(tot)+' to the city. Thank you for your business!','good');save();}
 function netWorth(){var n=G.cash+W4().bank.sav-W4().bank.loan;G.locs.forEach(function(l){n+=locCost(l.city,l.did,l.ind)*.6;});return Math.max(0,n);}
@@ -168,7 +173,7 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1)*(w.celeb>now()?1.15:1)*(w.dog&&w.dog.own?1.02:1);return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1)*(w.celeb>now()?1.15:1)*(w.dog&&w.dog.own?1.02:1)*brickMult(loc)*(w.recipe?1.08:1);return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}

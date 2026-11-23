@@ -51,7 +51,8 @@ function buildWest(){var p=plan,keep=stat;stat=new T.Group();var g=stat,r=seeded
   for(var i=0;i<40;i++){var x=x0-14-r()*90,z=p.zs[0]-20+r()*(p.zs[p.R]-p.zs[0]+40);if(r()<.5){tree(g,x,z,r()<.5?0x5fb35a:0x4f9a4a,'leaf',r);}else{var c=pick([0xf2d7b6,0xe9b8a0,0xc9d8c0,0xd8cde6]),hh=new T.Group();hh.position.set(x,0,z);hh.rotation.y=r()*6;g.add(hh);rb(6,3.4,5,.1,toon(c),0,1.7,0,hh);var rf=prism(6.6,2.2,5.6,toon(0x9a5a4a),0,3.4,0,hh);rf.rotation.y=Math.PI/2;bx(1,2,.1,toon(0x6b4a30),0,1,2.55,hh);}}
   for(i=0;i<6;i++){var hl=sp(60+r()*40,toon(0x8cc47a),x0-180-r()*60,-30,p.zs[0]+i*40,g,14);hl.scale.y=.5;}
   O.scene.add(mergeGroup(stat));stat=keep;}
-function updGeo(dt,tl){anim.forEach(function(a){
+var animGC=0;
+function updGeo(dt,tl){animGC+=dt;if(animGC>6){animGC=0;for(var ai=anim.length-1;ai>=0;ai--){var ao=anim[ai].obj;if(ao&&!ao.parent)anim.splice(ai,1);}}anim.forEach(function(a){
   if(a.lift){var L=a.lift.length;a.lift.forEach(function(ch,i){var t=((tl*.02+i/L)%1),up=t<.5,k=up?t*2:2-t*2,off=up?1.7:-1.7;ch.position.set(a.a.x+off+(a.b.x-a.a.x)*k,8.5+(a.b.y-a.a.y)*k,a.a.z+(a.b.z-a.a.z)*k);});}
   else if(a.wheel){a.wheel.rotation.z+=dt*.12;a.wheel.children.forEach(function(c){if(c.isGroup)c.rotation.z=-a.wheel.rotation.z;});}
   else if(a.boat){a.boat.position.x+=a.v*dt;if(a.boat.position.x>a.cx+260)a.boat.position.x=a.cx-260;if(a.boat.position.x<a.cx-260)a.boat.position.x=a.cx+260;a.boat.rotation.y=a.v>0?Math.PI/2:-Math.PI/2;a.boat.rotation.z=Math.sin(tl*1.3+a.v)*.06;}

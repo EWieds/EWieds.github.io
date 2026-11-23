@@ -3822,7 +3822,7 @@ function econTick(dt){
   if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -3836,15 +3836,20 @@ function taxCredits(c){var v=civ(c),staff=0,dec=0,l=[];G.locs.forEach(function(x
 function periodEnd(){
   var w=W4(),amt=0;for(var c=0;c<Math.max(1,G.cities||1);c++)amt+=cityTax(c);amt=Math.round(amt);
   if(amt>0){var bill={id:now(),amt:amt,due:now()+PERIOD*1000,paid:false,late:false};w.tax.bills.push(bill);
-    if(w.tax.auto&&G.cash>=amt){citySpend(amt);bill.paid=true;w.tax.paid+=amt;note('Taxes paid','Autopay sent '+fmt(amt)+' to the city.','info');}
-    else note('Tax bill: '+fmt(amt),'Due in '+mmssS(PERIOD)+'. Pay at City Hall'+(w.tax.visited?' or on your phone':'')+'.','info',{label:w.tax.visited?'Pay now':'Directions',fn:function(){if(w.tax.visited)payTaxes();else navTo(placeById('hall'));}});}
+    if(w.tax.auto&&G.cash>=amt){citySpend(amt);bill.paid=true;w.tax.paid+=amt;}
+    else if(!w.tax.auto)note('Tax bill: '+fmt(amt),'Due in '+mmssS(PERIOD)+'. Pay at City Hall'+(w.tax.visited?' or on your phone':'')+'.','info',{label:w.tax.visited?'Pay now':'Directions',fn:function(){if(w.tax.visited)payTaxes();else navTo(placeById('hall'));}});}
   w.tax.bills.forEach(function(b){if(!b.paid&&!b.late&&b.due<now()){b.late=true;b.amt=Math.round(b.amt*1.1);note('Late fee','A tax bill is overdue: +10%. Three unpaid bills and the city stops issuing building permits.','bad');}});
   w.tax.bills=w.tax.bills.filter(function(b){return !b.paid||now()-b.id<PERIOD*3000;});
-  var b=w.bank;if(b.loan>0){var i=Math.round(b.loan*.025);if(G.cash>=i){citySpend(i);}else b.loan+=i;b.intPaid=(b.intPaid||0)+i;}
-  if(b.sav>0){var si=Math.min(25000*TM(Math.max(0,(G.cities||1)-1)).pm,Math.round(b.sav*.006));b.sav+=si;}
-  if(b.ins){var pr=insPremium();citySpend(pr);}
+  var b=w.bank,lines=[],took=0;if(amt>0){var pd=w.tax.auto&&bill&&bill.paid;lines.push('City taxes: '+fmt(amt)+(pd?' (autopay)':' (bill, not paid yet)'));if(pd)took+=amt;}
+  if(b.loan>0){var i=Math.round(b.loan*bankRate());if(G.cash>=i){citySpend(i);took+=i;lines.push('Bank loan interest ('+(bankRate()*100).toFixed(1)+'%): '+fmt(i));}else{b.loan+=i;lines.push('Loan interest added to your balance: '+fmt(i));}b.intPaid=(b.intPaid||0)+i;}
+  if(b.sav>0){var si=Math.min(25000*TM(Math.max(0,(G.cities||1)-1)).pm,Math.round(b.sav*.006));b.sav+=si;lines.push('Savings interest earned: +'+fmt(si));}
+  if(b.ins){var pr=insPremium();citySpend(pr);took+=pr;lines.push('Insurance premium: '+fmt(pr));}
+  w.stmt={t:now(),lines:lines,took:took};w.stmts=(w.stmts||[]);w.stmts.unshift(w.stmt);if(w.stmts.length>12)w.stmts.length=12;
+  if(lines.length)note('Statement'+(took?': −'+fmt(took):''),lines.join(' · '),'info',{label:'Details',fn:showStatements});
   save();
 }
+function showStatements(){var w=W4(),s=w.stmts||[];popup('Your statements',s.length?s.slice(0,6).map(function(q){return new Date(q.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(q.took?'  −'+fmt(q.took):'')+'\n  '+q.lines.join('\n  ');}).join('\n\n'):'Nothing yet. Every 8 minutes the city bills taxes, and the bank charges loan interest and insurance.',[{t:'OK'}]);}
+function allTax(){var t=0;for(var c=0;c<Math.max(1,G.cities||1);c++)t+=cityTax(c);return Math.round(t);}
 function unpaid(){return W4().tax.bills.filter(function(b){return !b.paid;});}
 function payTaxes(){var u=unpaid(),tot=u.reduce(function(s,b){return s+b.amt;},0);if(!tot){toast('You\'re all paid up.','good');return;}if(!pay(tot,'Your tax bills'))return;u.forEach(function(b){b.paid=true;});W4().tax.paid+=tot;note('Taxes paid',fmt(tot)+' to the city. Thank you for your business!','good');save();}
 function netWorth(){var n=G.cash+W4().bank.sav-W4().bank.loan;G.locs.forEach(function(l){n+=locCost(l.city,l.did,l.ind)*.6;});return Math.max(0,n);}
@@ -3853,14 +3858,14 @@ function insPremium(){return Math.round(Math.max(150,netWorth()*.003));}
 O.insured=function(loc){return G&&G.w4&&G.w4.bank&&G.w4.bank.ins&&Math.random()<.6;};
 O.demMult=function(loc){if(!G||!G.w4||!G.w4.land)return 1;var w=G.w4,m=1,c=loc.city;
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.d!==loc.did)return;if(l.use==='billboard')m+=.08;if(l.use==='parking')m+=.06;});
-  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1)*(w.celeb>now()?1.15:1)*(w.dog&&w.dog.own?1.02:1);return m;};
+  var v=w.civ&&w.civ[c];if(v&&v.policy==='tourism')m*=1.15;if(distOf(loc).win==='campus')m*=1.1+(w.kiosk&&w.kiosk[c]?.02*w.kiosk[c]:0);if(v&&v.party&&v.party.until>now()&&v.party.d===loc.did)m*=1.4;if(w.party>now()&&loc.city===O.city)m*=1.08;m*=lawMult('dem',loc.city)*(hasClass('mkt')?1.04:1)*(w.celeb>now()?1.15:1)*(w.dog&&w.dog.own?1.02:1)*brickMult(loc)*(w.recipe?1.08:1);return m;};
 function truckCustomer(v){var g=v.g;g.updateMatrixWorld(true);var w=g.localToWorld(V3(-2.6,0,-.9)),a=g.localToWorld(V3(-3.4,0,-9)),b=g.localToWorld(V3(-3.4,0,8));
   var from=Math.random()<.5?a:b,to=from===a?b:a;var wk=walker([{x:from.x,z:from.z},{x:w.x,z:w.z}],{end:'fade'});wk.path.push({x:to.x,z:to.z});wk.atTruck=1;
   var aw=v.g.userData.awning;if(aw)aw.rotation.z=-1.1;}
 
 
 /* ---------- interiors: real rooms you walk through ---------- */
-var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000,grocery:-4300,home:-4600,store:-4900,eatery:-5150,office:-5400,mall:-5700,sewer:-6200,court:-6500,jail:-6800,e_it:-7100,e_asia:-7400,e_sushi:-7700,e_mex:-8000,e_steak:-8300,e_diner:-8600,e_bistro:-8900,e_speak:-9200,theater:-9500,roast:-9800};
+var IOX={supply:-3000,hall:-3200,bank:-3400,terminal:-3700,super:-4000,grocery:-4300,home:-4600,store:-4900,eatery:-5150,office:-5400,mall:-5700,sewer:-6200,court:-6500,jail:-6800,e_it:-7100,e_asia:-7400,e_sushi:-7700,e_mex:-8000,e_steak:-8300,e_diner:-8600,e_bistro:-8900,e_speak:-9200,theater:-9500,roast:-9800,home2:-10100};
 function floorT(a,b,s){return tx('fl'+a+b+s,128,128,function(g,w,h){var n=s||4,c=w/n;for(var y=0;y<n;y++)for(var x=0;x<n;x++){g.fillStyle=(x+y)%2?hexCss(a):hexCss(b);g.fillRect(x*c,y*c,c,c);}speck(g,w,h,200,.04);});}
 function room(id,o){
   var ox=IOX[id],w=o.w,d=o.d,g=new T.Group();g.position.set(ox,0,0);stat.add(g);curArea=id;ACTS[id]=[];
@@ -3880,7 +3885,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
+  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();home2Room();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){
@@ -4088,7 +4093,7 @@ function camInside(x,z,y){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area
 
 /* ---------- the action buttons (stable DOM: built once per change, never every frame) ---------- */
 function updActs(){
-  var list=caterActs().concat(mhActs(),crashActs(),synActs(),gigActs(),catActs(),celebActs(),ghostActs(),dogActs(),clockActs(),ACTS[P.area]||[],P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs(),beanActs(),vendActs()):[]),best=null,bd=1e9;
+  var list=caterActs().concat(mhActs(),crashActs(),synActs(),gigActs(),catActs(),celebActs(),ghostActs(),dogActs(),clockActs(),homeActs(),brickActs(),(ACTS[P.area]||[]).filter(home2When),P.area==='city'?vehAct().concat(rivalTruckActs(),pedActs(),repairActs(),taxiActs(),beanActs(),vendActs()):[]),best=null,bd=1e9;
   if(!drv&&!(RIDE&&!RIDE.coming)&&!CUT)list.forEach(function(a){var d=Math.hypot(a.x-P.x,a.z-P.z);if(d<a.r&&d<bd){bd=d;best=a;}});
   curAct=best;var el=$('#o-act'),el2=$('#o-alt'),k1='',k2='';
   if(drv){k1='Get out|'+(drv.v.kind==='truck'?(truckZone(drv.v)?'Park here and open the window':'Not a vending zone'):districtName(P.x,P.z));curAlt=null;}
@@ -4306,8 +4311,8 @@ function permitsWindow(){var v=civ(),m=v.policy==='permits'?.5:1,tm=tierM(),opts
   if(O.city>0&&(G.cities||1)<=O.city)opts.push({t:'Register a regional office',s:'Lets you open shops in '+plan.name+' (same as the Empire tab)',fn:function(){var r=act('city',O.city);if(r==='ok'){note('Regional office open','You can now buy land and open shops in '+plan.name+'.','good');banner('Welcome to '+plan.name,'Regional office registered','good');}else{var q=cityReq(O.city);popup('Not yet','You need level '+q.lvl+' and '+q.own+' shops in '+cityName(O.city-1)+'.',[{t:'OK'}],'bad');}}});
   popup('Permits window','"Next! What can the city do for you today?"',opts.concat([{t:'That\'s all',cls:'sec'}]),'',{who:'Permits clerk',role:'City Hall',col:'#2f8fd0'});}
 function taxWindow(){var w=W4(),u=unpaid(),tot=u.reduce(function(s,b){return s+b.amt;},0),cr=taxCredits(O.city);
-  var txt='Bills come every 8 minutes, based on what your businesses take in.\n'+(u.length?plural(u.length,'unpaid bill')+': '+fmt(tot)+(liened()?'\nPermits are on hold until you pay.':''):'You\'re all paid up.')+'\nNext bill about '+fmt(cityTax(O.city))+' for '+plan.name+'.\n\nTax credits'+(cr.list.length?': '+cr.list.map(function(q){return q[0]+' −'+Math.round(q[1]*100)+'%';}).join(', '):': none yet. Hire 6+ staff here, add a patio, or win a council seat.');
-  popup('Taxes window',txt,[{t:'Pay '+fmt(tot),off:!tot,why:'Nothing to pay.',fn:payTaxes},{t:w.tax.auto?'Turn autopay off':'Turn on autopay',s:'Bills are paid the moment they arrive',fn:function(){w.tax.auto=!w.tax.auto;toast(w.tax.auto?'Autopay is on.':'Autopay is off.','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Tax clerk',role:'City Hall',col:'#2fa860'});}
+  var txt='Bills come every 8 minutes, based on what your businesses take in.\n'+(u.length?plural(u.length,'unpaid bill')+': '+fmt(tot)+(liened()?'\nPermits are on hold until you pay.':''):'You\'re all paid up.')+'\nNext bill about '+fmt(allTax())+((G.cities||1)>1?' (all your cities; '+fmt(cityTax(O.city))+' from '+plan.name+')':'')+'. It is the only thing the city charges.'+(w.bank.loan>0||w.bank.ins?'\nSeparately, the bank charges '+(w.bank.loan>0?(bankRate()*100).toFixed(1)+'% loan interest ('+fmt(Math.round(w.bank.loan*bankRate()))+')':'')+(w.bank.loan>0&&w.bank.ins?' and ':'')+(w.bank.ins?'your insurance premium ('+fmt(insPremium())+')':'')+' at the same time.':'')+'\n\nTax credits'+(cr.list.length?': '+cr.list.map(function(q){return q[0]+' −'+Math.round(q[1]*100)+'%';}).join(', '):': none yet. Hire 6+ staff here, add a patio, or win a council seat.');
+  popup('Taxes window',txt,[{t:'Pay '+fmt(tot),off:!tot,why:'Nothing to pay.',fn:payTaxes},{t:'Past statements',fn:showStatements},{t:w.tax.auto?'Turn autopay off':'Turn on autopay',s:'Bills are paid the moment they arrive',fn:function(){w.tax.auto=!w.tax.auto;toast(w.tax.auto?'Autopay is on.':'Autopay is off.','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Tax clerk',role:'City Hall',col:'#2fa860'});}
 function electionsWindow(){var v=civ(),tm=tierM(),now2=now();
   if(v.camp&&v.camp.until>now2){popup('Elections office','"Your campaign is running. Results in '+mmssS((v.camp.until-now2)/1000)+'."',[{t:'OK'}]);return;}
   if(!v.council){var cc=Math.round(5000*tm);popup('Elections office','"A council seat opened up. You\'d need some name recognition (fame 250+) and a campaign budget."\n\nCouncil members get −15% taxes in '+plan.name+'.\nYour fame: '+Math.round(G.fame),[{t:'Run for council · '+fmt(cc),off:G.fame<250,why:'You need 250 fame.',fn:function(){if(!pay(cc,'The campaign'))return;v.camp={type:'council',until:now()+90000};note('Campaign launched','Your posters are going up all over '+plan.name+'. Results in 90 seconds.','good');save();}},{t:'Not now',cls:'sec'}],'',{who:'Clerk',role:'Elections office',col:'#7a5ad8'});return;}
@@ -4321,7 +4326,7 @@ function campaignTick(){Object.keys(W4().civ).forEach(function(c){var v=W4().civ
 function bankWindow(tab){var b=W4().bank,who={who:'Teller',role:'Crema Savings & Loan',col:'#2f5a46'};
   if(tab==='sav'){popup('Savings','Savings: '+fmt(b.sav)+'\nEarns 0.6% every 8 minutes. Money in savings is safe but can\'t be spent until you withdraw it.',[
     {t:'Deposit half your cash · '+fmt(G.cash/2),off:G.cash<10,fn:function(){var d=Math.floor(G.cash/2);citySpend(d);b.sav+=d;toast('Deposited '+fmt(d)+'.','good');save();}},{t:'Withdraw everything · '+fmt(b.sav),off:!b.sav,fn:function(){cityGain(b.sav);toast('Withdrew '+fmt(b.sav)+'.','good');b.sav=0;save();}},{t:'Done',cls:'sec'}],'',who);return;}
-  if(tab==='loan'){var lim=Math.max(0,loanLimit()-b.loan);popup('Loans','Current loan: '+fmt(b.loan)+'\nYou can borrow '+fmt(lim)+' more. Interest is 2.5% every 8 minutes, taken from cash.',[
+  if(tab==='loan'){var lim=Math.max(0,loanLimit()-b.loan);popup('Loans','Current loan: '+fmt(b.loan)+'\nYou can borrow '+fmt(lim)+' more on your name alone. Interest is '+(bankRate()*100).toFixed(1)+'% every 8 minutes, taken from cash.\nNeed more? Pitch a plan. With a good plan and an analyst\'s report the bank goes much higher.',[{t:'Pitch a business plan',s:'For a build, a buyout, or any idea',fn:pitchLoan},
     {t:'Borrow '+fmt(Math.round(lim/4)),off:lim<100,fn:function(){var a=Math.round(lim/4);b.loan+=a;cityGain(a);note('Loan approved','+'+fmt(a)+' in cash.','good');save();}},{t:'Borrow '+fmt(lim),off:lim<100,fn:function(){b.loan+=lim;cityGain(lim);note('Loan approved','+'+fmt(lim)+' in cash.','good');save();}},
     {t:'Repay '+fmt(Math.min(b.loan,G.cash)),off:!b.loan||G.cash<1,fn:function(){var a=Math.min(b.loan,G.cash);citySpend(a);b.loan-=a;toast(b.loan?'Paid down '+fmt(a)+'.':'Loan paid off!','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46'});return;}
   if(tab==='ins'){popup('Business insurance',(b.ins?'You\'re covered.':'Not insured.')+'\nCovers 60% of rival dirty tricks (fake reviews, poached staff, price wars). Premium '+fmt(insPremium())+' every 8 minutes.',[{t:b.ins?'Cancel the policy':'Buy a policy',fn:function(){b.ins=!b.ins;toast(b.ins?'You\'re insured.':'Policy cancelled.','good');save();}},{t:'Done',cls:'sec'}],'',{who:'Insurance desk',role:'Crema Savings & Loan',col:'#2f5a46'});}}
@@ -4807,7 +4812,8 @@ function buildWest(){var p=plan,keep=stat;stat=new T.Group();var g=stat,r=seeded
   for(var i=0;i<40;i++){var x=x0-14-r()*90,z=p.zs[0]-20+r()*(p.zs[p.R]-p.zs[0]+40);if(r()<.5){tree(g,x,z,r()<.5?0x5fb35a:0x4f9a4a,'leaf',r);}else{var c=pick([0xf2d7b6,0xe9b8a0,0xc9d8c0,0xd8cde6]),hh=new T.Group();hh.position.set(x,0,z);hh.rotation.y=r()*6;g.add(hh);rb(6,3.4,5,.1,toon(c),0,1.7,0,hh);var rf=prism(6.6,2.2,5.6,toon(0x9a5a4a),0,3.4,0,hh);rf.rotation.y=Math.PI/2;bx(1,2,.1,toon(0x6b4a30),0,1,2.55,hh);}}
   for(i=0;i<6;i++){var hl=sp(60+r()*40,toon(0x8cc47a),x0-180-r()*60,-30,p.zs[0]+i*40,g,14);hl.scale.y=.5;}
   O.scene.add(mergeGroup(stat));stat=keep;}
-function updGeo(dt,tl){anim.forEach(function(a){
+var animGC=0;
+function updGeo(dt,tl){animGC+=dt;if(animGC>6){animGC=0;for(var ai=anim.length-1;ai>=0;ai--){var ao=anim[ai].obj;if(ao&&!ao.parent)anim.splice(ai,1);}}anim.forEach(function(a){
   if(a.lift){var L=a.lift.length;a.lift.forEach(function(ch,i){var t=((tl*.02+i/L)%1),up=t<.5,k=up?t*2:2-t*2,off=up?1.7:-1.7;ch.position.set(a.a.x+off+(a.b.x-a.a.x)*k,8.5+(a.b.y-a.a.y)*k,a.a.z+(a.b.z-a.a.z)*k);});}
   else if(a.wheel){a.wheel.rotation.z+=dt*.12;a.wheel.children.forEach(function(c){if(c.isGroup)c.rotation.z=-a.wheel.rotation.z;});}
   else if(a.boat){a.boat.position.x+=a.v*dt;if(a.boat.position.x>a.cx+260)a.boat.position.x=a.cx-260;if(a.boat.position.x<a.cx-260)a.boat.position.x=a.cx+260;a.boat.rotation.y=a.v>0?Math.PI/2:-Math.PI/2;a.boat.rotation.z=Math.sin(tl*1.3+a.v)*.06;}
@@ -5074,7 +5080,7 @@ function dealSay0(b,phone,t){var s=dState(b),n=norm(t),p=b.pers,amt=parseAmt(t),
 
 /* ----- people on the street ----- */
 function pedSay(p,t){try{pedSay0(p,t);}finally{YOU=null;}}
-function pedSay0(p,t){var n=norm(t),loc=nearestMine(p.x,p.z);YOU=t;
+function pedSay0(p,t){var n=norm(t),loc=nearestMine(p.x,p.z);YOU=t;looseLips(t);
   var reply=function(m,after){say(p,m,after);};
   if(/^(bye|goodbye|see ya|see you|later|thanks|thank you|cheers)\b/.test(n)){YOU=null;p.stop=rnd(.5,1.2);bubble(p.x,2.4,p.z,'Bye!','');return;}
   var pl=findPlace(t);if(pl&&(/where|how (do|can) i get|directions|way to|take me|find|looking for|know where|which way/.test(n)||pl.sc>=2)){reply('"'+pl.name+'? '+pick(['That way. Here, I\'ll show you.','Sure, it\'s not far. Follow the arrows.','Oh, easy. This way.'])+'"',function(){navTo(pl);});return;}
@@ -5138,6 +5144,7 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var tq=n.replace(/.*\bto\b/,'');if(/\bto\b/.test(n)){cabTo(tq);return true;}hailBox();return true;}
   if(/\b(cab|taxi|uber|lyft|ride)\b/.test(n)){var cp=findPlace(n.replace(/.*\bto\b/,''));if(cp&&/\bto\b/.test(n)){callCab(cp);}else openPhone('cab');return true;}
   if(/bird|whole city|city view|overview|from above|map view|see everything|zoom out/.test(n)){if(P.area==='city')birdOn();else toast('Step outside first.');return true;}
+  if(/\b(loan|borrow|financ|invest(or|ment)? money)\b/.test(n)&&(/plan|pitch|million|\d{3},?\d{3}|\d+ ?(k|m)\b|big|more than|business loan/.test(n))){pitchLoan();return true;}
   if(/\b(loan|borrow|bank account|deposit|withdraw|briefcase)\b/.test(n)){bankWindow();return true;}
   if(/\b(tax|taxes|permit|election|council)\b/.test(n)){cityHallCall();return true;}
   if(/order (supplies|crates|delivery)|deliver/.test(n)){orderDelivery();return true;}
@@ -5173,25 +5180,28 @@ function aiCommand(t){var fail=function(){popup('Hmm','I couldn\'t work out "'+t
 /* ---------- real AI people (Gemini through Firebase AI Logic) ----------
    The model only talks. The game decides every price, sale and ban, so nobody can be sweet-talked
    below their real minimum. If the AI is off, slow or out of quota, the scripted brain answers instead. */
-var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite'],mi:0,hist:{},tok:0};
+var AI={on:true,down:0,calls:0,models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite'],mi:0,fails:0,win:[],hist:{},tok:0};
 var AI_KEY='AIzaSyArTaxXErhHQZ07rwLIOI_qoWCQOyHF4A8',AI_PROJ='lazer-arcade',AI_APPID='',AI_SITEKEY='',AC={tok:null,exp:0,p:null,ac:null};
 /* App Check: proves requests come from the real game page (reCAPTCHA v3, invisible) */
 function acToken(){if(!AI_SITEKEY||!AI_APPID)return Promise.resolve(null);if(AC.tok&&AC.exp>now()+60000)return Promise.resolve(AC.tok);if(AC.p)return AC.p;
   AC.p=Promise.all([import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js')]).then(function(m){var A=m[0],C=m[1],app=A.getApps().filter(function(a){return a.name==='crema-ai';})[0]||A.initializeApp({apiKey:AI_KEY,projectId:AI_PROJ,appId:AI_APPID,authDomain:'lazer-arcade.firebaseapp.com'},'crema-ai');
     if(!AC.ac)AC.ac=C.initializeAppCheck(app,{provider:new C.ReCaptchaV3Provider(AI_SITEKEY),isTokenAutoRefreshEnabled:true});return C.getToken(AC.ac,false);})
     .then(function(r){AC.tok=r&&r.token;AC.exp=now()+25*60000;AC.p=null;return AC.tok;}).catch(function(e){AC.p=null;console.warn('App Check',e&&e.message);return null;});return AC.p;}
-function aiOk(){return AI.on&&AI.calls<400&&now()>AI.down&&navigator.onLine!==false;}
+function aiOk(){var t=now();AI.win=AI.win.filter(function(x){return t-x<60000;});return AI.on&&AI.win.length<30&&t>AI.down&&navigator.onLine!==false;}
 function aiCall(sys,hist,user){
-  if(!aiOk())return Promise.resolve(null);AI.calls++;
+  if(!aiOk())return Promise.resolve(null);AI.calls++;AI.win.push(now());var tries=0;
   var contents=hist.slice(-10).map(function(h){return {role:h.r,parts:[{text:h.t}]};}).concat([{role:'user',parts:[{text:user}]}]);
-  var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:400,responseMimeType:'application/json'},
+  var body={systemInstruction:{parts:[{text:sys}]},contents:contents,generationConfig:{temperature:.95,maxOutputTokens:1200,responseMimeType:'application/json'},
     safetySettings:['HARM_CATEGORY_HARASSMENT','HARM_CATEGORY_HATE_SPEECH','HARM_CATEGORY_SEXUALLY_EXPLICIT','HARM_CATEGORY_DANGEROUS_CONTENT'].map(function(c){return {category:c,threshold:'BLOCK_MEDIUM_AND_ABOVE'};})};
-  var go=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},11000);
+  var once=function(){var model=AI.models[AI.mi],ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},16000);tries++;
     return acToken().then(function(tk){var hd={'Content-Type':'application/json','x-goog-api-key':AI_KEY,'x-goog-api-client':'gl-js/ fire/13.2.0'};if(tk)hd['X-Firebase-AppCheck']=tk;if(AI_APPID)hd['X-Firebase-Appid']=AI_APPID;return fetch('https://firebasevertexai.googleapis.com/v1beta/projects/'+AI_PROJ+'/models/'+model+':generateContent',{method:'POST',headers:hd,body:JSON.stringify(body),signal:ctl?ctl.signal:undefined});})
-      .then(function(r){clearTimeout(tm);if(r.status===404&&AI.mi<AI.models.length-1){AI.mi++;return go();}if(!r.ok){AI.down=now()+(r.status===429?60000:r.status===401||r.status===403?300000:30000);if(r.status===401)AC.tok=null;return null;}return r.json();})
-      .then(function(j){if(!j||!j.candidates)return j===null?null:null;var c=j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||'';}).join(''):'';return aiJSON(t);})
-      .catch(function(){clearTimeout(tm);AI.down=now()+20000;return null;});};
-  return go();}
+      .then(function(r){clearTimeout(tm);if(!r.ok)return {err:r.status};return r.json().then(function(j){var c=j&&j.candidates&&j.candidates[0],t=c&&c.content&&c.content.parts?c.content.parts.filter(function(p){return !p.thought;}).map(function(p){return p.text||'';}).join(''):'';var o=aiJSON(t);return o?{ok:o}:{err:'parse'};});})
+      .catch(function(){clearTimeout(tm);return {err:'net'};});};
+  var run=function(){return once().then(function(res){if(res.ok){AI.fails=0;return res.ok;}var e=res.err;
+    if(e===404&&AI.mi<AI.models.length-1){AI.mi++;return run();}
+    if(tries<3&&e!==401&&e!==403){if(e!=='parse')AI.mi=(AI.mi+1)%AI.models.length;return run();}
+    AI.fails++;AI.down=now()+(e===429?20000:e===401||e===403?120000:6000);if(e===401)AC.tok=null;return null;});};
+  return run();}
 function aiJSON(t){if(!t)return null;t=t.replace(/^```(json)?/,'').replace(/```$/,'').trim();try{return JSON.parse(t);}catch(e){var m=t.match(/\{[\s\S]*\}/);if(m)try{return JSON.parse(m[0]);}catch(e2){}}return null;}
 function clean(s){s=String(s||'').replace(/\s+/g,' ').trim();if(s.length>260)s=s.slice(0,257)+'…';return s;}
 function remember(key,r,t){var h=AI.hist[key]=AI.hist[key]||[];h.push({r:r,t:t});if(h.length>14)h.splice(0,h.length-14);}
@@ -5251,7 +5261,7 @@ function showVerdict(b,phone,v,said){var s=dState(b),who={who:b.owner,role:b.hom
   bizTalk(b,phone,said||(v.k==='broke'?line('broke',b):v.k==='heart'?line('heart',b):v.k==='counter'?line('counter',b,{n:fmt(s.ask)}):v.k==='firm'?line('firm',b,{n:fmt(s.ask)}):line('insult',b)));}
 
 /* ----- people on the street ----- */
-function aiPed(p,t){var tok=++AI.tok,key='p:'+p.me.root.id,loc=nearestMine(p.x,p.z);if(!aiOk()){pedSay(p,t);return;}
+function aiPed(p,t){var tok=++AI.tok,key='p:'+p.me.root.id,loc=nearestMine(p.x,p.z);if(!aiOk()){pedSay(p,t);return;}looseLips(t);
   var names=[];places.forEach(function(q){if(areaOfX(q.x))return;if(names.indexOf(q.name)<0&&names.length<46)names.push(q.name);});plan.blocks.forEach(function(b){var nm=blockName(b);if(names.indexOf(nm)<0)names.push(nm);});
   var gossip=[];for(var i=0;i<3;i++){var g=rumor(p);if(gossip.indexOf(g)<0&&!/Nothing new/.test(g))gossip.push(g.replace(/"/g,''));}
   var sys='You are '+p.name+', a local walking down '+(streetAt(p.x,p.z)||'the street')+' in a cozy city-builder game. Invent a consistent little life for yourself (job, family, opinions). '+cityFacts()+
@@ -5561,37 +5571,44 @@ function bindThread(el,who){var f=el.querySelector('.ph-reply');if(f)f.onsubmit=
 var TFX={};
 function sendText(who,v){var th=texts()[who]=texts()[who]||{m:[]};th.m.push({me:1,t:now(),x:v});th.typing=1;renderPhone();save();var kind=who.indexOf('Tenant')===0?'Tenant':who;
   var sys='You are texting with the player in a cozy city-builder game. You are: '+(PERSONA[kind]||('Someone named '+who+'.'))+' '+cityFacts()+(W4().home?' The player owns a home and lives in it.':'')+
-    '\nRules: text like a real person, 1 or 2 short lines, casual, family-friendly, no emojis overload. '+SAFE+(kind==='Bob'?' If they ask you to build or fix something at their house, give a ballpark and say they can confirm it in person or right here.':'')+'\nReturn only JSON: {"say": string, "act": "chat"'+(kind==='Bob'?'|"quote"':'')+(kind==='Dana'?'|"listings"':'')+'}.';
+    '\nRules: text like a real person, 1 or 2 short lines, casual, family-friendly, no emojis overload. '+SAFE+(kind==='Bob'?' You never refuse a job. If they ask you to build something, say you\'re in and offer to write up the exact quote. Work at their places: '+ownedHomes().map(function(k){var s=W4().biz[k];return (s.name||'a house')+': '+(projList(s)||'nothing yet');}).join('; ')+'. What you talked about before: '+(bobMem()||'nothing')+'.':'')+'\nReturn only JSON: {"say": string, "act": "chat"'+(kind==='Bob'?'|"quote"':'')+(kind==='Dana'?'|"listings"':'')+'}.';
   var hist=th.m.slice(-12,-1).map(function(m){return {r:m.me?'user':'model',t:m.me?m.x:JSON.stringify({say:m.x,act:'chat'})};});
-  var done=function(r){th.typing=0;var say=r&&r.say?clean(r.say):cannedText(kind,v);th.m.push({me:0,t:now(),x:say});
+  if(kind==='Bob')memAdd('bob','you',v);var done=function(r){th.typing=0;var say=r&&r.say?clean(r.say):cannedText(kind,v);if(kind==='Bob')memAdd('bob','Bob',say);th.m.push({me:0,t:now(),x:say});
     if(r&&r.act==='quote'&&kind==='Bob')th.opt=[{t:'Get a real quote for my house',fn:function(){var hb=W4().home&&bizOf(W4().home);if(hb)bobProject(hb,v);else toast('You need a house first.','bad');}}];
     if(r&&r.act==='listings'&&kind==='Dana')th.opt=[{t:'Show me the listings',fn:function(){closePhone();homesListing();}}];
     if(TFX[who]){TFX[who](v);}
-    save();if(PH.open&&PH.thread===who)renderPhone();else textIn(who,say);};
+    save();if(PH.open&&PH.thread===who)renderPhone();else{th.m.pop();textIn(who,say);}};
   setTimeout(function(){aiCall(sys,hist,v).then(done);},700+Math.random()*900);}
-function cannedText(k,v){var n=norm(v);if(k==='Mom')return pick(['I love you too sweetie. Eat something green today.','Your aunt says hi! Call me Sunday.','So proud of you. Wear a jacket.']);if(k==='Bob')return /build|fix|pool|deck|add|paint/.test(n)?'Can do. Come by or tell me at the house and I\'ll quote it.':'Bob here. Holler if you need something built.';
-  if(k==='Dana')return 'Ooh, I\'ll keep my eyes open for you! 🙂';if(k==='Unknown')return pick(['Look down.','Under Main Street. Bring a bar.','Some doors are round.']);if(k==='Tenant')return /fix|send|plumber|on it|sorry|help/.test(n)?'Thank you!! You\'re the best landlord.':'Okay… please hurry though.';return 'Ok!';}
+function fresh(who,lines){var th=texts()[who],seen=th?th.m.slice(-14).map(function(m){return m.x;}):[],ok=lines.filter(function(l){return seen.indexOf(l)<0;});return pick(ok.length?ok:lines);}
+function cannedText(k,v){var n=norm(v),neg=/^(no|nope|nah|not really|never)\b/.test(n),yes=/^(yes|yeah|yep|sure|ok|okay|ya)\b/.test(n);
+  if(k==='Mom'){if(neg)return fresh(k,['What do you mean no?! Go eat something. Right now.','Don\'t "no" me. I\'m your mother.','Fine. But I\'m sending soup.']);if(yes)return fresh(k,['Good. That\'s my kid.','Okay good. Love you!','See? Was that so hard? 😊']);if(/love/.test(n))return 'I love you more! ❤️';if(/\?/.test(v))return fresh(k,['Ask your father, he knows these things.','I don\'t know sweetie, but I\'m proud of you.','Call me and we\'ll talk about it.']);
+    return fresh(k,['I love you too sweetie. Eat something green today.','Your aunt says hi! Call me Sunday.','So proud of you. Wear a jacket.','Okay sweetie. Don\'t stay up too late.','Ha! You always make me laugh.']);}
+  if(k==='Bob')return /build|fix|pool|deck|add|paint|story|room|garage|slide/.test(n)?'Can do. Come by the house, tell me exactly what you want and I\'ll write it up.':fresh(k,['Bob here. Holler if you need something built.','👍','Ha. Okay boss.']);
+  if(k==='Dana')return fresh(k,['Ooh, I\'ll keep my eyes open for you! 🙂','On it!','I\'ll send you anything good that comes up.']);if(k==='Unknown')return fresh(k,['Look down.','Under Main Street. Bring a bar.','Some doors are round.','The hardware store sells more than nails.']);if(k==='Tenant')return /fix|send|plumber|on it|sorry|help/.test(n)?'Thank you!! You\'re the best landlord.':'Okay… please hurry though.';return 'Ok!';}
+function aiTextIn(who,hint,fallback,opt){if(!aiOk()){textIn(who,fresh(who,fallback),opt);return;}var th=texts()[who]||{m:[]},kind=who.indexOf('Tenant')===0?'Tenant':who;
+  var hist=th.m.slice(-8).map(function(m){return (m.me?'Player: ':who+': ')+m.x;}).join('\n');
+  aiCall('You are '+(PERSONA[kind]||who)+' You are sending the player an unprompted text message in a cozy city-life game. '+cityFacts()+'\nRecent thread:\n'+(hist||'(none)')+'\nWrite ONE new short text (max 20 words) about: '+hint+'. Do not repeat anything already in the thread. '+SAFE+'\nReturn only JSON: {"say": string}.',[],'Write the text.').then(function(r){var s=r&&r.say?clean(r.say):fresh(who,fallback);textIn(who,s,opt);});}
 var textT=150;
-function textTick(dt){if(!O.on)return;textT-=dt;if(textT>0)return;textT=rnd(260,460);var w=W4(),opts=[];
-  opts.push(function(){textIn('Mom',pick(['Are you eating?? You looked thin in that photo.','Saw your coffee place in the paper!! Your father is telling everyone.','Don\'t work too hard. Also, call your grandmother.','The neighbors\' dog had puppies. Just saying.']));});
-  if(w.home)opts.push(function(){textIn('Bob',pick(['Slow week. Your place could use a deck. Just saying.','Got a crew free Thursday. Need anything built?','Saw your house. That fence is begging for a coat of paint.']));});
-  opts.push(function(){textIn('Dana',pick(['New listings this week! Some of these owners are motivated 😉','Psst. Somebody on Pine St is thinking of selling.','Land prices are going up. Just a heads up!']));});
+function textTick(dt){if(!O.on)return;textT-=dt;if(textT>0)return;textT=rnd(300,520);var w=W4(),opts=[];
+  opts.push(function(){aiTextIn('Mom',pick(['checking in on whether they eat and sleep','something funny that happened in the neighborhood or her book club','being proud of their business','a family update and asking them to call']),['Are you eating?? You looked thin in that photo.','Saw your coffee place in the paper!! Your father is telling everyone.','Don\'t work too hard. Also, call your grandmother.','The neighbors\' dog had puppies. Just saying.','Book club picked a murder mystery again. I guessed it on page 4.','Your father tried to fix the sink. We have a plumber coming.','Are you sleeping enough? Be honest.']);});
+  if(w.home)opts.push(function(){aiTextIn('Bob',pick(['offering to build something specific at their house','a funny job-site story','a free crew this week']),['Slow week. Your place could use a deck. Just saying.','Got a crew free Thursday. Need anything built?','Saw your house. That fence is begging for a coat of paint.','Just finished a treehouse with a zipline. Thinking of you.']);});
+  opts.push(function(){aiTextIn('Dana',pick(['a motivated seller','land prices in a neighborhood','a house that just listed']),['New listings this week! Some of these owners are motivated 😉','Psst. Somebody on Pine St is thinking of selling.','Land prices are going up. Just a heads up!','A duplex just hit the market. Rents itself.']);});
   var ten=ownedHomes().filter(function(k){return w.biz[k].tenant&&w.biz[k].kind!=='apt';});if(ten.length)opts.push(function(){var k=pick(ten),s=w.biz[k],c=Math.round(180*tierM()),who='Tenant · '+(s.name||'');
     textIn(who,pick(['Hi! The kitchen sink is leaking. Could you send someone?','The heat isn\'t working… it\'s freezing in here.','Raccoon in the attic. A big one. Help?']),[{t:'Send a repair person · '+fmt(c),fn:function(){if(!pay(c,'The repair'))return;var th=texts()[who];th.m.push({me:1,t:now(),x:'Someone\'s on the way!'});th.m.push({me:0,t:now(),x:'Thank you!! Best landlord ever.'});addFame(1);s.happy=(s.happy||0)+1;save();}},{t:'Ignore it',fn:function(){s.happy=(s.happy||0)-1;if(s.happy<-1){s.tenant=null;s.vac=now();note('Tenant moved out','Repairs never came. '+(s.name||'Your rental')+' is empty.','bad');}save();}}]);});
   if(G.lvl>=6&&!w.f.unknown){opts.push(function(){w.f.unknown=1;textIn('Unknown','You\'ve been looking at the town from the wrong side. The money\'s underneath. Some doors are round.');});}
   pick(opts)();}
 
 /* ===== Bob builds anything at your house ===== */
-var PROJ={pool:['In-ground pool',1.4,['pool','swim']],deck:['Wooden deck',.5,['deck','porch','patio']],garden:['Flower garden',.25,['garden','flower','plant']],solar:['Solar panels',.8,['solar','panel','energy']],
+var PROJ_OLD={pool:['In-ground pool',1.4,['pool','swim']],deck:['Wooden deck',.5,['deck','porch','patio']],garden:['Flower garden',.25,['garden','flower','plant']],solar:['Solar panels',.8,['solar','panel','energy']],
   hoop:['Basketball hoop',.15,['hoop','basketball','court']],treehouse:['Treehouse',.45,['treehouse','tree house','fort']],hottub:['Hot tub',.6,['hot tub','jacuzzi','spa','hottub']],garage:['Garage',.9,['garage','carport','shed','workshop']],
   lights:['String lights',.1,['lights','string','lanterns']],gnome:['Garden gnome army',.08,['gnome','statue','flamingo']],paint:['Fresh paint job',.3,['paint','color','repaint']],floor2:['Second story',2.2,['second floor','second story','add a floor','extension','addition','upstairs']],
   theater:['Home theater',.7,['theater','theatre','cinema','movie room','projector']],gym:['Home gym',.5,['gym','weights','treadmill']],arcade:['Arcade room',.6,['arcade','game room','gaming']],fountain:['Front-yard fountain',.4,['fountain']]};
-function projGuess(t){var n=norm(t),best=null;Object.keys(PROJ).forEach(function(k){PROJ[k][2].forEach(function(w2){if(n.indexOf(w2)>=0)best=k;});});return best;}
-function bobProject(h,said){var s=W4().biz[h.key];if(!s||!s.own){toast('Bob only works on houses you own.','bad');return;}var hv=h.val||homeBase()*2;
+function projGuessOld(t){var n=norm(t),best=null;Object.keys(PROJ).forEach(function(k){PROJ[k][2].forEach(function(w2){if(n.indexOf(w2)>=0)best=k;});});return best;}
+function bobProjectOld(h,said){var s=W4().biz[h.key];if(!s||!s.own){toast('Bob only works on houses you own.','bad');return;}var hv=h.val||homeBase()*2;
   var quick=['pool','deck','garden','solar','hottub','theater'].filter(function(k){return !(s.proj||[]).some(function(p){return p.k===k;});}).slice(0,4);
   popup('Bob\'s Builders','"What are we building at '+h.name+'? Anything you want. I\'ll give you a number."',quick.map(function(k){return {t:PROJ[k][0],s:'About '+fmt(Math.round(hv*PROJ[k][1]))+(k==='pool'||k==='hottub'?' · adds real value':''),fn:function(){bobQuote(h,PROJ[k][0]);}};}).concat([{t:'Never mind',cls:'sec'}]),'',
     {who:'Bob',role:'Bob\'s Builders',col:'#f2b632',say:{ph:'Describe it… "a pool with a slide", "paint it blue"',fn:function(t){bobQuote(h,t);}}});if(said)setTimeout(function(){bobQuote(h,said);},50);}
-function bobQuote(h,t){var hv=h.val||homeBase()*2,k=projGuess(t),who={who:'Bob',role:'Bob\'s Builders',col:'#f2b632'};
+function bobQuoteOld(h,t){var hv=h.val||homeBase()*2,k=projGuess(t),who={who:'Bob',role:'Bob\'s Builders',col:'#f2b632'};
   var finish=function(k2,label,price,secs,line2){var lo=Math.round(hv*(k2&&PROJ[k2]?PROJ[k2][1]*.7:.1)),hi=Math.round(hv*(k2&&PROJ[k2]?PROJ[k2][1]*1.5:2.5));price=Math.max(lo,Math.min(hi,Math.round(price||((lo+hi)/2))));secs=Math.max(30,Math.min(300,Math.round(secs||90)));
     popup('Quote · '+label,'"'+(line2||'I can do that.')+'"\n'+fmt(price)+' · done in about '+mmssS(secs)+'.',[{t:'Do it · '+fmt(price),fn:function(){if(!pay(price,label))return;var s=W4().biz[h.key];s.proj=s.proj||[];s.proj.push({k:k2||'custom',label:label,at:now()+secs*1000,done:0,price:price,color:colorFrom(t)});note('Bob\'s on it',label+' at '+h.name+'. Crew arrives shortly.','good');O.dirty=true;save();}},
       {t:'Too much. Do it for less?',fn:function(){var cut=Math.random()<.5?.88:.95;popup('Bob\'s Builders',cut<.9?'"Fine. '+fmt(Math.round(price*cut))+'. Don\'t tell my wife."':'"Materials cost what they cost. '+fmt(Math.round(price*cut))+', best I can do."',[{t:'Deal · '+fmt(Math.round(price*cut)),fn:function(){var p2=Math.round(price*cut);if(!pay(p2,label))return;var s=W4().biz[h.key];s.proj=s.proj||[];s.proj.push({k:k2||'custom',label:label,at:now()+secs*1000,done:0,price:p2,color:colorFrom(t)});note('Bob\'s on it',label+'. Crew arrives shortly.','good');O.dirty=true;save();}},{t:'Forget it',cls:'sec'}],'',who);}},{t:'Never mind',cls:'sec'}],'',who);};
@@ -5601,9 +5618,9 @@ function bobQuote(h,t){var hv=h.val||homeBase()*2,k=projGuess(t),who={who:'Bob',
     if(!r){finish(k,k?PROJ[k][0]:titleCase(t).slice(0,40));return;}if(r.kind===null){popup('Bob\'s Builders','"'+clean(r.say||'Can\'t do that one, boss.')+'"',[{t:'OK'}],'',who);return;}var kk=PROJ[r.kind]?r.kind:k;finish(kk,clean(r.label||t).slice(0,40),+r.price,+r.seconds,clean(r.say||'').replace(/^"|"$/g,''));});}
 function titleCase(s){return String(s).replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function colorFrom(t){var n=norm(t),C={red:0xe2553f,blue:0x46a9e6,navy:0x2a3a6a,green:0x6cc76a,yellow:0xffd24a,pink:0xef8fb0,purple:0xb39ddb,white:0xf6f6f6,black:0x2a2a2a,orange:0xff8a3d,gray:0x9aa3ad,grey:0x9aa3ad,teal:0x4fb3a9,mint:0x9fe3c6};var c=null;Object.keys(C).forEach(function(k){if(n.indexOf(k)>=0)c=C[k];});return c;}
-function projTick(){var w=W4(),ch=false;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];(s.proj||[]).forEach(function(p){if(!p.done&&now()>p.at){p.done=1;ch=true;var add=Math.round(p.price*.7);s.valAdd=(s.valAdd||0)+add;s.rentAdd=(s.rentAdd||0)+add/80;note(p.label+' is done','Bob finished at '+(s.name||'your house')+'. Worth +'+fmt(add)+' and it rents for more.','good');if(cityOfLot(k)===O.city)O.dirty=true;}});});if(ch)save();}
+function projTickOld(){var w=W4(),ch=false;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];(s.proj||[]).forEach(function(p){if(!p.done&&now()>p.at){p.done=1;ch=true;var add=Math.round(p.price*.7);s.valAdd=(s.valAdd||0)+add;s.rentAdd=(s.rentAdd||0)+add/80;note(p.label+' is done','Bob finished at '+(s.name||'your house')+'. Worth +'+fmt(add)+' and it rents for more.','good');if(cityOfLot(k)===O.city)O.dirty=true;}});});if(ch)save();}
 /* what the projects look like in the yard (called from houseModel) */
-function projDecor(g,h,st,cx,hw,hd,hh,f,dx,lotW){var pr=(st.proj||[]);if(!pr.length)return;var side=dx<cx?1:-1,sx=cx+side*(hw/2-1.2);
+function projDecorOld(g,h,st,cx,hw,hd,hh,f,dx,lotW){var pr=(st.proj||[]);if(!pr.length)return;var side=dx<cx?1:-1,sx=cx+side*(hw/2-1.2);
   pr.forEach(function(p){var c=p.color;if(!p.done){if(!g.userData.uc){g.userData.uc=1;var sgp=new T.Group();sgp.position.set(sx,0,-.9);g.add(sgp);cyB(.04,1.2,toon(0x6b4a30),0,.2,0,sgp,4);plane(1.1,.6,flat(0xffffff,{map:signT('BOB\'S BUILDERS',{bg:'#f2b632',fg:'#2a1a12',w:256,h:140,sub:'WORK IN PROGRESS'})}),0,1.1,.03,sgp);}return;}
     switch(p.k){case 'pool':var pl=plane(2.4,1.3,toon(0x4fb8e8,{e:0x1a5a8a,ei:.2}),sx,.25,-1.1,g);pl.rotation.x=-Math.PI/2;bx(2.7,.12,1.6,toon(0xf4efe6),sx,.2,-1.1,g);break;
       case 'hottub':cy(.6,.6,.45,toon(0x8a5a3a),sx-.2,.42,-1,g,12);cy(.52,.52,.05,toon(0x6ac8e8,{e:0x2a6a9a,ei:.3}),sx-.2,.66,-1,g,12);break;
@@ -6180,7 +6197,7 @@ var ESTYLES={
     decor:function(g){for(var i=0;i<6;i++)lanternR(g,-7+i*2.6,3.6,-1+((i%2)*3),0xe2553f);var p=plane(5,2.2,flat(0xffffff,{map:signT('福',{bg:'#7a2a22',fg:'#d4af37',w:512,h:220})}),-3,2.6,-5.8,g);bx(1.4,1.6,.6,toon(0x7a2a22),7,.8,3,g);}},
   e_sushi:{floor:floorT(0xd8c3a0,0xcbb48e,8),wall:0xf4efe6,trim:0x2a1a12,bg:0x1a1a1a,counter:0xd8c3a0,top:0xf4efe6,tables:[[-5,1.5],[-1.6,1.5]],
     table:function(g,x,z){bx(1.8,.08,1,toon(0xb8a07a),x,.6,z,g);[-.6,.6].forEach(function(o){bx(.5,.1,.5,toon(0x2f5f90),x+o,.15,z+.75,g);bx(.5,.1,.5,toon(0x2f5f90),x+o,.15,z-.75,g);});},th:.64,
-    decor:function(g,ox){bx(11,1,1,toon(0xd8c3a0),-2,.5,-2.2,g);var belt=bx(10.6,.08,.5,toon(0x3a3f4b),-2,1.04,-2.2,g);for(var i=0;i<12;i++){var pl=new T.Group();pl.position.set(-7+i*.9,1.1,-2.2);dyn.add(pl);pl.position.x+=ox;cy(.18,.18,.03,toon([0xe2553f,0x2f5f90,0xffc63d][i%3]),0,0,0,pl,10);sushiBits(pl);anim.push({belt:pl,x0:ox-7.2,x1:ox+3.2,v:.6});}
+    decor:function(g,ox){bx(11,1,1,toon(0xd8c3a0),-2,.5,-2.2,g);var belt=bx(10.6,.08,.5,toon(0x3a3f4b),-2,1.04,-2.2,g);for(var i=0;i<12;i++){var pl=new T.Group();pl.position.set(ox-7+i*.9,1.1,-2.2);dyn.add(pl);pl.position.x+=ox;cy(.18,.18,.03,toon([0xe2553f,0x2f5f90,0xffc63d][i%3]),0,0,0,pl,10);sushiBits(pl);anim.push({belt:pl,x0:ox-7.2,x1:ox+3.2,v:.6});}
       addCol(ox-7.5,ox+3.5,-2.8,-1.6,'e_sushi');for(var b=0;b<6;b++){cyB(.04,1.6,toon(0x8a9a5a),-7.6,0,-5+b*.4,g,4);}for(var k=0;k<5;k++)lanternR(g,-6+k*3,3.7,0,0xfff3d6);}},
   e_mex:{floor:floorT(0xc8743a,0xb8642a,4),wall:0xffe0a0,trim:0x2fa860,bg:0x3a1a0a,counter:0x2fa860,top:0xffe0a0,tables:[[-5,-1],[-1.5,-1],[-5,2.6],[-1.5,2.6]],
     table:function(g,x,z){bx(1.5,.08,1.5,toon(0x46a9e6,{map:checkT('#46a9e6','#ffe38a')}),x,.97,z,g);cyB(.07,.95,toon(0x6b4a30),x,0,z,g,6);chairs(g,x,z,0xe2553f,2);},
@@ -6278,13 +6295,13 @@ function heart(g,x,y,s){g.beginPath();g.moveTo(x,y+s);g.bezierCurveTo(x-s*2,y-s,
 function cap(g,t,lines){var cur=null;lines.forEach(function(l){if(t>=l[0])cur=l[1];});if(!cur)return;g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,232,640,40);g.fillStyle='#fff';g.font='bold 20px system-ui';g.textAlign='center';g.fillText(cur,320,259);}
 function watchMovie(m){var f=FILMS.filter(function(x){return x.n===m[0];})[0]||pick(FILMS);if(!AREAS.theater){addXP(15);return;}
   fade(function(){P.area='theater';var A=AREAS.theater;P.x=A.ox;P.z=2.2;P.ry=Math.PI;O.snap=true;updDaylight();MOV={f:f,t:-2,t0:now()+2000,done:false};var b=$('#o-cut');b.hidden=false;b.textContent='Leave ›';b.onclick=function(){endMovie(true);};});}
-function updMovie(dt){if(!MOV||!SCREEN)return;MOV.t=(now()-MOV.t0)/1000;var g=SCREEN.g;g.save();if(MOV.t<0){g.fillStyle='#000';g.fillRect(0,0,640,272);g.fillStyle='#d4af37';g.font='bold 30px system-ui';g.textAlign='center';g.fillText(MOV.f.n.toUpperCase(),320,140);}
+function updMovie(dt){if(!MOV||!SCREEN)return;MOV.t=(now()-MOV.t0)/1000;var S2=MOV.scr||SCREEN,g=S2.g;g.save();if(MOV.t<0){g.fillStyle='#000';g.fillRect(0,0,640,272);g.fillStyle='#d4af37';g.font='bold 30px system-ui';g.textAlign='center';g.fillText(MOV.f.n.toUpperCase(),320,140);}
   else if(MOV.t<MOV.f.len)MOV.f.draw(g,MOV.t);else if(MOV.t<MOV.f.len+6){g.fillStyle='#000';g.fillRect(0,0,640,272);g.fillStyle='#aaa';g.font='14px system-ui';g.textAlign='center';var y=272-(MOV.t-MOV.f.len)*60;['Directed by J. Crema IV','Coffee consultant: Doppio the Mule','No beans were harmed','Filmed on location in '+plan.name].forEach(function(s,i){g.fillText(s,320,y+i*28);});}
   else if(MOV.t<MOV.f.len+11){g.fillStyle='#000';g.fillRect(0,0,640,272);g.fillStyle='#fff';g.font='bold 18px system-ui';g.textAlign='center';g.fillText(postCredits(),320,140);if(!MOV.pc){MOV.pc=1;var w=W4();w.f=w.f||{};w.f.postcredits=(w.f.postcredits||0)+1;save();}}
-  else endMovie(false);g.restore();SCREEN.t.needsUpdate=true;}
+  else endMovie(false);g.restore();S2.t.needsUpdate=true;}
 function postCredits(){var w=W4(),f=w.f||{};if(!f.cat)return '"Has anyone seen my cat? Orange. Answers to Espresso."';if(!f.lockbox)return '"The founder\'s money is where the rain goes."';if(!f.inkwell)return '"Some books are doors."';if(!f.tower)return '"The clock tower opens at midnight."';return '"Thanks for staying. You\'re one of us now."';}
-function movieCamera(dt){if(!MOV||P.area!=='theater')return false;var A=AREAS.theater;O.cam.position.lerp(V3(A.ox+.6,2.1,3.2),Math.min(1,dt*3));camL.lerp(V3(A.ox,3.4,-7.7),Math.min(1,dt*3));O.cam.lookAt(camL);return true;}
-function endMovie(early){if(!MOV)return;var m=MOV;MOV=null;$('#o-cut').hidden=true;drawIdle();addXP(early?5:20);if(!early){var w=W4();w.stats.movies=(w.stats.movies||0)+1;banner(pick(['What a movie.','Two thumbs up.','Cinema!']),m.f.n,'good');}exitTheater();}
+function movieCamera(dt){if(MOV&&MOV.home&&P.area==='home2'){var H=AREAS.home2;O.cam.position.lerp(V3(H.ox-1,2,.4),Math.min(1,dt*3));camL.lerp(V3(H.ox-1,2.2,-6.7),Math.min(1,dt*3));O.cam.lookAt(camL);return true;}if(!MOV||P.area!=='theater')return false;var A=AREAS.theater;O.cam.position.lerp(V3(A.ox+.6,2.1,3.2),Math.min(1,dt*3));camL.lerp(V3(A.ox,3.4,-7.7),Math.min(1,dt*3));O.cam.lookAt(camL);return true;}
+function endMovie(early){if(!MOV)return;var m=MOV;MOV=null;$('#o-cut').hidden=true;if(m.home){var hg=HSCREEN.g;hg.fillStyle='#000';hg.fillRect(0,0,640,272);HSCREEN.t.needsUpdate=true;if(!early)banner('Movie night',m.f.n,'good');return;}drawIdle();addXP(early?5:20);if(!early){var w=W4();w.stats.movies=(w.stats.movies||0)+1;banner(pick(['What a movie.','Two thumbs up.','Cinema!']),m.f.n,'good');}exitTheater();}
 function exitTheater(){fade(function(){P.area='mall';var A=AREAS.mall;P.x=A.ox+25;P.z=-6;P.ry=0;O.snap=true;updDaylight();});}
 
 
@@ -6298,7 +6315,7 @@ function roastRoom(){var g=room('roast',{name:'The back room',w:16,d:12,floor:fl
   [[-5.6,2.4,0x2a2a2a],[-5.4,-3.4,0x3a3a3a],[5,3.4,0x1a1a2a]].forEach(function(q){var cp=liteMe({shirt:q[2],pant:0x1a1a1a});cp.root.position.set(q[0],0,q[1]);cp.root.rotation.y=Math.atan2(-q[0],-q[1]);g.add(cp.root);});
   for(var cd=0;cd<2;cd++){var cx2=-1.5+cd*3;cy(.06,.08,.3,toon(0xd4af37),cx2,1.2,-.5,g,6);for(var f=0;f<3;f++){var fl=sp(.04,toon(0xffd24a,{e:0xffa020,ei:1}),cx2-.12+f*.12,1.42,-.5,g,5);}}
   // fireplace with the founder's portrait above it
-  bx(2.6,2.2,.6,toon(0x8a8a8a),0,1.1,-5.7,g);bx(1.6,1.2,.2,toon(0x1a0a06),0,.8,-5.5,g);var fire=plane(1.3,.9,toon(0xff6a20,{e:0xff5a10,ei:1}),0,.75,-5.38,g);anim.push({flick:fire});
+  bx(2.6,2.2,.6,toon(0x8a8a8a),0,1.1,-5.7,g);bx(1.6,1.2,.2,toon(0x1a0a06),0,.8,-5.5,g);var fire=plane(1.3,.9,toon(0xff6a20,{e:0xff5a10,ei:1}),ox,.75,-5.38,dyn);anim.push({flick:fire});
   var por=plane(1.6,2,toon(0xffffff,{map:canvasTex(160,200,function(c,w,h){c.fillStyle='#3a2418';c.fillRect(0,0,w,h);c.fillStyle='#d4af37';c.fillRect(6,6,w-12,h-12);c.fillStyle='#2a1a12';c.fillRect(12,12,w-24,h-24);c.fillStyle='#e8c8a0';c.beginPath();c.arc(w/2,78,30,0,7);c.fill();c.fillStyle='#1a1a1a';c.fillRect(w/2-34,40,68,18);c.fillRect(w/2-20,20,40,26);c.fillRect(w/2-42,110,84,80);c.fillStyle='#d4af37';c.font='bold 11px serif';c.textAlign='center';c.fillText('J.C. 1871',w/2,186);},null,'portJC')}),0,3.4,-5.62,g);
   // bar cart, espresso machine, bookshelf, globe, chandelier
   bx(1.6,.9,.6,toon(0x8a5a3a),5.8,.45,-5.2,g);for(var b=0;b<6;b++)cy(.07,.07,.34,toon([0x2f7a4a,0x8a3a10,0xd4af37][b%3]),5.2+b*.22,1.07,-5.2,g,6);
@@ -6403,6 +6420,179 @@ function turfIncome(){var s=W4().syn;if(!s||!s.turf)return 0;return Object.keys(
 var chaiT=900;
 function chaiTick(dt){var s=W4().syn;if(!s||!s.turf||!s.turf[O.city]||!O.on)return;chaiT-=dt;if(chaiT>0)return;chaiT=rnd(900,1500);var t=s.turf[O.city],c=Math.round(6000*tierM());
   textIn('Madame Chai','Lovely neighborhood, '+t+'. The Chai Syndicate would like a piece. '+fmt(c)+' and we leave quietly.',[{t:'Pay her · '+fmt(c),fn:function(){if(pay(c,'Tribute'))toast('Madame Chai sends a thank-you tea.','');}},{t:'Stand firm',fn:function(){if(Math.random()<.6+.08*s.inf){s.inf++;note('The Chai Syndicate backed off',t+' stays yours. Influence +1.','good');}else{delete s.turf[O.city];note('You lost '+t,'The Chai Syndicate moved in. Talk to the Don about new territory.','bad');}save();}}]);}
+/* loose lips: talk about the family in the street and the family hears about it */
+var lipT=0;
+function looseLips(t){var n=norm(t);if(!/roastery|don arabica|the family business|\bmafia\b|\bmob\b|\bmobster|sal the ledger|crime family|back room at luigi/.test(n))return false;if(now()-lipT<4000)return true;lipT=now();
+  var w=W4(),s=syn();w.lips=(w.lips||0)+1;var first=w.lips===1&&s.rank>0;
+  setTimeout(function(){if(first){textIn('Unknown','A friend says you\'ve been talking about things you shouldn\'t. Don\'t.');return;}brick();},rnd(20000,45000));return true;}
+function brick(){var w=W4(),mine=G.locs.filter(function(l){return l.city===O.city;}),loc=pick(mine);if(!loc)return;w.broken=w.broken||{};w.broken[loc.id]={t:now()};if(syn().rank)syn().heat=Math.min(10,syn().heat+1);
+  try{tone(1800,.08,'square',.06);tone(900,.25,'sawtooth',.05,.05);}catch(e){}
+  note('A brick through the window','At '+loc.name+'. Tied to it, a note: "We don\'t talk about the Roastery." Customers are staying away until you fix it.','bad',{label:'Directions',fn:function(){navTo(placeById('shop:'+loc.id));}});O.dirty=true;save();}
+function brickMult(loc){var b=W4().broken;return b&&b[loc.id]?.8:1;}
+function brickActs(){var b=W4().broken;if(!b||P.area!=='city')return [];var out=[];Object.keys(b).forEach(function(id){var p=placeById('shop:'+id);if(!p||Math.hypot(p.x-P.x,p.z-P.z)>4)return;var c=Math.round(900*tierM());
+  out.push({x:p.x,z:p.z,r:4,label:'Fix the broken window',sub:fmt(c)+' · glass guy comes right away',fn:function(){if(!pay(c,'New glass'))return;delete b[id];O.dirty=true;toast('Good as new.','good');save();}});});return out;}
+function brickDecor(){var b=W4().broken;if(!b)return;Object.keys(b).forEach(function(id){var p=placeById('shop:'+id);if(!p)return;var g=new T.Group();g.position.set(p.x,0,p.z);dyn.add(g);bx(.3,.14,.16,toon(0xa8452a),.6,.3,.4,g).rotation.y=.6;for(var i=0;i<9;i++){var sh=plane(.12+Math.random()*.15,.1,glass(0xcfe8f4,.7),-.8+Math.random()*1.8,.24,-.2+Math.random()*.9,g);sh.rotation.x=-Math.PI/2;sh.rotation.z=Math.random()*3;}});}
+
+
+/* ---------- Bob v2: never says no, same price every time, remembers you, and you watch it get built ---------- */
+// [label, real-world contractor cost in USD, build seconds, words, share of cost added to home value, where it shows up]
+var PROJ={pool:['In-ground pool',65000,240,['pool','swim'],.55,'yard'],slide:['Waterslide',30000,150,['waterslide','water slide','slide'],.4,'yard'],deck:['Wooden deck',18000,90,['deck','porch','patio'],.7,'yard'],
+  garden:['Flower garden',4000,45,['garden','flower','plant','landscap'],.8,'yard'],solar:['Solar panels',25000,120,['solar','panel','energy'],.75,'roof'],hoop:['Basketball hoop',2500,30,['hoop','basketball'],.5,'yard'],
+  court:['Sport court',45000,180,['tennis','pickleball','sport court','basketball court'],.5,'yard'],treehouse:['Treehouse',15000,120,['treehouse','tree house','fort'],.45,'yard'],hottub:['Hot tub',12000,60,['hot tub','jacuzzi','spa','hottub'],.6,'yard'],
+  garage:['Garage',45000,180,['garage','carport','workshop'],.8,'yard'],shed:['Garden shed',6000,60,['shed'],.6,'yard'],lights:['String lights',800,20,['lights','string','lanterns'],.3,'yard'],gnome:['Garden gnome army',400,15,['gnome','flamingo'],.1,'yard'],
+  paint:['Fresh paint job',9000,90,['paint','color','repaint'],.9,'house'],floor2:['Second story',180000,360,['second floor','second story','add a floor','extension','addition','upstairs','another floor','2nd floor','2nd story'],1.1,'house'],
+  theater:['Home theater',35000,150,['theater','theatre','cinema','movie room','projector'],.6,'in'],gym:['Home gym',15000,90,['gym','weights','treadmill','workout'],.5,'in'],arcade:['Arcade room',25000,120,['arcade','game room','gaming','video game'],.5,'in'],
+  office:['Home office',20000,120,['office','study','desk'],.7,'in'],bowling:['Bowling lane',90000,240,['bowling','bowl'],.4,'in'],cellar:['Wine cellar',60000,200,['wine','cellar'],.6,'in'],kitchen:['Chef\'s kitchen',50000,180,['kitchen','stove','chef'],.85,'in'],
+  fountain:['Front-yard fountain',10000,90,['fountain'],.5,'yard'],firepit:['Fire pit',3000,30,['fire pit','firepit','bonfire'],.6,'yard'],koi:['Koi pond',9000,90,['koi','pond','fish'],.5,'yard'],ramp:['Skate ramp',8000,60,['skate','ramp','halfpipe','half pipe'],.3,'yard'],
+  playset:['Kids playset',4000,45,['playset','swing','playground','jungle gym'],.5,'yard'],greenhouse:['Greenhouse',20000,120,['greenhouse','green house'],.6,'yard'],zipline:['Zipline',9000,60,['zipline','zip line'],.3,'yard'],
+  helipad:['Helipad',250000,300,['helipad','helicopter'],.3,'yard'],observatory:['Rooftop observatory',120000,300,['observatory','telescope','dome','stars'],.5,'roof'],rooftop:['Rooftop deck',40000,180,['rooftop','roof deck','roof terrace'],.7,'roof'],
+  guest:['Guest house',150000,300,['guest house','guesthouse','granny flat','casita','cottage'],.95,'yard'],maze:['Hedge maze',7000,90,['maze','hedge'],.4,'yard'],fence:['New fence',6000,45,['fence','gate'],.7,'yard']};
+function gameK(){return homeBase()*2/400000;}
+function projGuess(t){var n=norm(t),best=null,bl=0;Object.keys(PROJ).forEach(function(k){PROJ[k][3].forEach(function(w2){if(n.indexOf(w2)>=0&&w2.length>bl){best=k;bl=w2.length;}});});if(best==='slide'&&/slide/.test(n)&&!/water|pool/.test(n)&&!/slide/.test(n.replace('slide','')))best='slide';return best;}
+function quoteKey(t){var k=projGuess(t);if(k)return 'k:'+k;return 'c:'+norm(t).split(' ').filter(function(w2){return w2.length>2&&['the','and','with','for','can','you','please','build','make','want','add','some','like','put','get','bob','house','home','my','new','big','nice'].indexOf(w2)<0;}).sort().join(' ').slice(0,60);}
+function bobBook(){var w=W4();w.bobQ=w.bobQ||{};return w.bobQ;}
+function projPrice(real){return Math.max(50,Math.round(real*gameK()*tierM()/10)*10);}
+function projList(s){return (s.proj||[]).map(function(p){return p.label+(p.done?' (done)':' (in progress, '+mmssS(Math.max(0,(p.at-now())/1000))+' left)');}).join(', ');}
+function bobMem(){return memLines('bob').map(function(m){return (m.r==='you'?'Player: ':'Bob: ')+m.t;}).join(' | ');}
+function bobProject(h,said){var s=W4().biz[h.key];if(!s||!s.own){toast('Bob only works on houses you own.','bad');return;}
+  var live=(s.proj||[]).filter(function(p){return !p.done;}),hi=live.length?'"'+live[0].label+' is coming along. About '+mmssS(Math.max(0,(live[0].at-now())/1000))+' to go. What else?"':memLines('bob').length?'"Back for more? What are we building at '+h.name+' this time?"':'"What are we building at '+h.name+'? Anything you want. I\'ll give you a straight number."';
+  var quick=['floor2','pool','theater','deck','guest','solar'].filter(function(k){return !(s.proj||[]).some(function(p){return p.k===k;});}).slice(0,4);
+  popup('Bob\'s Builders',hi,quick.map(function(k){var q=bobBook()['k:'+k];return {t:PROJ[k][0],s:(q?fmt(q.price):'About '+fmt(projPrice(PROJ[k][1])))+' · '+mmssS(q?q.secs:PROJ[k][2]),fn:function(){bobQuote(h,PROJ[k][0]);}};}).concat([{t:'Never mind',cls:'sec'}]),'',
+    {who:'Bob',role:'Bob\'s Builders',col:'#f2b632',say:{ph:'Describe it… "a waterslide into the pool", "a second story", "a castle tower"',fn:function(t){bobQuote(h,t);}}});if(said)setTimeout(function(){bobQuote(h,said);},50);}
+function bobQuote(h,t){var who={who:'Bob',role:'Bob\'s Builders',col:'#f2b632',you:t},qk=quoteKey(t),book=bobBook(),k=projGuess(t);memAdd('bob','you',t);
+  var show=function(q){var s=W4().biz[h.key],dup=(s.proj||[]).some(function(p){return p.qk===qk&&!p.done;}),disc=q.disc?Math.round(q.price*.95):q.price;
+    popup('Quote · '+q.label,'"'+(q.say||'I can do that.')+'"\n'+fmt(disc)+(q.disc?' (with the 5% you talked me into)':'')+' · done in about '+mmssS(q.secs)+'.\nAdds about '+fmt(Math.round(disc*q.vr))+' to the house\'s value.'+(dup?'\nMy crew is already on that one.':''),
+      [{t:'Do it · '+fmt(disc),off:dup,why:'Already in progress.',fn:function(){if(!pay(disc,q.label))return;var s2=W4().biz[h.key];s2.proj=s2.proj||[];s2.proj.push({k:q.k,qk:qk,label:q.label,start:now(),at:now()+q.secs*1000,done:0,price:disc,vr:q.vr,color:colorFrom(t),desc:t.slice(0,80)});memAdd('bob','Bob','Started '+q.label+' at '+h.name+' for '+fmt(disc));note('Bob\'s on it',q.label+' at '+h.name+'. The crew is pulling up now. Go watch.','good',{label:'Directions',fn:function(){navTo(placeById('biz:'+h.key)||{x:h.door.x,z:h.door.z,name:h.name});}});O.dirty=true;save();}},
+       !q.disc?{t:'Can you do it for less?',fn:function(){q.disc=1;save();popup('Bob\'s Builders','"'+pick(['Five percent. That\'s it. Materials cost what they cost.','For you? Five percent off. Don\'t tell my wife.'])+'"',[{t:'OK',fn:function(){show(q);}}],'',who);}}:null,
+       {t:'Not right now',cls:'sec'}].filter(Boolean),'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632',you:t});};
+  if(book[qk]){var q0=book[qk];q0.say=pick(['Same as I told you before: '+fmt(q0.price)+'.','Still '+fmt(q0.price)+'. My prices don\'t move.','Like I said last time. Same number.']);show(q0);return;}
+  var make=function(kind,label,real,secs,say){var kk=PROJ[kind]?kind:'custom',P2=PROJ[kk];if(P2){real=P2[1];secs=P2[2];label=label||P2[0];}
+    real=Math.max(300,Math.min(25000000,+real||40000));secs=Math.max(20,Math.min(600,Math.round(+secs||Math.min(600,40+Math.sqrt(real)*.8))));
+    var q={k:kk,label:String(label||titleCase(t)).slice(0,40),price:projPrice(real),secs:secs,vr:P2?P2[4]:.5,say:say||'I can do that.',real:real};book[qk]=q;save();memAdd('bob','Bob','Quoted '+q.label+' at '+fmt(q.price));show(q);};
+  if(k){make(k,null,0,0,pick(['Done a hundred of these.','Easy. My crew loves these jobs.','Good choice. That one pays for itself.']));return;}
+  if(!aiOk()){var n=norm(t),big=/castle|tower|mansion|wing|stadium|track|rollercoaster|roller coaster|bunker|moat/.test(n)?400000:/room|bar|studio|library|sauna|lounge/.test(n)?40000:15000;make('custom',titleCase(t).slice(0,40),big,0,'Never built one of those. Doesn\'t mean I can\'t.');return;}
+  thinking('Bob\'s Builders',t,{who:'Bob',col:'#f2b632'});var tok=AI.tok,s0=W4().biz[h.key]||{};
+  aiCall('You are Bob, a gruff, warm, honest contractor in a city-life game. You NEVER refuse a job: if a request is unsafe, illegal or impossible, you build the closest safe, legal, real-world version and say so with humor. The player\'s house: '+h.name+'. Work already done or underway there: '+(projList(s0)||'none')+'. What you two talked about before: '+(bobMem()||'nothing yet')+'.\nPrice it like a real US contractor in real dollars (reference: pool $65,000; second story $180,000; deck $18,000; home theater $35,000; guest house $150,000). Build time in game seconds 20-600 (bigger = longer).\nReturn only JSON: {"label": short project name (max 5 words), "real_usd": number, "seconds": number, "say": one short line in your voice (no price in it)}.',[],t.slice(0,240)).then(function(r){if(tok!==AI.tok)return;
+    if(!r){make('custom',titleCase(t).slice(0,40),40000,0,'Never built one of those. Doesn\'t mean I can\'t.');return;}make('custom',clean(r.label||t),r.real_usd,r.seconds,clean(r.say||'').replace(/^"|"$/g,''));});}
+function projTick(){var w=W4(),ch=false;Object.keys(w.biz).forEach(function(k){var s=w.biz[k];(s.proj||[]).forEach(function(p){if(!p.done&&now()>p.at){p.done=1;ch=true;var add=Math.round(p.price*(p.vr||.6));s.valAdd=(s.valAdd||0)+add;s.rentAdd=(s.rentAdd||0)+add/80;memAdd('bob','Bob','Finished '+p.label);
+    note(p.label+' is done','Bob finished at '+(s.name||'your house')+'. Worth +'+fmt(add)+(PROJ[p.k]&&PROJ[p.k][5]==='in'||p.k==='floor2'||p.k==='custom'?'. Go inside and see it.':'.'),'good');if(cityOfLot(k)===O.city)O.dirty=true;}});});if(ch)save();}
+var hammerT=0;
+function crewTick(dt){hammerT-=dt;if(hammerT>0||P.area!=='city'||!O.on)return;hammerT=.45;var w=W4();BUS.forEach(function(h){if(!h.home||!h.door)return;var s=w.biz[h.key];if(!s||!s.proj)return;if(!s.proj.some(function(p){return !p.done;}))return;var d=Math.hypot(h.door.x-P.x,h.door.z-P.z);if(d<22&&Math.random()<.7)try{tone(Math.random()<.5?180:240,.05,'square',.03*(1-d/22));}catch(e){}});}
+function homeActs(){if(P.area!=='home'||!AREAS.home||!AREAS.home.h||TOUR)return [];var h=AREAS.home.h,s=homeState(h),pr=(s.proj||[]).filter(function(p){return p.done;});if(!pr.length)return [];
+  var up=pr.some(function(p){return p.k==='floor2';}),inside=pr.some(function(p){return PROJ[p.k]&&PROJ[p.k][5]==='in'||p.k==='custom';});if(!up&&!inside)return [];var A=AREAS.home;
+  return [{x:A.ox-6.6,z:4.6,r:1.6,label:up?'Stairs up':'Into the new wing',sub:pr.filter(function(p){return PROJ[p.k]&&PROJ[p.k][5]==='in'||p.k==='custom';}).map(function(p){return p.label;}).slice(0,3).join(' · ')||'The second floor',fn:function(){goHome2(h);}}];}
+/* what it looks like outside: the crew, the truck, scaffolding, and then the finished thing */
+function crewMan(g,x,z,ry){var m=liteMe({shirt:0xff8a3d,pant:0x3a4a6a,hat:0xffd24a});m.root.position.set(x,0,z);m.root.rotation.y=ry;g.add(m.root);var t0=Math.random()*6;anim.push({fn:function(dt,tl){if(!m.root.parent)return;var k=Math.sin(tl*7+t0);m.arms[1].rotation.x=-1.2+k*.7;m.arms[0].rotation.x=-.3;m.body.position.y=Math.max(0,k)*.03;},obj:m.root});return m;}
+function bobTruck(g,x,z,ry){var t=new T.Group();t.position.set(x,0,z);t.rotation.y=ry;g.add(t);rb(1.5,1,1.3,.1,toon(0xf2b632),0,.85,.9,t);bx(1.5,.5,1.8,toon(0xf2b632),0,.6,-.7,t);
+  [[-.75,.9],[.75,.9],[-.75,-1],[.75,-1]].forEach(function(o){var wh=cy(.3,.3,.2,toon(0x1a1a1a),o[0],.3,o[1],t,10);wh.rotation.z=Math.PI/2;});bx(1.2,.5,.05,toon(0x9fd2f2),0,1.1,1.55,t);
+  for(var i=0;i<4;i++)bx(1.3,.1,.14,toon(0xc89a6a),0,.95+i*.11,-.7,t);var sg=plane(1.6,.42,flat(0xffffff,{map:signT('BOB\'S BUILDERS',{bg:'#2a1a12',fg:'#f2b632',w:256,h:70})}),.78,.75,-.5,t);sg.rotation.y=Math.PI/2;}
+function projDecor(g,h,st,cx,hw,hd,hh,f,dx,lotW){var pr=(st.proj||[]);if(!pr.length)return;var side=dx<cx?1:-1,sx=cx+side*(hw/2-1.2),back=f-hd-1.4,live=pr.filter(function(p){return !p.done;}),dg=new T.Group();dg.position.copy(g.position);dg.rotation.copy(g.rotation);dyn.add(dg);
+  if(live.length){var p0=live[0];bobTruck(g,cx-side*(hw/2+.9),-1.2,0);crewMan(dg,cx-.8,f+1.1,Math.PI);crewMan(dg,cx+1.4,f+.8,Math.PI*.8);
+    var sgp=new T.Group();sgp.position.set(sx,0,-.7);g.add(sgp);cyB(.04,1.2,toon(0x6b4a30),0,.2,0,sgp,4);plane(1.3,.7,flat(0xffffff,{map:signT('BOB\'S BUILDERS',{bg:'#f2b632',fg:'#2a1a12',w:256,h:140,sub:p0.label.toUpperCase().slice(0,22)})}),0,1.1,.03,sgp);
+    bx(1.1,.25,.9,toon(0x8a6a4a),cx+side*1.6,.33,-1.5,g);for(var lb=0;lb<4;lb++)bx(1,.1,.12,toon(0xd8b48a),cx+side*1.6,.5+lb*.11,-1.5+(lb%2)*.2,g);
+    bx(1.6,.8,.9,toon(0x2f7a4a),cx+side*(hw/2-.3),.6,back+.3,g);
+    if(live.some(function(p){return p.k==='floor2';})){var top=hh+.3;for(var sx2=cx-hw/2-.3;sx2<=cx+hw/2+.31;sx2+=hw/3)[f+.4,f-hd-.4].forEach(function(z){cyB(.04,top+2.4,toon(0x9aa3ad),sx2,0,z,g,5);});[1.6,top,top+1.6].forEach(function(y){bx(hw+.8,.06,.5,toon(0xc89a6a),cx,y,f+.4,g);});
+      for(var st2=0;st2<6;st2++)bx(.1,2.2,.1,toon(0xd8b48a),cx-hw/2+.3+st2*(hw-.6)/5,top+1.3,f-.2,g);bx(hw,.1,.1,toon(0xd8b48a),cx,top+2.4,f-.2,g);crewMan(dg,cx,f+.4,Math.PI).root.position.y=top+.05;}}
+  pr.forEach(function(p){if(!p.done)return;var c=p.color;
+    switch(p.k){case 'pool':var pl=plane(2.4,1.3,toon(0x4fb8e8,{e:0x1a5a8a,ei:.2}),sx,.25,-1.1,g);pl.rotation.x=-Math.PI/2;bx(2.7,.12,1.6,toon(0xf4efe6),sx,.2,-1.1,g);break;
+      case 'slide':var sl=new T.Group();sl.position.set(sx+side*1.7,0,-1.3);g.add(sl);[[-.3,-.3],[.3,-.3],[-.3,.3],[.3,.3]].forEach(function(o){cyB(.04,2.4,toon(0xffffff),o[0],0,o[1],sl,5);});bx(.8,.08,.8,toon(0x46a9e6),0,2.4,0,sl);
+        for(var i=0;i<8;i++){var a=i/8*Math.PI*1.2,seg=bx(.55,.1,.6,toon(i%2?0xffd24a:0xe2553f),Math.cos(a)*.9-.9,2.3-i*.28,Math.sin(a)*.9,sl);seg.rotation.y=-a;}
+        if(!pr.some(function(q){return q.k==='pool'&&q.done;})){var pl2=plane(1.6,1.1,toon(0x4fb8e8,{e:0x1a5a8a,ei:.2}),sx,.25,-1.1,g);pl2.rotation.x=-Math.PI/2;}break;
+      case 'hottub':cy(.6,.6,.45,toon(0x8a5a3a),sx-.2,.42,-1,g,12);cy(.52,.52,.05,toon(0x6ac8e8,{e:0x2a6a9a,ei:.3}),sx-.2,.66,-1,g,12);break;
+      case 'deck':bx(hw*.8,.18,1.1,toon(0xb8845a),cx,.35,f+.6,g);break;
+      case 'garden':for(var i2=0;i2<10;i2++)sp(.12,toon([0xef8fb0,0xffd24a,0xe2553f,0xb39ddb,0xffffff][i2%5]),cx-hw/2+.4+i2*(hw-.8)/9,.4,-.55,g,6);break;
+      case 'solar':for(var j=0;j<3;j++){var sp2=plane(1.2,.9,toon(0x1f3a6a,{e:0x0a1a3a,ei:.2}),cx-1.4+j*1.4,hh+1.25,f-hd/2+.6,g);sp2.rotation.x=-Math.PI/2+.55;}break;
+      case 'hoop':cyB(.06,2.9,toon(0x3a3f4b),sx+.6,.2,-.6,g,6);bx(.9,.6,.06,toon(0xffffff),sx+.6,3,-.45,g);tor(.18,.02,toon(0xff8a3d),sx+.6,2.8,-.25,g,null,10).rotation.x=Math.PI/2;break;
+      case 'court':var ct=plane(lotW-1,3,toon(0x2f7a8a),0,.23,back-1.4,g);ct.rotation.x=-Math.PI/2;bx(lotW-1.2,.6,.04,toon(0xffffff),0,.5,back-1.4,g);break;
+      case 'treehouse':tree(g,sx,back,0x4f9a4a,'leaf',seeded(3));bx(1.2,.9,1.2,toon(0xb8845a),sx,3.2,back,g);prism(1.4,.6,1.4,toon(0x9a5a4a),sx,3.65,back,g);break;
+      case 'garage':rb(2.4,2.4,3,.06,toon(c||0xd8d2c6),cx+side*(hw/2+1.15),1.4,f-1.6,g);bx(2,1.8,.05,toon(0xe8e8e8),cx+side*(hw/2+1.15),1.2,f-.08,g);break;
+      case 'shed':rb(1.6,1.6,1.4,.05,toon(c||0x9a5a4a),-side*(lotW/2-1.2),1,back,g);prism(1.8,.6,1.6,toon(0x3a3f4b),-side*(lotW/2-1.2),2,back,g);break;
+      case 'lights':for(var x=-lotW/2+.3;x<lotW/2-.3;x+=.45)sp(.05,MAT.lamp,x,.95+Math.sin(x*2)*.06,-.3,g,5);break;
+      case 'gnome':for(var q=0;q<5;q++){var gx=cx-hw/2+.5+q*.5;cone(.09,.22,toon(0xe2553f),gx,.62,-.4,g,6);sp(.09,toon(0xffffff),gx,.48,-.4,g,6);}break;
+      case 'fountain':cy(.55,.6,.35,toon(0xc8ccd2),sx,.4,-1.1,g,12);cy(.1,.12,.8,toon(0xc8ccd2),sx,.6,-1.1,g,8);var wt=cy(.45,.45,.05,toon(0x6ac8e8,{e:0x2a6a9a,ei:.3}),sx,.58,-1.1,g,12);break;
+      case 'firepit':cy(.5,.55,.25,toon(0x8a8f96),-side*1.4,.33,back,g,10);var fl=cone(.3,.5,toon(0xff8a3d,{e:0xff5a10,ei:1}),-side*1.4,.65,back,dg,6);anim.push({flick:fl});break;
+      case 'koi':var kp=plane(1.8,1.2,toon(0x2a7aa8,{e:0x0a2a4a,ei:.2}),-side*1.6,.24,back+.2,g);kp.rotation.x=-Math.PI/2;for(var kf=0;kf<3;kf++)sp(.08,toon(0xff8a3d),-side*1.6-.4+kf*.4,.27,back+.2,g,5);break;
+      case 'ramp':var rp=bx(2,.08,1.6,toon(0xb8845a),side*1.2,.6,back-.6,g);rp.rotation.x=.5;break;
+      case 'playset':bx(2,.1,.1,toon(0xe2553f),-side*1.4,1.8,back,g);[-1,1].forEach(function(o){cyB(.05,1.8,toon(0x46a9e6),-side*1.4+o,0,back,g,5);});for(var sw=0;sw<2;sw++)bx(.35,.05,.2,toon(0xffd24a),-side*1.4-.4+sw*.8,.6,back,g);break;
+      case 'greenhouse':rb(2.2,1.6,1.6,.05,glass(0xbfe8d0,.35),side*1.5,1.05,back-.4,g);prism(2.3,.6,1.7,glass(0xbfe8d0,.35),side*1.5,1.85,back-.4,g);for(var gp=0;gp<5;gp++)sp(.15,toon(0x4f9a4a),side*1.5-.8+gp*.4,.5,back-.4,g,6);break;
+      case 'zipline':cyB(.06,3.2,toon(0x6b4a30),-lotW/2+.6,0,back,g,5);cyB(.06,1.6,toon(0x6b4a30),lotW/2-.6,0,-1,g,5);var zl=bx(.02,.02,Math.hypot(lotW-1.2,back+1),toon(0x1a1a1a),0,2.4,(back-1)/2,g);zl.rotation.y=Math.atan2(lotW-1.2,back+1);zl.rotation.x=.08;break;
+      case 'helipad':var hp=cy(2,2,.08,toon(0x3a3f4b),0,.26,back-1.2,g,20);var hpl=plane(1.2,1.2,flat(0xffffff,{map:signT('H',{bg:'#3a3f4b',fg:'#ffffff',w:128,h:128})}),0,.31,back-1.2,g);hpl.rotation.x=-Math.PI/2;break;
+      case 'observatory':sp(1.2,toon(0xe8ecef),cx,hh+1.6,f-hd/2-.4,g,14);cy(1.2,1.2,.6,toon(0xc8ccd2),cx,hh+1.4,f-hd/2-.4,g,14);var tsc=cy(.12,.16,1.2,toon(0x3a3f4b),cx+.6,hh+2.4,f-hd/2-.4,g,8);tsc.rotation.z=-.7;break;
+      case 'rooftop':bx(hw*.6,.1,hd*.5,toon(0xb8845a),cx,hh+1.35,f-hd/2,g);for(var rl=0;rl<6;rl++)cyB(.03,.6,toon(0xffffff),cx-hw*.3+rl*hw*.12,hh+1.4,f-hd/4,g,4);break;
+      case 'guest':var gg=new T.Group();gg.position.set(-side*(lotW/2-1.8),0,back-.3);g.add(gg);rb(2.6,2.2,2.2,.05,toon(c||0xf4ead8),0,1.4,0,gg);prism(3,1.2,2.6,toon(0x9a5a4a),0,3,0,gg);bx(.7,1.4,.08,toon(0x8a3a3a),0,1,1.12,gg);plane(.7,.6,hwin(),.8,1.7,1.12,gg);break;
+      case 'maze':for(var mz=0;mz<5;mz++){bx(lotW-1.4-(mz%2)*1.5,.9,.3,toon(0x3a7a3a),(mz%2)*.75,.65,back-.2-mz*.5,g);}break;
+      case 'fence':var fk=toon(c||0xfafafa);bx(lotW-.4,.9,.06,fk,0,.65,-.25,g);break;
+      case 'floor2':case 'paint':case 'theater':case 'gym':case 'arcade':case 'office':case 'bowling':case 'cellar':case 'kitchen':break;
+      default:var gz=new T.Group();gz.position.set(sx-side*.6,0,back+.2);g.add(gz);[-.6,.6].forEach(function(o){cyB(.05,2,toon(0xffffff),o,.2,-.5,gz,5);cyB(.05,2,toon(0xffffff),o,.2,.5,gz,5);});cone(1.1,.7,toon(c||0x9a5a4a),0,2.5,0,gz,6);
+        bx(1,.6,.7,toon(c||0xd8b48a),0,.5,0,gz);plane(1.1,.34,flat(0xffffff,{map:signT(p.label.toUpperCase().slice(0,20),{bg:'#ffffff',fg:'#2a1a12',w:256,h:84})}),0,1.1,.56,gz);}});}
+/* upstairs / the new wing: every interior project becomes a real room you walk around in */
+var H2={},HSCREEN=null;
+function home2Room(){var g=room('home2',{name:'Upstairs',w:22,d:14,floor:floorT(0xd8b48a,0xc9a57a,6),wall:0xf2ece0,trim:0xffffff,bg:0x2a2420,h:4.2,outside:0x5fb35a}),ox=IOX.home2;
+  var out=ACTS.home2[0];out.label='Back downstairs';out.sub='';out.fn=function(){fade(function(){P.area='home';var A=AREAS.home;P.x=A.ox-6.6;P.z=3.4;P.ry=Math.PI;O.snap=true;updDaylight();});};
+  for(var s=0;s<8;s++)bx(1.4,.2,.5,toon(0x8a5a3a),0,.1+s*.2,6.6-s*.25,g);
+  var dg=new T.Group();dg.position.x=ox;dyn.add(dg);var sec=function(k){var q=new T.Group();dg.add(q);H2[k]=q;q.visible=false;return q;};
+  var bed=sec('bed');rb(2.8,.6,3.4,.1,toon(0xffffff),-8.4,.32,-4.6,bed);plane(2.7,2.4,toon(0x8a3a4a),-8.4,.64,-4.2,bed).rotation.x=-Math.PI/2;bx(3,1.6,.2,toon(0x4a3a5a),-8.4,.8,-6.3,bed);sp(.4,toon(0xffffff),-9.1,.82,-5.7,bed,6);sp(.4,toon(0xffffff),-7.7,.82,-5.7,bed,6);
+    bx(1.6,2.4,.6,toon(0x8a5a3a),-10.4,1.2,-2,bed);var rg=plane(3.4,2.4,toon(0xe8d8c0),-8.4,.02,-1.6,bed);rg.rotation.x=-Math.PI/2;
+  var th=sec('theater');var c=document.createElement('canvas');c.width=640;c.height=272;var tx=new T.CanvasTexture(c);tx.encoding=T.sRGBEncoding;var scr=plane(5.6,2.4,new T.MeshBasicMaterial({map:tx}),-1,2.3,-6.75,th);HSCREEN={c:c,g:c.getContext('2d'),t:tx};
+    bx(6,2.8,.1,toon(0x1a1a1a),-1,2.3,-6.85,th);for(var r=0;r<2;r++)for(var i=0;i<3;i++){var x=-2.6+i*1.6,z=-3.4+r*1.8;rb(1.2,.55,1,.15,toon(0x7a1a2a),x,.35,z,th);rb(1.2,.9,.3,.12,toon(0x7a1a2a),x,.8,z+.5,th);}
+    var pc=new T.Group();pc.position.set(1.6,0,-1.4);th.add(pc);cy(.2,.16,.4,toon(0xe2553f),0,.9,0,pc,8);sp(.18,toon(0xfff3c0),0,1.15,0,pc,6);bx(.6,.8,.6,toon(0x3a3f4b),0,.4,0,pc);
+  var gy=sec('gym');bx(.9,.5,2,toon(0x3a3f4b),5.2,.35,-4.6,gy);var belt=bx(.7,.04,1.7,toon(0x1a1a1a),5.2,.62,-4.6,gy);bx(.9,1.2,.08,toon(0x3a3f4b),5.2,1.1,-5.6,gy);anim.push({fn:function(dt,tl){belt.material.color.setHSL(0,0,.08+Math.abs(Math.sin(tl*8))*.04);},obj:belt});
+    bx(2,1.2,.4,toon(0x8a8f96),8.4,.6,-6.4,gy);for(var dbb=0;dbb<5;dbb++){cy(.12,.12,.5,toon(0x1a1a1a),7.6+dbb*.4,1.25,-6.4,gy,8).rotation.z=Math.PI/2;}plane(3,2,toon(0xcfe8f4),8.4,1.8,-6.8,gy);
+  var ar=sec('arcade');[[5,1.6],[6.4,1.6],[7.8,1.6]].forEach(function(p,i){var cab=new T.Group();cab.position.set(p[0],0,p[1]);cab.rotation.y=Math.PI;ar.add(cab);rb(1,2,.8,.06,toon([0xe2553f,0x2f5f90,0xffc63d][i]),0,1,0,cab);plane(.7,.5,toon([0xff8a3d,0x31e0ff,0xffe38a][i],{e:[0xff8a3d,0x31e0ff,0xffe38a][i],ei:.8}),0,1.4,.41,cab);});
+    rb(1.2,.9,2,.06,toon(0x6a2a8a),9.4,.9,2.6,ar);
+  var of=sec('office');bx(2.4,.08,1,toon(0x6b4a30),-8.6,1,2.6,of);[-.9,.9].forEach(function(o){bx(.08,1,.9,toon(0x6b4a30),-8.6+o,.5,2.6,of);});[-.5,.5].forEach(function(o){bx(.7,.45,.04,toon(0x111111),-8.6+o,1.4,2.3,of);plane(.64,.38,toon(0x2fa860,{e:0x1a5a2a,ei:.6}),-8.6+o,1.4,2.33,of);});
+  var bw=sec('bowling');var ln=plane(1.2,9,toon(0xd8b48a),10,.03,0,bw);ln.rotation.x=-Math.PI/2;for(var pn=0;pn<6;pn++)cy(.06,.1,.4,toon(0xffffff),10-.3+(pn%3)*.3,.2,-5.6+Math.floor(pn/3)*.4,bw,8);sp(.22,toon(0x2a3a6a),10,.22,4,bw,10);
+  var ce=sec('cellar');for(var wr=0;wr<3;wr++)for(var wc=0;wc<8;wc++){var bt=cy(.06,.06,.4,toon([0x6a1a2a,0x2f5a3a,0x3a2a1a][(wr+wc)%3]),-4.4+wc*.24,.6+wr*.45,6.2,ce,6);bt.rotation.x=Math.PI/2;}bx(2.4,1.8,.5,toon(0x5a3a28),-3.6,.9,6.5,ce);
+  var kt=sec('kitchen');counterTop(kt,2.2,6,3.6,0xffffff,0x2a2a2a);bx(1,1,.8,toon(0xc8ccd2),4.6,.5,6.2,kt);for(var pt=0;pt<3;pt++)cy(.2,.2,.2,toon(0x8a8f96),1.4+pt*.6,1.1,6,kt,10);
+  var cus=sec('custom');H2.plaques=[];for(var pq=0;pq<4;pq++){var cv=document.createElement('canvas');cv.width=256;cv.height=160;var t2=new T.CanvasTexture(cv);t2.encoding=T.sRGBEncoding;var pl=plane(1.5,.95,flat(0xffffff,{map:t2}),-10.85,1.9,-1+pq*1.9,cus);pl.rotation.y=Math.PI/2;bx(.4,.9,.9,toon(0xd8b48a),-10.4,.45,-1+pq*1.9,cus);H2.plaques.push({c:cv,t:t2,m:pl});}
+  ACTS.home2.push({x:ox-1,z:-1,r:1.8,label:'Watch a movie',sub:'Your home theater',when:'theater',fn:function(){popup('Home theater','What are we watching?',FILMS.map(function(f){return {t:f.n,s:f.d,fn:function(){watchHome(f);}};}).concat([{t:'Nothing',cls:'sec'}]));}});
+  ACTS.home2.push({x:ox+5.2,z:-3.4,r:1.6,label:'Work out',sub:'20 minutes on the treadmill',when:'gym',fn:function(){fade(function(){var w=W4();w.buff=w.buff||{};w.buff.fast=now()+300000;addXP(10);bubble(P.x,2.6,P.z,'Feeling great.','good');save();});}});
+  ARC_CAB.slice(0,3).forEach(function(cb,i){ACTS.home2.push({x:ox+5+i*1.4,z:.6,r:1,label:cb.n,sub:'Free play',when:'arcade',fn:function(){startArcade(cb.id);}});});
+  ACTS.home2.push({x:ox-8.6,z:1.6,r:1.6,label:'Your desk',sub:'Check the market, read reports',when:'office',fn:function(){popup('Home office','Two monitors. A plant. Quiet.',[{t:'Open Stocks',fn:function(){openPhone('stk');}},{t:'Market report',fn:marketReport},{t:'Your statements',fn:showStatements},{t:'Done',cls:'sec'}]);}});
+  ACTS.home2.push({x:ox+10,z:3.6,r:1.6,label:'Bowl a frame',sub:'Your own lane',when:'bowling',fn:function(){startBowl(true);}});
+  ACTS.home2.push({x:ox-3.6,z:5.4,r:1.6,label:'Wine cellar',sub:'Pour a glass for guests',when:'cellar',fn:function(){addFame(1);bubble(P.x,2.6,P.z,'A good year.','good');}});
+  ACTS.home2.push({x:ox+2.2,z:5,r:1.6,label:'Cook something',sub:'Chef\'s kitchen',when:'kitchen',fn:function(){fade(function(){var w=W4();w.buff=w.buff||{};w.buff.full=now()+900000;addXP(8);bubble(P.x,2.6,P.z,'Home cooking.','good');save();});}});
+  ACTS.home2.push({x:ox-8.4,z:-2.4,r:1.8,label:'Take a nap',sub:'Skip ahead an hour',when:'bed',fn:function(){fade(function(){clockH=(clockH+1)%24;toast('You wake up refreshed.','good');});}});}
+function goHome2(h){var s=homeState(h),pr=(s.proj||[]).filter(function(p){return p.done;}),has=function(k){return pr.some(function(p){return p.k===k;});};
+  Object.keys(H2).forEach(function(k){if(H2[k]&&H2[k].isObject3D)H2[k].visible=k==='bed'?has('floor2'):has(k);});var cu=pr.filter(function(p){return p.k==='custom'||!PROJ[p.k];});H2.custom.visible=cu.length>0;
+  H2.plaques.forEach(function(q,i){var p=cu[i];q.m.visible=!!p;if(!p)return;var g2=q.c.getContext('2d');g2.fillStyle='#2a1a12';g2.fillRect(0,0,256,160);g2.fillStyle='#d4af37';g2.fillRect(6,6,244,148);g2.fillStyle='#2a1a12';g2.fillRect(10,10,236,140);g2.fillStyle='#ffe3a8';g2.textAlign='center';g2.font='bold 22px system-ui';wrapT(g2,p.label,128,60,220,26);g2.font='13px system-ui';g2.fillStyle='#c8b89a';g2.fillText('Built by Bob\'s Builders',128,130);q.t.needsUpdate=true;});
+  AREAS.home2.name=has('floor2')?'Upstairs · '+h.name:'The new wing · '+h.name;AREAS.home2.h=h;
+  fade(function(){P.area='home2';var A=AREAS.home2;P.x=A.ox;P.z=5.2;P.ry=Math.PI;O.snap=true;updDaylight();});}
+function wrapT(g,t,x,y,mw,lh){var ws=String(t).split(' '),line='',yy=y;ws.forEach(function(w2){var tt=line?line+' '+w2:w2;if(g.measureText(tt).width>mw&&line){g.fillText(line,x,yy);line=w2;yy+=lh;}else line=tt;});g.fillText(line,x,yy);}
+function home2When(a){if(!a.when||P.area!=='home2'||!AREAS.home2||!AREAS.home2.h)return true;var s=homeState(AREAS.home2.h),pr=(s.proj||[]).filter(function(p){return p.done;});return a.when==='bed'?pr.some(function(p){return p.k==='floor2';}):pr.some(function(p){return p.k===a.when;});}
+function watchHome(f){MOV={f:f,t:-2,t0:now()+2000,home:1,scr:HSCREEN};var b=$('#o-cut');b.hidden=false;b.textContent='Stop ›';b.onclick=function(){endMovie(true);};}
+function startBowl(){toast('Strike!','good');} /*TEMP until z_fun*/
+
+
+/* ---------- business loans: walk in with a plan, bring an analyst, borrow big ---------- */
+function bankRate(){var b=W4().bank;return b.rate||.025;}
+function pitchLoan(){var w=W4(),opts=[],lots=Object.keys(w.land);
+  lots.slice(0,4).forEach(function(k){var own=w.land[k],D=district(cityOfLot(k),own.d),lp=landPrice(D);opts.push({t:'Build on my lot in '+D.name,s:own.use?'Currently: '+own.use:'Empty lot · land worth '+fmt(lp),fn:function(){pitchBuild(k);}});});
+  var tg=BUS.filter(function(b){return !b.home&&!b.airport&&b.door&&!(w.biz[b.key]||{}).own;}).sort(function(a,b){return bizRev(b)-bizRev(a);}).slice(0,2);
+  tg.forEach(function(b){var d=dState(b);opts.push({t:'Buy '+b.name,s:'Asking '+fmt(d.ask)+' · earns '+fmt(bizRev(b))+'/min',fn:function(){pitchPlan({what:'Buy '+b.name,cost:d.ask,rev:bizRev(b),col:d.ask*.8});}});});
+  opts.push({t:'Something else',s:'Describe your plan in your own words',fn:function(){pitchFree();}});opts.push({t:'Never mind',cls:'sec'});
+  popup('Pitch a business plan','"Regular loans top out at '+fmt(loanLimit())+'. Bring me a real plan and I can go much higher. What\'s the money for?"',opts,'',{who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46',say:{ph:'Describe the plan… "build a water park on my lot"',fn:function(t){pitchFree(t);}}});}
+function pitchBuild(key){var w=W4(),own=w.land[key],D=district(cityOfLot(key),own.d),lp=landPrice(D),ok=Object.keys(DEV).filter(function(k){return DEV[k][4].indexOf(D.win)<0;});
+  popup('What would you build?','Zoning in '+D.name+' allows these. Pick one and the bank will run the numbers.',ok.slice(0,6).map(function(k){var c=lp*DEV[k][1],r=lp*DEV[k][2]*(D.demand||1);return {t:DEV[k][0],s:'Costs '+fmt(c)+' · about '+fmt(r)+'/min',fn:function(){pitchPlan({what:DEV[k][0]+' in '+D.name,cost:c,rev:r,col:lp+c*.7,lot:key,type:k});}};}).concat([{t:'Back',cls:'sec',fn:pitchLoan}]),'',{who:'Loan officer',col:'#2f5a46'});}
+function pitchFree(t){if(!t){popup('Your plan','Tell the loan officer what you want to do with the money.',[{t:'Cancel',cls:'sec'}],'',{who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46',say:{ph:'"Open three more coffee trucks downtown"',fn:pitchFree}});return;}
+  var est=function(cost,rev,line){pitchPlan({what:clean(t).slice(0,60),cost:cost,rev:rev,col:cost*.5,line:line});};
+  var base=Math.max(20000,empireRate()*60);if(!aiOk()){est(Math.round(base*1.5),Math.round(base*1.5/180),null);return;}
+  thinking('Loan officer',t,{who:'Loan officer',col:'#2f5a46'});var tok=AI.tok;
+  aiCall('You are a careful but fair bank loan officer in a business-sim game. Game economy facts: the player earns about '+fmt(empireRate())+' per minute in total; a typical small shop costs about '+fmt(Math.round(8000*tierM()))+' and earns about '+fmt(Math.round(90*tierM()))+' per minute; a big project costs '+fmt(Math.round(200000*tierM()))+'+. The player pitches: "'+t.slice(0,240)+'". Estimate the realistic cost of the plan and its income per minute IN THIS GAME\'S ECONOMY (not real life). Unrealistic plans get modest income estimates. '+SAFE+'\nReturn only JSON: {"cost": number, "per_min": number, "say": one sentence reaction}.',[],'Evaluate.').then(function(r){if(tok!==AI.tok)return;
+    if(!r||!(+r.cost>0)){est(Math.round(base*1.5),Math.round(base*1.5/180),null);return;}est(Math.max(1000,Math.min(5e8,+r.cost)),Math.max(0,Math.min(+r.cost/20,+r.per_min||0)),clean(r.say||''));});}
+function pitchPlan(pl){var w=W4(),b=w.bank,fee=Math.round(Math.max(300,pl.cost*.01)),who={who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46'};
+  var pb=pl.rev>0?pl.cost/pl.rev:1e9;
+  popup('Your plan: '+pl.what,(pl.line?'"'+pl.line+'"\n':'')+'Needs about '+fmt(pl.cost)+'. Projected income '+fmt(pl.rev)+'/min, so it pays for itself in about '+(pb<1e8?mmssS(pb*60):'never')+'.\n\n"I can decide on this now, or you can bring in an analyst. A proper report gets you a bigger loan and a lower rate."',
+    [{t:'Hire Priya Shah, CFA · '+fmt(fee),s:'She writes the projections. Up to 90% of the cost at 2%',fn:function(){if(!pay(fee,'Priya\'s report'))return;fade(function(){decideLoan(pl,true);});}},
+     {t:'Decide without a report',s:'Up to 60% of the cost at 2.5%',fn:function(){decideLoan(pl,false);}},{t:'Never mind',cls:'sec'}],'',who);}
+function decideLoan(pl,rep){var w=W4(),b=w.bank,who={who:'Loan officer',role:'Crema Savings & Loan',col:'#2f5a46'},rate=rep?.02:.025,share=rep?.9:.6;
+  var ask=Math.round(pl.cost*share),inc=empireRate()+pl.rev,debt=b.loan+ask,service=debt*rate/(PERIOD/60),dscr=inc/Math.max(1,service),cap=Math.round((netWorth()+pl.col)*(rep?2.5:1.5));
+  var need=rep?1.2:1.6,amt=Math.min(ask,Math.max(0,cap-b.loan));
+  if(rep)popup('Analyst report','Priya Shah, CFA\n• Income today: '+fmt(empireRate())+'/min, plus '+fmt(pl.rev)+'/min from this plan\n• Loan payments would be '+fmt(service)+'/min\n• Coverage: '+dscr.toFixed(2)+'× (banks want 1.2×)\n• Collateral: '+fmt(pl.col)+'\n'+(dscr>=need?'"The numbers work. Sign it."':'"Borrow less, or grow income first."'),[{t:'Take it to the loan officer',fn:function(){verdictLoan();}}],'',{who:'Priya Shah',role:'Financial analyst',col:'#2a3a6a'});else verdictLoan();
+  function verdictLoan(){if(dscr<need||amt<1000){var safe=Math.max(0,Math.round(inc/need*(PERIOD/60)/rate-b.loan));popup('Not this time','"Your income can\'t cover payments on '+fmt(ask)+'. '+(safe>1000?'I could do '+fmt(Math.min(safe,cap-b.loan))+' on this plan."':'Come back when the business is bigger."'),safe>1000?[{t:'Take '+fmt(Math.min(safe,cap-b.loan)),fn:function(){grant(Math.min(safe,cap-b.loan));}},{t:'No thanks',cls:'sec'}]:[{t:'OK'}],'',who);return;}
+    popup('Approved','"'+fmt(amt)+' at '+(rate*100).toFixed(1)+'% every 8 minutes'+(amt<ask?' (that\'s what your collateral supports)':'')+'. Interest comes out of cash, and you can repay any time."',[{t:'Sign · '+fmt(amt),fn:function(){grant(amt);}},{t:'Walk away',cls:'sec'}],'',who);}
+  function grant(a){a=Math.round(a);if(a<=0)return;var old=b.loan;b.rate=old>0?(old*bankRate()+a*rate)/(old+a):rate;b.loan+=a;cityGain(a);b.plans=b.plans||[];b.plans.push({what:pl.what,amt:a,t:now()});banner('Loan approved','+'+fmt(a),'good');note('Business loan',fmt(a)+' for "'+pl.what+'". Rate '+(b.rate*100).toFixed(2)+'% every 8 minutes.','good');save();
+    if(pl.lot&&pl.type)setTimeout(function(){popup('Ready to build?','The money is in your account. Call Bob for the '+DEV[pl.type][0]+'?',[{t:'Get Bob\'s quote',fn:function(){devQuote(pl.lot,DEV[pl.type][0]);}},{t:'Later',cls:'sec'}]);},600);}}
 
 
 /* ---------- build a city ---------- */
@@ -6427,7 +6617,7 @@ function build(city){
   P.me=makeCustomer(district(city,plan.blocks[0].D.id),{staff:acc});P.me.root.scale.setScalar(1.05);sc.add(P.me.root);
   P.hand=new T.Group();P.hand.position.set(0,.72,.5);P.me.root.add(P.hand);carryView();
   P.phone=new T.Group();P.phone.position.set(0,-.42,.1);P.me.arms[1].add(P.phone);rb(.12,.22,.03,.02,toon(0x1a1a1e),0,0,0,P.phone);plane(.1,.18,flat(0x8fd3ff),0,0,.017,P.phone);P.phone.visible=false;
-  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
+  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();brickDecor();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
   O.dirty=false;
   if(lowEnd()){sc.fog.far=140;}
 }
@@ -6556,7 +6746,7 @@ function FADE_ON(){var f=$('#o-fade');return !!(f&&f.classList.contains('on'));}
 function tutWhenReady(n){setTimeout(function(){var w=W4();if((w.f&&w.f.tut)||TUT||!O.on)return;if(FADE_ON()&&n<12){tutWhenReady(n+1);return;}playTutorial(true);},n?500:900);}
 O.bind=function(){bindUI();window.__OUT=O.hooks;};
 O.hooks={ev:function(s){return eval(s);},ray:function(x,y){var rc=new T.Raycaster();rc.setFromCamera({x:x,y:y},O.cam);var h=rc.intersectObjects(O.scene.children,true).slice(0,4);return h.map(function(i){var o=i.object,path=[];while(o){path.push((o.name||o.type)+(o.geometry&&o.geometry.type?':'+o.geometry.type:''));o=o.parent;}return i.distance.toFixed(2)+' '+path.slice(0,4).join('<')+' vis:'+i.object.visible+' mat:'+(i.object.material&&i.object.material.type);});},talkInfo:function(){return TALK?{t:[TALK.x,TALK.z,TALK.y],p:[P.x,P.z],cam:O.cam.position.toArray(),vis:TALK.me.root.visible,par:!!TALK.me.root.parent}:null;},doBox:function(){doBox();},ped:function(){var b=null,bd=1e9;peds.forEach(function(q){var d=Math.hypot(q.x-P.x,q.z-P.z);if(d<bd){bd=d;b=q;}});if(b)talkPed(b);return !!b;},bird:function(on){if(on)birdOn();else birdOff();},mis:function(){return W4().mis;},cabin:function(){return CAB?{t:CAB.t,look:CAB.look}:null;},skip:function(){if(CUT)CUT.skip=true;},look:function(){if(CAB)CAB.look=1;},shift:function(){return {bg:bgShift(),mgr:SH&&hasMgr(SH.loc),staff:SH&&JSON.stringify(SH.loc.staff),ph:SH&&SH.phase,t:SH&&Math.round(SH.t),len:SH&&SH.len,paused:paused,on:O.on,cust:SH?SH.cust.length:0,modal:!$('#modal').hidden&&$('#modal').innerText.slice(0,60)};},endDay:function(){if(SH)SH.t=SH.len-1;},prof:function(){var r={};function c(){renderer.render(O.scene,O.cam);return renderer.info.render.calls;}r.all=c();dyn.visible=false;r.noDyn=c();dyn.visible=true;peds.forEach(function(p){p.me.root.visible=false;});r.noPeds=c();peds.forEach(function(p){p.me.root.visible=true;});cars.forEach(function(q){q.g.visible=false;});r.noCars=c();cars.forEach(function(q){q.g.visible=true;});r.children=O.scene.children.length;return r;},state:function(){var w=W4();return {on:O.on,city:O.city,area:P.area,P:{x:+P.x.toFixed(1),z:+P.z.toFixed(1)},act:curAct&&(typeof curAct.label==='function'?curAct.label():curAct.label),drv:!!drv,carry:P.carry.slice(),trunk:w.trunk.slice(),stock:w.stock,builds:w.builds.length,land:Object.keys(w.land).length,locs:G.locs.length,cash:Math.round(G.cash),cars:cars.length,peds:peds.length,walkers:walkers.length,nav:NAV?Math.round(NAV.len):null,ride:!!RIDE,cut:!!CUT,pop:popOpen()?$('#o-pop .pp-t').textContent:null,phone:PH.open?PH.app:null,calls:renderer.info.render.calls,trucks:w.trucks.length,supers:Object.keys(w.supers).length,clock:clockStrH(clockH)};},
-  act:function(a){doAct(a);},tp:function(x,z){P.x=x;P.z=z;P.auto=0;O.snap=true;},acts:function(){return (ACTS[P.area]||[]).concat(P.area==='city'?vehAct():[]).map(function(a){return {x:+a.x.toFixed(2),z:+a.z.toFixed(2),l:typeof a.label==='function'?a.label():a.label};});},key:function(k,v){keys[k]=v;},
+  act:function(a){doAct(a);},tp:function(x,z){P.x=x;P.z=z;P.auto=0;O.snap=true;},acts:function(){return (ACTS[P.area]||[]).filter(home2When).concat(homeActs(),brickActs(),synActs(),P.area==='city'?vehAct():[]).map(function(a){return {x:+a.x.toFixed(2),z:+a.z.toFixed(2),l:typeof a.label==='function'?a.label():a.label};});},key:function(k,v){keys[k]=v;},
   place:function(id){var p=placeById(id);return p?{x:p.x,z:p.z,name:p.name}:null;},places:function(){return places.map(function(p){return p.id;});},nav:function(id){navTo(placeById(id));},go:function(id){enterArea(id);},phone:function(a){openPhone(a);},
   pop:function(i){var b=document.querySelectorAll('#o-pop .pp-b')[i];if(b)b.click();return !!b;},popText:function(){return popOpen()?$('#o-pop').innerText:null;},walk:function(dx,dz,sec){joy.x=dx;joy.y=dz;setTimeout(function(){joy.x=joy.y=0;},sec*1000);},
   yaw:function(v){if(v!=null)yaw=v;return yaw;},tick:function(s){econT=s;},cab:function(id){callCab(placeById(id));},board:function(){var t=myTicket();if(t)board(t);},rain:function(on){rain.on=!!on;rain.next=999;},clock:function(h){clockH=h;clockSrc='world';},
