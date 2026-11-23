@@ -112,7 +112,7 @@ function bankFront(lot){
 }
 function marketBlock(b,r){
   var L=lotsOf(b);supplyFront(L[0]);superFront(wideLot(b,1,1,2));garageFront(L[3]);
-  genBuilding(L[4],b,r,{name:'FreshMart Grocery',grocery:true,arch:'market'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
+  genBuilding(L[4],b,r,{name:'Mg1\'s Fresh Market',grocery:true,arch:'market'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
 }
 function supplyFront(lot){
   var g=lotGroup(lot),dg=dynGroup(lot),w=lot.w-.3,d=BDEP-.4,h=7;

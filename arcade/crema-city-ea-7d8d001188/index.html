@@ -3187,7 +3187,7 @@ function bankFront(lot){
 }
 function marketBlock(b,r){
   var L=lotsOf(b);supplyFront(L[0]);superFront(wideLot(b,1,1,2));garageFront(L[3]);
-  genBuilding(L[4],b,r,{name:'FreshMart Grocery',grocery:true,arch:'market'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
+  genBuilding(L[4],b,r,{name:'Mg1\'s Fresh Market',grocery:true,arch:'market'});genBuilding(L[5],b,r,{name:'Bolt & Nut Hardware'});genBuilding(L[6],b,r,{name:'Suds Laundromat'});genBuilding(L[7],b,r,{name:'Paws Pet Shop'});
 }
 function supplyFront(lot){
   var g=lotGroup(lot),dg=dynGroup(lot),w=lot.w-.3,d=BDEP-.4,h=7;
@@ -3885,7 +3885,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();home2Room();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
+  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();freshRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();home2Room();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){
@@ -4054,7 +4054,7 @@ var retPos=null;
 function fade(fn,cb){var f=$('#o-fade');f.classList.add('on');setTimeout(function(){try{fn();}catch(e){console.error(e);}setTimeout(function(){f.classList.remove('on');if(cb)cb();},60);},230);}
 function enterArea(id){if(!AREAS[id]){popup('Closed','This building isn\'t open yet.',[{t:'OK'}]);return;}
   fade(function(){retPos={x:P.x,z:P.z,yaw:yaw};P.area=id;var A=AREAS[id];P.x=A.spawn.x;P.z=A.spawn.z;P.ry=Math.PI;yaw=0;pitch=A.cam.pitch;O.snap=true;doorCD=1;
-    if(id==='hall'){W4().tax.visited=true;}try{tone(1318,.25,'sine',.02);}catch(e){}updDaylight();});}
+    if(id==='hall'){W4().tax.visited=true;}if(id==='grocery')fmEnter();try{tone(1318,.25,'sine',.02);}catch(e){}updDaylight();});}
 function leaveArea(){if(jailLocked()){toast('The door is locked. Wait it out or post bail.','bad');return;}if(P.carry.length&&P.area==='supply'){/* fine: you carry crates out */}
   fade(function(){var r=retPos||placeById('hall')||{x:0,z:0};P.area='city';var back=outward(r);P.x=back.x;P.z=back.z;yaw=Math.atan2(back.x-r.x,back.z-r.z);P.ry=yaw;pitch=.44;O.snap=true;doorCD=1;updDaylight();});}
 function outward(r){var b=blockAt(r.x,r.z);if(!b)return {x:r.x-1.2,z:r.z};var dz=r.z>b.z?1:-1;return {x:r.x,z:r.z+dz*1.2};}
@@ -4349,7 +4349,7 @@ var BT={
   arcade:{base:1.3,arch:'modern',prop:'balloons',what:'an arcade'},fish:{base:1.3,arch:'warehouse',prop:'ice',what:'a fish market'},hardware:{base:1.4,arch:'warehouse',prop:'cart',what:'a hardware store'},
   pets:{base:1,arch:'classic',prop:'dog',what:'a pet shop'},auto:{base:1.4,arch:'warehouse',prop:'tires',what:'an auto shop'},shop:{base:1,arch:'classic',prop:'plant',what:'a shop'},
   office:{base:3,arch:'tower',nosale:1,what:'an office'}};
-var BT_RX=[[/FreshMart|Grocery/,'grocery'],[/Book/,'books'],[/Florist|Bloom|Lace|Linen/,'florist'],[/Pizza|Slice/,'pizza'],[/Deli|Diner/,'deli'],[/Vinyl|Record/,'records'],[/Toy/,'toys'],[/Cuts|Barber/,'barber'],
+var BT_RX=[[/FreshMart|Grocery|Fresh Market/,'grocery'],[/Book/,'books'],[/Florist|Bloom|Lace|Linen/,'florist'],[/Pizza|Slice/,'pizza'],[/Deli|Diner/,'deli'],[/Vinyl|Record/,'records'],[/Toy/,'toys'],[/Cuts|Barber/,'barber'],
   [/Nails/,'nails'],[/Laundr|Suds/,'laundry'],[/Phone/,'phones'],[/Copy|Print|Paper|Post$/,'copy'],[/Ramen|Noodle|Dumpling|Bao/,'ramen'],[/Bike/,'bikes'],[/Gym|Iron|Spin|Climb/,'gym'],[/Yoga/,'yoga'],
   [/Surf|Board|Sun & Sand/,'surf'],[/Taco|Fish Tacos/,'tacos'],[/Gift|Shell|Kite/,'gifts'],[/Antique|Clock|Apothecary|Old Post/,'antiques'],[/Tea|Cocoa/,'tea'],[/Ski|Snow|Gear|Wool/,'ski'],[/Inn|Fireside/,'inn'],
   [/Karaoke/,'karaoke'],[/Arcade|Lucky Cat/,'arcade'],[/Fish|Dock|Ship|Rope|Ferry/,'fish'],[/Hardware|Bolt/,'hardware'],[/Pet|Paws/,'pets'],[/Tire|Auto|Driving/,'auto'],
@@ -4426,7 +4426,7 @@ function propFor(g,k,w,r){var x=2.8,z=1.2;
 }
 function regBiz(lot,b,name,type,g,opt){
   var key=lot.key,city=O.city,D=b.D||null,bz={key:key,name:name,type:type,city:city,D:D,lot:lot,grocery:!!opt.grocery,cuisine:opt.cuisine||null};BUS.push(bz);
-  var r=seeded(hashS(key+name));bz.owner=OWNERS[Math.floor(r()*OWNERS.length)];bz.pers=Object.keys(PERS)[Math.floor(r()*6)];bz.phone='555-0'+(100+Math.floor(r()*899));
+  var r=seeded(hashS(key+name));bz.owner=OWNERS[Math.floor(r()*OWNERS.length)];bz.pers=Object.keys(PERS)[Math.floor(r()*6)];bz.phone='555-0'+(100+Math.floor(r()*899));if(opt.grocery){bz.owner='Mg1';bz.pers='sentimental';}
   var st=W4().biz[key];if(st&&st.own){plane(.9,.45,flat(0xffffff,{map:signT('A CREMA COMPANY',{bg:'#2a1a12',fg:'#ffc63d',w:256,h:120})}),DOORX+1.15,1.9,.26,g);var fp=new T.Group();fp.position.set(-lot.w/2+.6,3.8,.3);g.add(fp);cyB(.03,1.4,toon(0xd8d8d8),0,0,0,fp,4);plane(.7,.45,toon(0xffffff,{map:flagTex(),ds:1}),.38,1.15,0,fp);}
   var dw=L2W(lot,DOORX,.9);bz.door=dw;
   ACTS[curArea].push({x:dw.x,z:dw.z,r:1.7,door:true,dn:lot,label:function(){var s=W4().biz[key];return s&&s.own?'Check on '+name+' (yours)':(isEatery(bz)?'Eat at ':'Step into ')+name;},
@@ -4515,7 +4515,7 @@ function SUPCO(){var t=TM(O.city).pm;return {key:'supco:'+O.city,name:'Crema Sup
 function callValley(){var w=W4(),b=VALLEY(),s=dState(b),who={who:'Earl',role:'Valley Farms Distribution',col:'#6b8a3a'};
   if(s.own){popup('Valley Farms','"Trucks are rolling, boss. Every shop of yours gets ingredients 20% cheaper."',[{t:'Great',cls:'sec'}],'',who);return;}
   var ct=w.contract&&w.contract.until>now(),fee=Math.round(9000*TM(Math.max(0,(G.cities||1)-1)).pm*(w.haggled?.88:1));
-  popup('Valley Farms','"Earl speaking. Who gave you this number? ...FreshMart\'s invoices, huh. Smart. What do you want?"',[
+  popup('Valley Farms','"Earl speaking. Who gave you this number? ...Mg1\'s Fresh Market\'s invoices, huh. Smart. What do you want?"',[
     {t:ct?'Contract active · '+mmssS((w.contract.until-now())/1000)+' left':'Supply contract · '+fmt(fee),s:'12% cheaper ingredients at all your shops for 30 minutes',off:ct,why:'Your contract is still running.',fn:function(){if(!pay(fee,'The contract'))return;w.contract={pct:.12,until:now()+1800000};note('Supply contract signed','Ingredients 12% cheaper everywhere for 30 minutes.','good');save();}},
     {t:'Can you do better on the contract?',off:!!w.haggled,why:'Earl already gave you his best price.',fn:function(){w.haggled=1;if(Math.random()<.6)popup('Valley Farms','"For a regular? Fine. 12% off the fee."',[{t:'OK'}],'',who);else{w.haggled=2;popup('Valley Farms','"That IS the better price, friend."',[{t:'OK'}],'',who);}save();}},
     {t:'I want to buy Valley Farms',s:'The whole company',fn:function(){bizTalk(b,true);}},{t:'Bye',cls:'sec'}],'',who);}
@@ -4525,7 +4525,7 @@ function caseView(){if(!P.me)return;if(!P.caseM){P.caseM=new T.Group();P.caseM.p
 function caseMenu(){var amts=[10000,50000,250000,1000000].map(function(a){return Math.round(a*tierM());}).filter(function(a){return a<=G.cash;});
   popup('Cash briefcase','Walk into a negotiation with cash in hand and owners take you more seriously (+6% on your offer; greedy owners like it even more).\nIn the briefcase: '+fmt(caseAmt()),
     amts.map(function(a){return {t:'Fill it with '+fmt(a),fn:function(){citySpend(a);W4().case=caseAmt()+a;caseView();note('Briefcase packed',fmt(caseAmt())+' in cash. Go make someone an offer.','good');save();}};}).concat(caseAmt()?[{t:'Deposit the briefcase · '+fmt(caseAmt()),fn:function(){cityGain(caseAmt());W4().case=0;caseView();toast('Deposited.','good');save();}}]:[]).concat([{t:'Done',cls:'sec'}]),'',{who:'Teller',role:'Crema Savings & Loan',col:'#2f5a46'});}
-/* FreshMart: a grocery store you can walk around, with the supplier's invoices in the back office */
+/* the Fresh Market: a grocery store you can walk around, with the supplier's invoices in the back office */
 function groceryRoom(){
   var gb=BUS.filter(function(q){return q.grocery;})[0];if(!gb)return;
   var g=room('grocery',{name:gb.name,w:22,d:16,floor:floorT(0xf2f2ec,0xe0e4dc,4),wall:0xeef2e4,trim:0x2fa860,bg:0x2a3a2e,h:5.4}),ox=IOX.grocery;
@@ -4542,7 +4542,7 @@ function groceryRoom(){
   var own=npc(g,-5.5,-2,Math.PI/2,{shirt:0x8a5a3a});
   ACTS.grocery.push({x:ox-4.4,z:-2,r:1.8,label:function(){var s=W4().biz[gb.key];return s&&s.own?'Talk to '+gb.owner+' (your manager)':'Talk to '+gb.owner+' (owner)';},sub:function(){var s=W4().biz[gb.key];return s&&s.own?'Earning '+fmt(bizRev(gb))+'/min · ingredients 8% cheaper':'Ask about buying the store';},fn:function(){bizTalk(gb,false);}});
   ACTS.grocery.push({x:ox-8.6,z:-5,r:1.6,label:function(){return W4().found&&W4().found.valley?'Invoices (Valley Farms · 555-0199)':'Peek at the invoices on the desk';},sub:'Back office',fn:function(){var w=W4();w.found=w.found||{};var first=!w.found.valley;w.found.valley=1;save();
-    popup('Invoice','VALLEY FARMS DISTRIBUTION\n"Your farm-to-shelf partner since 1971"\nMilk 120 cs · Flour 80 sacks · Fruit 64 cs · Cream 40 cs\nQuestions? Call Earl: 555-0199',[{t:'Call Earl now',fn:callValley},{t:'Put it back',cls:'sec'}]);if(first)note('New contact: Valley Farms','Earl supplies FreshMart, and probably half the town. He\'s in your phone now.','good');}});
+    popup('Invoice','VALLEY FARMS DISTRIBUTION\n"Your farm-to-shelf partner since 1971"\nMilk 120 cs · Flour 80 sacks · Fruit 64 cs · Cream 40 cs\nQuestions? Call Earl: 555-0199',[{t:'Call Earl now',fn:callValley},{t:'Put it back',cls:'sec'}]);if(first)note('New contact: Valley Farms','Earl supplies the Fresh Market, and probably half the town. He\'s in your phone now.','good');}});
   for(var s2=0;s2<5;s2++){var sh2=liteMe();sh2.root.position.set(ox-8+s2*4,0,3);dyn.add(sh2.root);shoppers.push({me:sh2,x:ox-8+s2*4,z:3,tx:ox-8+s2*4,tz:3,w:rnd(0,3),area:'grocery'});}
 }
 
@@ -4580,7 +4580,7 @@ function rumor(p){
   homesForSale().slice(0,2).forEach(function(h){list.push(['hs'+h.key,'"'+h.owner+' over at '+h.name+' is trying to sell. Sign\'s been up for weeks."']);});
   BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own||b.home)return;if(b.pers==='tired')list.push(['tired'+b.key,'"I heard '+b.owner+' at '+b.name+' wants to retire. Says they\'re exhausted."']);if(b.pers==='sentimental')list.push(['sent'+b.key,'"'+b.owner+' at '+b.name+' would only sell to someone who keeps the staff on. Family business."']);
     if(b.pers==='proud')list.push(['proud'+b.key,'"Don\'t lowball '+b.owner+' at '+b.name+'. They\'ll throw you out."']);});
-  if(!(W4().found&&W4().found.valley))list.push(['valley','"See those Valley Farms trucks at FreshMart every morning? They supply half the town."']);
+  if(!(W4().found&&W4().found.valley))list.push(['valley','"See those Valley Farms trucks at the Fresh Market every morning? They supply half the town."']);
   var sale=places.filter(function(q){return q.kind==='sale';});if(sale.length)list.push(['sale','"There\'s an empty lot over in '+sale[0].name.replace('Lot for sale · ','')+'. Somebody should build there."']);
   G.locs.forEach(function(l){if(l.city===O.city&&l.comp&&l.comp.S<15)list.push(['weak'+l.id,'"'+l.comp.name+' looks like it\'s struggling. Half empty every time I pass."']);});
   if(!civ().council&&G.fame>=200)list.push(['council','"There\'s a council seat open. Someone like you could win it."']);
@@ -4733,9 +4733,9 @@ var MIS=[
   {ch:'Hit the road',t:'Get a street vending permit',h:'Permits window, City Hall.',p:'hall',ok:function(w){return Object.keys(w.civ).some(function(c){return w.civ[c].permits.vend;});}},
   {ch:'Hit the road',t:'Buy a food truck',h:'Crema Motors on Motor Row.',p:'motors',ok:function(w){return w.trucks.length;}},
   {ch:'Hit the road',t:'Sell from a food truck zone',h:'Drive your truck to a striped zone and get out. Central Park has three.',p:function(){return nearestZone(P.x,P.z);},ok:function(w){return w.f.zoned;}},
-  {ch:'Taking over',t:'Find out who supplies FreshMart',h:'The invoices are on the desk in FreshMart\'s back office.',p:'biz:grocery',ok:function(w){return w.found.valley;}},
+  {ch:'Taking over',t:'Find out who supplies the Fresh Market',h:'The invoices are on the desk in Mg1\'s Fresh Market\'s back office.',p:'biz:grocery',ok:function(w){return w.found.valley;}},
   {ch:'Taking over',t:'Buy a business',h:'Walk into any shop and make the owner an offer. Type what you\'d say, haggle, bring the briefcase from the bank for better deals.',ok:function(w){return ownedBiz().length;}},
-  {ch:'Taking over',t:'Buy FreshMart',h:'Owning the grocery store makes your ingredients 8% cheaper.',p:'biz:grocery',ok:function(w){return Object.keys(w.biz).some(function(k){return w.biz[k].own&&w.biz[k].grocery;});}},
+  {ch:'Taking over',t:'Buy the Fresh Market',h:'Owning the grocery store makes your ingredients 8% cheaper.',p:'biz:grocery',ok:function(w){return Object.keys(w.biz).some(function(k){return w.biz[k].own&&w.biz[k].grocery;});}},
   {ch:'Taking over',t:'Make a deal with Valley Farms',h:'Call Earl: a supply contract, or buy the company.',ok:function(w){return w.contract||(w.biz.valley||{}).own;}},
   {ch:'Big time',t:'Build the Crema Superstore',h:'Get a commercial permit at City Hall, then build on Market Square.',p:'supersite',ok:function(w){return Object.keys(w.supers).length;}},
   {ch:'Big time',t:'Open 3 superstore departments',h:'Walk up to the empty bays inside.',p:'super',ok:function(w){return Object.keys(w.supers).some(function(c){return Object.keys(w.supers[c].depts).length>=3;});}},
@@ -4997,7 +4997,7 @@ function homeRoom(){
   bx(3,.1,.4,toon(0x6b4a30),1.5,2.4,-5.8,g);var nb=Math.min(9,ownedBiz().length);for(var t=0;t<nb;t++){cy(.1,.06,.25,toon(0xffd24a),.3+t*.3,2.6,-5.75,g,8);}
   ACTS.home.push({x:ox-3,z:3.4,r:1.6,label:'Watch the news',sub:'Channel 4',fn:function(){var n=(G.news||[]).slice(0,4).map(function(x){return '· '+x.text;}).join('\n');popup('Crema News',n||'Slow news day. A cat got stuck in a tree on Main St. It\'s fine now.',[{t:'Turn it off',cls:'sec'}]);}});
   ACTS.home.push({x:ox-7,z:3.4,r:1.4,label:'Open the laptop',sub:'Your holdings',fn:function(){openPhone('hold');}});
-  ACTS.home.push({x:ox+5,z:-4.2,r:1.5,label:'Raid the fridge',sub:'Kitchen',fn:function(){bubble(P.x,2.6,P.z,pick(['Leftover pizza. Perfect.','Just oat milk. Of course.','Cold brew. Your own.']),'');try{sfx.pick();}catch(e){}}});
+  ACTS.home.push({x:ox+5,z:-4.2,r:1.5,label:'Raid the fridge',sub:function(){var p=W4().pantry||{},n=Object.keys(p).filter(function(k){return p[k]>0;});return n.length?'Groceries: '+n.slice(0,3).join(', '):'Kitchen';},fn:function(){var w=W4(),p=w.pantry||{},n=Object.keys(p).filter(function(k){return p[k]>0;});if(!n.length){bubble(P.x,2.6,P.z,pick(['Leftover pizza. Perfect.','Just oat milk. Of course.','Cold brew. Your own.','Empty. Time for a trip to Mg1\'s.']),'');try{sfx.pick();}catch(e){}return;}var k=pick(n);p[k]--;w.buff=w.buff||{};w.buff.full=now()+600000;if(/Pie|Cookies/.test(k)){w.buff.fast=now()+120000;}addXP(4);bubble(P.x,2.6,P.z,'Mmm, '+k.toLowerCase()+'.','good');save();}});
   ACTS.home.push({x:ox+6.4,z:1.2,r:1.5,label:function(){return TOUR?'Check out the bedroom':'Take a nap';},sub:function(){return TOUR?'Nice light in here':'You wake up rested';},fn:function(){if(TOUR){bubble(P.x,2.6,P.z,'Big closet. Nice.','');return;}fade(function(){addXP(10);toast('You feel rested. +10 XP','good');});}});
   ACTS.home.push({x:ox-.5,z:2,r:1.6,label:function(){var h=AREAS.home.h;if(TOUR&&h)return 'Make '+h.owner+' an offer';var w=W4();return w.home&&AREAS.home.h&&w.home===AREAS.home.h.key?'Throw a house party':'Look around';},
     sub:function(){var h=AREAS.home.h;return TOUR&&h?'Asking '+fmt(dState(h).ask):'Neighbors come over · fame';},fn:function(){var h=AREAS.home.h;if(!h)return;if(TOUR){bizTalk(h,false);return;}var w=W4();if(w.home===h.key)houseParty(h);}});
@@ -5108,7 +5108,7 @@ function genericSay(t,title,text,btns,kind,opt){var n=norm(t),qt=toks(t),best=nu
   popup(title,pick(['"Sorry, I didn\'t catch that."','"Hm? Say that another way?"','"Not sure I can help with that."']),btns,kind,Object.assign({},opt,{you:t,say:null}));}
 
 /* ----- places by name: "the bank", "freshmart", "campus", "Paper Moon", "home" ----- */
-var ALIAS=[[/airport|plane|flight|fly/,'airport'],[/city hall|town hall|taxes|permit|mayor/,'hall'],[/\bbank|loan|atm/,'bank'],[/realt|dana|real estate/,'realty'],[/supply|crates|ingredients|supplies|wholesale/,'supply'],[/grocery|freshmart|groceries|supermarket/,'biz:grocery'],[/central park|\bpark\b/,'park'],[/universit|campus|college/,'uni'],[/motors|car dealer|dealership|buy a car|pickup/,'motors'],[/ski|lift|mountain|slope|snow/,'lift'],[/pier|ferris|beach|ocean|boardwalk/,'pier'],[/superstore/,'super']];
+var ALIAS=[[/airport|plane|flight|fly/,'airport'],[/city hall|town hall|taxes|permit|mayor/,'hall'],[/\bbank|loan|atm/,'bank'],[/realt|dana|real estate/,'realty'],[/supply|crates|ingredients|supplies|wholesale/,'supply'],[/grocery|freshmart|fresh market|mg1|groceries|supermarket/,'biz:grocery'],[/central park|\bpark\b/,'park'],[/universit|campus|college/,'uni'],[/motors|car dealer|dealership|buy a car|pickup/,'motors'],[/ski|lift|mountain|slope|snow/,'lift'],[/pier|ferris|beach|ocean|boardwalk/,'pier'],[/superstore/,'super']];
 function findPlace(t){var n=norm(t),w=W4();
   if(/\b(go home|my home|my house|home)\b/.test(n)&&w.home){var hp=placeById('home:'+w.home);if(hp)return {x:hp.x,z:hp.z,name:'Home',id:hp.id,sc:3};}
   if(/my (shop|cafe|store|coffee)|back to (work|the shop)|the counter/.test(n)){var lc=G.locs.filter(function(l){return l.city===O.city;})[0];var sp2=lc&&placeById('shop:'+lc.id);if(sp2)return Object.assign({sc:3},sp2);}
@@ -5119,7 +5119,7 @@ function findPlace(t){var n=norm(t),w=W4();
   return bs>=1?Object.assign({sc:bs},best):null;}
 
 /* ----- the "do anything" box ----- */
-var DO_EX=['take me to the airport','buy a house','call Earl','find FreshMart','show me the whole city','I want to build something','call a cab to the pier','go home','get a loan','fly somewhere','order supplies'];
+var DO_EX=['take me to the airport','buy a house','call Earl','find the Fresh Market','show me the whole city','I want to build something','call a cab to the pier','go home','get a loan','fly somewhere','order supplies'];
 function doBox(){var ex=DO_EX.slice().sort(function(){return Math.random()-.5;}).slice(0,4);
   popup('What do you want to do?','Type anything. Places, people, things to buy, things to build.',ex.map(function(e){return {t:'"'+e+'"',fn:function(){doCmd(e);}};}).concat([{t:'Close',cls:'sec'}]),'',{say:{ph:'e.g. "buy the bakery" or "where is city hall"',fn:function(t){if(!doCmd(t))aiCommand(t);}}});
   if(!matchMedia('(pointer:coarse)').matches)setTimeout(function(){var i=document.querySelector('#o-pop .pp-say input');if(i)i.focus();},30);}
@@ -5161,7 +5161,7 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
     if(/\b(land|lot|plot)\b/.test(n)){callDana();return true;}
     if(/\b(car|pickup|truck|vehicle|van)\b/.test(n)){var m=placeById('motors');if(m)return goTo(m);}
     if(/supplies|crates|ingredients|stock|beans|milk/.test(n)){var sp=placeById('supply');if(sp)return goTo(sp);}
-    if(/valley|farm|supplier/.test(n)){if(w.found&&w.found.valley){bizTalk(VALLEY(),true);}else popup('Who supplies who?','Somebody supplies FreshMart. The paperwork is probably in their back office.',[{t:'Directions to FreshMart',fn:function(){var g=placeById('biz:grocery');if(g)navTo(g);}},{t:'OK',cls:'sec'}]);return true;}
+    if(/valley|farm|supplier/.test(n)){if(w.found&&w.found.valley){bizTalk(VALLEY(),true);}else popup('Who supplies who?','Somebody supplies the Fresh Market. The paperwork is probably in their back office.',[{t:'Directions to the Fresh Market',fn:function(){var g=placeById('biz:grocery');if(g)navTo(g);}},{t:'OK',cls:'sec'}]);return true;}
     var q=toks(n.replace(/\b(buy|purchase|acquire|own|get|out|the|whole)\b/g,'')),bb2=null,bs2=0;BUS.forEach(function(b){var sc=overlap(q,b.name);if(sc>bs2){bs2=sc;bb2=b;}});
     if(bb2&&bs2>=1){var bp=placeById((bb2.home?'home:':'biz:')+bb2.key);if(bp)return goTo(bp,'Go talk to '+bb2.owner+' at '+bb2.name+'.');}
     if(/\b(business|shop|store|company|restaurant)\b/.test(n)){var cand=BUS.filter(function(b){return !b.home&&!(w.biz[b.key]||{}).own&&b.pers==='tired';})[0]||BUS.filter(function(b){return !b.home&&!(w.biz[b.key]||{}).own;})[0];if(cand)return goTo(placeById('biz:'+cand.key),cand.owner+' at '+cand.name+' might sell. Go make an offer.');}
@@ -5976,7 +5976,7 @@ function gigApp(){var w=W4(),g=w.gig;return phTop('CremaDash')+(g&&g.state?'<div
 function takeGig(){var rs=BUS.filter(function(b){return isEatery(b)&&b.door;}),hs=HOMES.filter(function(h){return h.door;});if(!rs.length||!hs.length){toast('No gigs nearby.','');return;}var a=pick(rs),b=pick(hs),pa=placeById('biz:'+a.key),pb=placeById('home:'+b.key);
   W4().gig={state:'pick',what:pick(['2 burritos','A family pizza','Sushi for 4','Pad thai','A brisket plate']),from:{x:pa.x,z:pa.z},fromN:a.name,to:{x:pb.x,z:pb.z},toN:b.name,t:now(),pay:Math.round(rnd(25,70)*tierM())};closePhone();navTo({x:pa.x,z:pa.z,name:a.name});note('Gig accepted','Pick up at '+a.name+'.','good');save();}
 function gigActs(){var g=W4().gig;if(!g||!g.state||P.area!=='city')return [];var p=g.state==='pick'?g.from:g.to;return [{x:p.x,z:p.z,r:2.6,label:g.state==='pick'?'Pick up '+g.what:'Deliver '+g.what,sub:'CremaDash · '+fmt(g.pay),fn:function(){if(g.state==='pick'){g.state='drop';g.t2=now();navTo({x:g.to.x,z:g.to.z,name:g.toN});toast('Picked up. Go!','good');}else{var fast=(now()-g.t2)<60000,tip=fast?Math.round(g.pay*.4):0;cityGain(g.pay+tip);W4().gig=null;banner('Delivered',fmt(g.pay)+(tip?' + '+fmt(tip)+' tip':''),'good');addXP(10);}save();}}];}
-function extraIncome(){var w=W4();return vendIncome()+clubIncome()+frIncome()+(w.taxi||0)*Math.round(60*tierM())+(w.bigbean?bbRev():0)+turfIncome();}
+function extraIncome(){var w=W4();return vendIncome()+clubIncome()+frIncome()+(w.taxi||0)*Math.round(60*tierM())+(w.bigbean?bbRev():0)+turfIncome()+fmIncome();}
 
 
 /* ---------- your garage, money you can feel, and things the tutorial never mentions ---------- */
@@ -6595,6 +6595,129 @@ function decideLoan(pl,rep){var w=W4(),b=w.bank,who={who:'Loan officer',role:'Cr
     if(pl.lot&&pl.type)setTimeout(function(){popup('Ready to build?','The money is in your account. Call Bob for the '+DEV[pl.type][0]+'?',[{t:'Get Bob\'s quote',fn:function(){devQuote(pl.lot,DEV[pl.type][0]);}},{t:'Later',cls:'sec'}]);},600);}}
 
 
+/* ---------- Mg1's Fresh Market: Fresh Market Rush (a Lazer Arcade community game by Mg1) as the town's grocery store.
+   Shop there as a customer. Buy it, and you run it exactly like Fresh Market Rush: load shelves, hire stockers, collect the cash pile,
+   upgrade, open more locations, and fight off Big Box Bros. Mg1 stays on at the register. ---------- */
+var FM_BASEP=[3,4,5,7,9,12,15,25],FM_BASEC=[0,0,60,180,450,1000,2200,4500];
+var FM_MAIN=[['Apples','🍎',0xe2553f,'s'],['Bananas','🍌',0xffd24a,'c'],['Bread','🍞',0xd8a45a,'b'],['Milk','🥛',0xf6f6f6,'b'],['Eggs','🥚',0xf4efe6,'s'],['Cheese','🧀',0xffc63d,'b'],['Cookies','🍪',0xb8845a,'c'],['Mg1\'s Apple Pie','🥧',0xc8743a,'c']];
+var FM_TYPES=[['Fruit & Veggies','🍎',['Apples','Bananas','Carrots','Tomatoes','Broccoli','Grapes','Strawberries','Watermelon']],['Bakery','🥐',['Bread','Croissants','Baguettes','Bagels','Cookies','Donuts','Cupcakes','Cakes']],['Dairy & Deli','🧀',['Milk','Eggs','Butter','Cheese','Ice Cream','Bacon','Chicken','Steak']],['Candy Shop','🍭',['Candy','Lollipops','Chocolate','Popcorn','Juice Boxes','Soda','Pudding','Cake Slices']],
+  ['Food Court','🍔',['Salads','Tacos','Pizza','Burgers','Pasta','Ramen','Sushi','Bento']],['Flower Shop','🌸',['Daisies','Tulips','Sunflowers','Roses','Blossoms','Cactus','Potted Plants','Bouquets']],['Toy Store','🧸',['Balloons','Yo-yos','Dice Games','Puzzles','Kites','Toy Cars','Teddy Bears','Robots']],['Pet Shop','🐾',['Dog Bones','Yarn Toys','Goldfish','Hamsters','Turtles','Birds','Bunnies','Puppies']]];
+var FM_UP=[{id:'worker',n:'Hire Stocker',d:'Loads & restocks shelves',base:40,mult:2.3,max:6},{id:'wspeed',n:'Faster Stockers',d:'Faster loading, carry more',base:75,mult:1.85,max:8},{id:'reg',n:'Faster Register',d:'Mg1 rings people up quicker',base:60,mult:1.8,max:8},{id:'shelf',n:'Bigger Shelves',d:'+4 items per shelf',base:90,mult:1.9,max:4},
+  {id:'ads',n:'Advertising',d:'More shoppers come in',base:70,mult:1.9,max:10},{id:'price',n:'Premium Quality',d:'+15% on every sale',base:150,mult:2.1,max:8},{id:'loyalty',n:'Loyalty Cards',d:'Fewer shoppers go to Big Box Bros',base:400,mult:2.2,max:5,comp:true},{id:'manager',n:'Hire Manager',d:'Collects the cash pile for you',base:2500,mult:1,max:1}];
+var FMS=null,FMV=null;
+function fmGB(){return BUS.filter(function(q){return q.grocery;})[0]||null;}
+function fmOwned(){var gb=fmGB();return !!(gb&&W4().biz[gb.key]&&W4().biz[gb.key].own);}
+function fmState(){var w=W4();if(!w.fm)w.fm={lv:{worker:0,wspeed:0,reg:0,shelf:0,ads:0,price:0,loyalty:0,manager:0},unlocked:2,stock:[8,8,0,0,0,0,0,0],pile:0,sale:0,rival:0,locs:{},served:0,earned:0,names:[]};return w.fm;}
+function fmLv(){return fmOwned()?fmState().lv:{worker:2,wspeed:2,reg:3,shelf:1,ads:3,price:0,loyalty:2,manager:1};}
+function fmUnlocked(){return fmOwned()?fmState().unlocked:8;}
+function fmK(){return Math.max(1,tierM());}
+function fmPrice(i){return Math.round(FM_BASEP[i]*fmK()*(1+.15*fmLv().price)*100)/100;}
+function fmShelfMax(){return 8+4*fmLv().shelf;}
+function fmRegTime(){return 2.2*Math.pow(.8,fmLv().reg);}
+function fmWSpeed(){return 2.1*Math.pow(1.15,fmLv().wspeed);}
+function fmCarry(){return 4+fmLv().wspeed;}
+function fmWMul(){return Math.pow(.86,fmLv().wspeed);}
+function fmSpawnInt(){var s=fmState();return 4.6*Math.pow(.86,fmLv().ads)*(fmOwned()&&s.sale>now()?.55:1)/(fmOwned()?1-s.rival*.8:1);}
+function fmMaxCust(){return 6+2*fmLv().ads;}
+function fmUpCost(u){return Math.floor(u.base*Math.pow(u.mult,fmState().lv[u.id])*fmK()*4);}
+function fmOwnedLocs(){return Object.keys(fmState().locs).length;}
+function fmLocCost(k){return Math.round(1200*Math.pow(2.6,k)/100)*100*fmK();}
+function fmIncome(){if(!fmOwned())return 0;var s=fmState(),t=0;Object.keys(s.locs).forEach(function(d,i){var l=s.locs[d],k=i+1,avg=0;for(var q=0;q<(l.un||3);q++)avg+=FM_BASEP[q];avg/=(l.un||3);t+=avg*Math.pow(2.6,Math.min(k,8))*2/4.6*.5*60*fmK()*(1-s.rival*.8);});return Math.round(t);}
+/* the building */
+function freshRoom(){var gb=fmGB();if(!gb)return;
+  var g=room('grocery',{name:gb.name,w:24,d:18,floor:floorT(0xf4f1e8,0xe3ecdf,4),wall:0xe8f3e6,trim:0x2f9e57,bg:0x2a3a2e,h:5.4,cam:{dist:10,pitch:.62}}),ox=IOX.grocery;
+  wallSign(g,'MG1\'S FRESH MARKET',0,4.4,-8.8,{bg:'#2f9e57',fg:'#fff',w:8,h:1,sub:'FRESH FOOD · FRIENDLY PRICES · SINCE FRESH MARKET RUSH'});
+  for(var aw=0;aw<12;aw++)bx(2,.5,.6,toon(aw%2?0xef6f6c:0xffffff),-11+aw*2,3.6,-8.6,g);
+  FMV={sh:[],shop:[],stk:[],q:[],pile:null,ox:ox,cust:[],t:0,spawn:1,reg:0,inc:[0,0,0,0,0,0,0,0],load:[0,0,0,0,0,0,0,0],ldur:[1,1,1,1,1,1,1,1],sound:0};
+  var dg=new T.Group();dg.position.x=ox;dyn.add(dg);FMV.dg=dg;
+  for(var i=0;i<8;i++){var row=i>>2,c=i%4,x=-8.5+c*4.6,z=row?0:-4.6;var u=new T.Group();u.position.set(x,0,z);g.add(u);
+    bx(3.2,.25,.95,toon(0x7d8690),0,.12,0,u);bx(3.2,1.9,.12,toon(0x9aa3ad),0,1.05,-.42,u);for(var t2=0;t2<2;t2++)bx(3.1,.05,.85,toon(0xf4f4f4),0,.62+t2*.62,0,u);bx(3.3,.16,1,toon(0x2f9e57),0,2.04,0,u);
+    addCol(ox+x-1.65,ox+x+1.65,z-.55,z+.5,'grocery');
+    var lab=document.createElement('canvas');lab.width=256;lab.height=72;var lt=new T.CanvasTexture(lab);lt.encoding=T.sRGBEncoding;var lp=plane(1.6,.45,flat(0xffffff,{map:lt}),x,2.45,z+.1,dg);
+    var items=new T.Group();items.position.set(x,0,z);dg.add(items);var ms=[];for(var k=0;k<12;k++){var m=fmItemMesh(i,items,-1.25+(k%6)*.5,.72+Math.floor(k/6)*.62,.05);ms.push(m);}
+    var crate=bx(.6,.4,.5,toon(0xb8845a),x+1,.45,z+.75,dg);crate.visible=false;
+    FMV.sh.push({x:ox+x,z:z,ax:ox+x,az:z+1.1,lab:{c:lab,t:lt},ms:ms,crate:crate,i:i});}
+  // the register, Mg1, the cash pile, the queue rail
+  counterTop(g,9,4.5,3,0x2f9e57,0xffffff);addCol(ox+7.4,ox+10.6,4,5,'grocery');bx(.5,.35,.4,toon(0x3a3f4b),8.4,1.28,4.4,g);plane(.42,.26,toon(0x31e0ff,{e:0x1a8aa8,ei:.6}),8.4,1.36,4.61,g);
+  for(var rl=0;rl<6;rl++)cyB(.04,1,toon(0xc8ccd2),7.6-rl*1,0,7.1,g,5);bx(5,.05,.05,toon(0xc8ccd2),5.1,.95,7.1,g);
+  FMV.pileG=new T.Group();FMV.pileG.position.set(ox+9.9,1.12,4.5);dyn.add(FMV.pileG);
+  // the stock room at the back
+  bx(4,3,.2,toon(0xd8d2c6),-1,1.5,-7.4,g);bx(1.4,2.3,.1,toon(0x8a6a4a),-1,1.15,-7.28,g);for(var cr=0;cr<6;cr++)bx(.7,.5,.6,toon(0xb8845a),-3.6+(cr%3)*.75,.25+Math.floor(cr/3)*.5,-7,g);
+  plane(1.6,.4,flat(0xffffff,{map:signT('STOCK ROOM',{bg:'#24352a',fg:'#fff',w:256,h:64})}),-1,2.6,-7.28,g);
+  // Mg1's office (with the supplier's invoices) in the back corner
+  bx(1.8,.9,.9,toon(0x6b4a30),-10.4,.45,-7.4,g);plane(.6,.4,toon(0xffffff),-10.4,.92,-7.4,g).rotation.x=-Math.PI/2;bx(.15,2.6,3,toon(0xd8d2c6),-8.6,1.3,-7.5,g);addCol(ox-11.6,ox-9.4,-8,-6.9,'grocery');
+  // produce bins by the door, a credits plaque, the upgrades board
+  for(var pb=0;pb<3;pb++){var st=new T.Group();st.position.set(-9.5+pb*2.4,0,5.4);g.add(st);rb(1.8,.8,1.2,.04,toon(0x8a5a3a),0,.4,0,st);for(var j=0;j<12;j++)sp(.14,toon([0xe2553f,0x6cc76a,0xff8a3d][pb]),-.6+(j%4)*.4,.86,-.3+Math.floor(j/4)*.3,st,6);addCol(ox-10.5+pb*2.4,ox-8.5+pb*2.4,4.8,6,'grocery');}
+  var pq=wallSign(g,'FRESH MARKET RUSH',-11.8,2.4,2.4,{bg:'#fff8dc',fg:'#1f7a41',w:2.4,h:1.1,sub:'A LAZER ARCADE COMMUNITY GAME BY MG1',ry:Math.PI/2});
+  wallSign(g,'UPGRADES & LOCATIONS',11.85,2.4,0,{bg:'#ff6f91',fg:'#fff',w:2.6,h:.9,ry:-Math.PI/2});
+  var gbk=gb.key;placeRoomNpc('grocery',gb,9,3.6,0);
+  // acts
+  FMV.sh.forEach(function(S){ACTS.grocery.push({x:S.ax,z:S.az,r:1.5,label:function(){return fmShelfLabel(S.i);},sub:function(){return fmShelfSub(S.i);},fn:function(){fmShelfAct(S.i);}});});
+  ACTS.grocery.push({x:ox+9,z:6,r:1.8,label:function(){return fmOwned()?(fmState().pile>=1?'Collect the cash · '+fmt(fmState().pile):'The register'):(fmBasketTotal()?'Check out with Mg1 · '+fmt(fmBasketTotal()):'Talk to Mg1');},sub:function(){return fmOwned()?(fmState().lv.manager?'Your manager collects it':'Mg1 rings them up. You collect it.'):(fmBasketTotal()?fmBasketList():'Mg1 runs the register (and the store)');},fn:fmRegister,alt:function(){return {label:'Talk to Mg1',fn:function(){bizTalk(fmGB(),false);}};}});
+  ACTS.grocery.push({x:ox+11,z:0,r:1.6,label:function(){return fmOwned()?'Upgrades & Locations':'Store notices';},sub:function(){return fmOwned()?fmt(fmIncome())+'/min from other locations':'Help wanted · Coupons';},fn:fmBoard});
+  ACTS.grocery.push({x:ox-11,z:2.4,r:1.4,label:'Read the plaque',sub:'',fn:function(){popup('Fresh Market Rush','"This store is built on Fresh Market Rush, a game Mg1 made for the Lazer Arcade community. Load the shelves, hire stockers, open 25 locations, and beat Big Box Bros." Mg1 still works the register.',[{t:'Cool'}]);}});
+  ACTS.grocery.push({x:ox-10.4,z:-6.4,r:1.6,label:function(){return W4().found&&W4().found.valley?'Invoices (Valley Farms · 555-0199)':'Peek at the invoices on the desk';},sub:'Mg1\'s office',fn:function(){var w=W4();w.found=w.found||{};var first=!w.found.valley;w.found.valley=1;save();
+    popup('Invoice','VALLEY FARMS DISTRIBUTION\n"Your farm-to-shelf partner since 1971"\nApples 64 cs · Milk 120 cs · Flour 80 sacks · Eggs 40 cs\nQuestions? Call Earl: 555-0199',[{t:'Call Earl now',fn:callValley},{t:'Put it back',cls:'sec'}]);if(first)note('New contact: Valley Farms','Earl supplies Mg1\'s Fresh Market, and probably half the town. He\'s in your phone now.','good');}});
+  ACTS.grocery.push({x:ox-1,z:-6.6,r:1.4,label:'Stock room',sub:function(){return fmOwned()?'Crates for the shelves':'Employees only';},fn:function(){toast(fmOwned()?'Walk up to a shelf to load it. Stockers fetch from here.':'"Employees only, friend." (Mg1)','');}});
+  fmDrawLabels();}
+function fmItemMesh(i,par,x,y,z){var it=FM_MAIN[i],m,mat=toon(it[2]);if(it[3]==='s')m=sp(.16,mat,x,y+.16,z,par,8);else if(it[3]==='c'){m=cy(.17,.17,.22,mat,x,y+.11,z,par,10);}else m=bx(.3,.36,.3,mat,x,y+.18,z,par);if(i===3){bx(.31,.08,.31,toon(0x46a9e6),0,.22,0,m);}if(i===1)m.rotation.z=1.2;return m;}
+function fmDrawLabels(){if(!FMV)return;var un=fmUnlocked();FMV.sh.forEach(function(S){var g=S.lab.c.getContext('2d'),i=S.i,lock=i>=un;g.fillStyle=lock?'#9aa3ad':'#2f9e57';g.fillRect(0,0,256,72);g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';g.font='bold 26px system-ui';g.fillText((lock?'🔒 ':FM_MAIN[i][1]+' ')+FM_MAIN[i][0],128,26);g.font='bold 20px system-ui';g.fillStyle='#fff8dc';g.fillText(lock?'Unlock · '+fmt(FM_BASEC[i]*fmK()*4):fmt(fmPrice(i))+' each',128,56);S.lab.t.needsUpdate=true;});}
+function fmStock(){if(fmOwned())return fmState().stock;var w=W4();if(!w.fmShop||w.fmShop.length!==8)w.fmShop=[10,10,10,10,10,10,10,10];return w.fmShop;}
+function fmShelfLabel(i){var un=fmUnlocked(),st=fmStock(),own=fmOwned();if(i>=un)return 'Sell '+FM_MAIN[i][0]+' '+FM_MAIN[i][1];if(own){if(FMV.load[i]>0)return 'Loading '+FM_MAIN[i][0]+'…';var miss=fmShelfMax()-st[i];return miss>0?'Load '+FM_MAIN[i][0]+' ('+miss+' missing)':FM_MAIN[i][0]+' (full)';}return 'Grab '+FM_MAIN[i][0]+' · '+fmt(fmPrice(i));}
+function fmShelfSub(i){var st=fmStock();if(i>=fmUnlocked())return 'Costs '+fmt(FM_BASEC[i]*fmK()*4)+' to start selling';if(FMV.load[i]>0)return Math.round((1-FMV.load[i]/FMV.ldur[i])*100)+'%';return st[i]+'/'+fmShelfMax()+' on the shelf'+(fmOwned()?'':' · '+(W4().basket&&W4().basket[i]?W4().basket[i]+' in your basket':''));}
+function fmShelfAct(i){var st=fmStock(),s=fmState();if(!fmOwned()){if(st[i]<1){toast('Sold out. A stocker is on the way.','bad');return;}st[i]--;var w=W4();w.basket=w.basket||{};w.basket[i]=(w.basket[i]||0)+1;bubble(P.x,2.4,P.z,'+1 '+FM_MAIN[i][1],'good');try{tone(620,.06,'sine',.04);}catch(e){}return;}
+  if(i>=s.unlocked){var c=FM_BASEC[i]*fmK()*4;if(i>s.unlocked){toast('Unlock '+FM_MAIN[s.unlocked][0]+' first.','');return;}if(!pay(c,'New shelf'))return;s.stock[i]=fmShelfMax();s.unlocked++;banner('Now selling '+FM_MAIN[i][0],FM_MAIN[i][1],'good');fmDrawLabels();save();return;}
+  if(FMV.load[i]>0){toast('Already loading…','');return;}var miss=fmShelfMax()-st[i];if(miss<=0){toast('That shelf is already full!','');return;}FMV.load[i]=FMV.ldur[i]=.4+.16*miss;FMV.sh[i].crate.visible=true;try{tone(330,.06,'square',.03);}catch(e){}}
+function fmBasketTotal(){var b=W4().basket||{},t=0;Object.keys(b).forEach(function(i){t+=b[i]*fmPrice(+i);});return Math.round(t*100)/100;}
+function fmBasketList(){var b=W4().basket||{};return Object.keys(b).map(function(i){return b[i]+' '+FM_MAIN[i][0];}).join(', ');}
+function fmRegister(){var w=W4(),s=fmState(),gb=fmGB();if(fmOwned()){if(s.pile>=1){var a=Math.round(s.pile);s.pile=0;cityGain(a);s.earned+=a;banner('+'+fmt(a),'Fresh Market cash','good');try{tone(1046,.12,'triangle',.08);tone(1568,.3,'triangle',.06,.08);}catch(e){}fmPile();save();}else bizTalk(gb,false);return;}
+  var t=fmBasketTotal();if(!t){bizTalk(gb,false);return;}if(!pay(t,'Groceries'))return;w.pantry=w.pantry||{};Object.keys(w.basket).forEach(function(i){var n=FM_MAIN[i][0];w.pantry[n]=(w.pantry[n]||0)+w.basket[i];});w.basket={};
+  popup('Mg1','"'+pick(['Thanks for shopping at Fresh Market! Come back soon.','Paper or plastic? Kidding. It\'s all paper.','Good choice on the apple pie. My recipe.','That\'ll keep you going. Have a good one!'])+'"\nYour groceries are in your kitchen at home.',[{t:'Thanks, Mg1'}],'',{who:'Mg1',role:'Mg1\'s Fresh Market',col:'#2f9e57',say:{ph:'Say something to Mg1…',fn:function(t2){aiGeneric(t2,'Mg1','You are Mg1, the cheerful founder and cashier of Mg1\'s Fresh Market (the grocery store) in '+plan.name+'. You made the store famous with the Fresh Market Rush idea. Friendly, a little proud of your apple pie.',[{t:'OK'}],'',{who:'Mg1',col:'#2f9e57'});}}});save();}
+function fmBoard(){var s=fmState();if(!fmOwned()){popup('Store notices','• HELP WANTED: stockers. Ask Mg1.\n• Fresh Market Rush: try it in the Lazer Arcade community games!\n• This week: Mg1\'s Apple Pie, '+fmt(fmPrice(7))+'.\n• Lost cat? Check with the post office.',[{t:'OK'}]);return;}
+  var opts=FM_UP.filter(function(u){return !u.comp||s.rival>0;}).map(function(u){var lv=s.lv[u.id],mx=lv>=u.max,c=fmUpCost(u);return {t:u.n+(mx?' · MAX':' · '+fmt(c)),s:u.d+' · level '+lv+'/'+u.max,off:mx,why:'Maxed out.',fn:function(){if(!pay(c,u.n))return;s.lv[u.id]++;if(u.id==='worker'){var nm=pick(['Sam','Maya','Leo','Zoe','Omar','Ruby','Jake','Lily','Max','Nina','Theo','Ivy']);s.names.push(nm);toast(nm+' joined the team!','good');fmSpawnStockers();}if(u.id==='loyalty')s.rival=Math.min(s.rival,fmRivalCap());if(u.id==='shelf')fmDrawLabels();if(u.id==='price')fmDrawLabels();save();setTimeout(fmBoard,60);}};});
+  opts.push({t:'📍 Locations ('+fmOwnedLocs()+'/24)',s:'Open more Fresh Markets around town',fn:fmLocations});if(s.rival>0)opts.push({t:'📣 Run a Sale · '+fmt(Math.round(400*fmK()*4)),s:s.sale>now()?'On now':'Win shoppers back from Big Box Bros for 45 seconds',off:s.sale>now(),why:'A sale is already running.',fn:function(){if(!pay(Math.round(400*fmK()*4),'The sale'))return;s.sale=now()+45000;s.rival=Math.max(0,s.rival-.2);banner('SALE!','Shoppers are flooding back','good');save();}});
+  opts.push({t:'Done',cls:'sec'});popup('Upgrades & Locations','Served '+s.served+' shoppers · earned '+fmt(s.earned)+' here'+(s.rival>0?'\n⚔️ Big Box Bros steals '+Math.round(s.rival*100)+'% of shoppers':''),opts);}
+function fmLocations(){var s=fmState(),ds=plan.blocks.filter(function(b){return b.D;}).map(function(b){return b.D;}),seen={};ds=ds.filter(function(D){if(seen[D.id])return false;seen[D.id]=1;return true;});var k=fmOwnedLocs()+1,c=fmLocCost(k);
+  popup('Locations','Each new Fresh Market costs more and earns a lot more. Pick a neighborhood, then pick what it sells.',ds.slice(0,10).map(function(D){var have=s.locs[D.id];return {t:(have?'✓ ':'')+D.name,s:have?FM_TYPES[have.type][1]+' '+FM_TYPES[have.type][0]:'Open for '+fmt(c),off:!!have,why:'Already open.',fn:function(){fmPickType(D,c);}};}).concat([{t:'Back',cls:'sec',fn:fmBoard}]));}
+function fmPickType(D,c){var s=fmState();popup('What does it sell?',D.name,FM_TYPES.map(function(T2,i){return {t:T2[1]+' '+T2[0],s:T2[2].slice(0,4).join(' · '),fn:function(){if(!pay(c,'New location'))return;s.locs[D.id]={type:i,un:3,at:now()};banner('Fresh Market · '+D.name,T2[0]+' is open','good');if(fmOwnedLocs()===3&&!s.rivalSeen){s.rivalSeen=1;s.rival=.15;popup('A rival chain appeared!','Big Box Bros just opened stores all over town. Some shoppers walk past with red BB bags.\n• Run a Sale to win shoppers back\n• Buy Loyalty Cards so fewer leave\n• Keep growing',[{t:'Bring it on!'}]);}save();}};}));}
+function fmRivalCap(){return Math.max(.1,.6-.1*fmState().lv.loyalty);}
+/* the simulation: runs while you're in the store */
+function fmPile(){var g=FMV&&FMV.pileG;if(!g)return;while(g.children.length)g.remove(g.children[0]);var p=fmOwned()?fmState().pile:0;if(p<1)return;var n=Math.min(14,1+Math.floor(Math.log(p+1)*1.6));for(var i=0;i<n;i++){var b=bx(.34,.04,.18,toon(0x6cc76a),((i%3)-1)*.12,Math.floor(i/3)*.045,(i%2)*.05,g);b.rotation.y=i*.6;}}
+function fmSpawnStockers(){if(!FMV)return;FMV.stk.forEach(function(w2){if(w2.me.root.parent)w2.me.root.parent.remove(w2.me.root);});FMV.stk=[];var n=fmLv().worker;for(var i=0;i<n;i++){var me=liteMe({shirt:0x2f9e57,apron:0x1f7a41});me.root.position.set(FMV.ox-1+i*.6,0,-6.4);dyn.add(me.root);FMV.stk.push({me:me,x:FMV.ox-1+i*.6,z:-6.4,path:[],st:'idle',t:Math.random(),tg:-1,res:0,carry:0});}}
+function fmRoute(ax,az,bx2,bz){if(Math.abs(az-bz)<.3)return [[bx2,bz]];var cx=FMV.ox+7.4;return [[cx,az],[cx,bz],[bx2,bz]];}
+function fmMove(e,dt,sp){var moving=false;while(e.path.length){var t=e.path[0],dx=t[0]-e.x,dz=t[1]-e.z,d=Math.hypot(dx,dz),step=sp*dt;if(d<=step){e.x=t[0];e.z=t[1];e.path.shift();continue;}e.x+=dx/d*step;e.z+=dz/d*step;e.me.root.rotation.y=Math.atan2(dx,dz);moving=true;break;}
+  e.me.root.position.set(e.x,0,e.z);animLite(e.me,Math.min(dt,.05),moving);return !e.path.length;}
+function fmEnter(){if(!FMV)return;FMV.cust.forEach(function(c){if(c.me.root.parent)c.me.root.parent.remove(c.me.root);});FMV.cust=[];FMV.q=[];fmSpawnStockers();fmDrawLabels();fmPile();fmShowStock();}
+function fmShowStock(){var st=fmStock(),mx=fmShelfMax(),un=fmUnlocked();FMV.sh.forEach(function(S){var n=S.i>=un?0:Math.ceil(st[S.i]/mx*12);S.ms.forEach(function(m,k){m.visible=k<n;});});}
+function fmSpawnCust(){var un=fmUnlocked(),av=[];for(var i=0;i<un;i++)av.push(i);av.sort(function(){return Math.random()-.5;});var k=1+Math.floor(Math.random()*Math.min(3,av.length)),list=av.slice(0,k).sort(function(a,b){return b-a;});
+  var me=liteMe();var c={me:me,x:FMV.ox,z:8.2,path:[[FMV.ox,2.8]],st:'enter',list:list,li:0,cart:0,tot:0,t:0,want:1};me.root.position.set(c.x,0,c.z);dyn.add(me.root);FMV.cust.push(c);
+  if(fmOwned()&&fmState().rival>0&&Math.random()<fmState().rival*.6){c.rivalBag=1;c.list=[];c.path=[[FMV.ox,6],[FMV.ox+1.5,8.6]];c.st='leave';var bag=bx(.3,.35,.15,toon(0xe2553f),.3,.6,.1,me.root);}}
+function fmGoShelf(c){var S=FMV.sh[c.list[c.li]];c.want=1+Math.floor(Math.random()*3);c.path=fmRoute(c.x,c.z,S.ax+rnd(-1.1,1.1),S.az+.1);c.st='toShelf';}
+function fmNext(c){c.li++;if(c.li<c.list.length){fmGoShelf(c);return;}if(c.cart){FMV.q.push(c);var p=fmQPos(FMV.q.length-1);c.path=fmRoute(c.x,c.z,p[0],p[1]);c.st='toQ';}else fmLeave(c,'😠');}
+function fmQPos(i){return [FMV.ox+8.6-i*.9,6.2];}
+function fmLeave(c,mood){c.st='leave';if(mood)bubble(c.x,2.4,c.z,mood,mood==='😠'?'bad':'');c.path=fmRoute(c.x,c.z,FMV.ox+1.4,6.6).concat([[FMV.ox+1.4,8.8]]);}
+function updFresh(dt){if(P.area!=='grocery'||!FMV||!O.on)return;var V=FMV,own=fmOwned(),s=fmState(),st=fmStock(),mx=fmShelfMax();dt=Math.min(dt,.1);V.t+=dt;
+  if(own&&s.rival>0&&s.sale<now())s.rival=Math.min(fmRivalCap(),s.rival+dt*.002);
+  V.spawn-=dt;if(V.spawn<=0){V.spawn=fmSpawnInt()*rnd(.7,1.3);if(V.cust.length<fmMaxCust())fmSpawnCust();}
+  for(var i=0;i<8;i++){if(V.load[i]>0){V.load[i]-=dt;if(V.load[i]<=0){V.load[i]=0;st[i]=mx;V.sh[i].crate.visible=false;try{tone(620,.07,'sine',.05);}catch(e){}bubble(V.sh[i].ax,2.2,V.sh[i].az,'Full!','good');}}}
+  V.cust.forEach(function(c){var arrived;switch(c.st){case 'enter':if(fmMove(c,dt,2.3))fmGoShelf(c);break;
+    case 'toShelf':if(fmMove(c,dt,2.3)){c.st='pick';c.t=.5;c.me.root.rotation.y=Math.PI;}break;
+    case 'pick':c.t-=dt;animLite(c.me,dt,false);if(c.t<=0){var k=c.list[c.li];if(st[k]>0){var n=Math.min(c.want,st[k]);st[k]-=n;c.cart+=n;c.tot+=n*fmPrice(k);fmNext(c);}else{c.st='wait';c.t=6;bubble(c.x,2.4,c.z,FM_MAIN[k][1]+'?','');}}break;
+    case 'wait':c.t-=dt;animLite(c.me,dt,false);var k2=c.list[c.li];if(st[k2]>0){var n2=Math.min(c.want,st[k2]);st[k2]-=n2;c.cart+=n2;c.tot+=n2*fmPrice(k2);fmNext(c);}else if(c.t<=0){bubble(c.x,2.4,c.z,'😕','');fmNext(c);}break;
+    case 'toQ':if(fmMove(c,dt,2.3))c.st='q';break;
+    case 'q':var qi=V.q.indexOf(c),p=fmQPos(qi);if(Math.abs(c.x-p[0])>.05){c.path=[p];fmMove(c,dt,2);}else{animLite(c.me,dt,false);c.me.root.rotation.y=Math.PI/2;}break;
+    case 'leave':if(fmMove(c,dt,2.4))c.dead=1;break;}});
+  if(V.q.length){V.reg+=dt;var head=V.q[0];if(Math.abs(head.x-fmQPos(0)[0])<.1&&V.reg>=fmRegTime()){V.reg=0;V.q.shift();s.served+=own?1:0;if(own){s.pile+=head.tot;if(s.lv.manager){var a=Math.round(s.pile);if(a>=1){s.pile-=a;cityGain(a);s.earned+=a;}}fmPile();}try{tone(1320,.08,'sine',.03);}catch(e){}bubble(head.x,2.5,head.z,own?'+'+fmt(head.tot):'🛍️','good');fmLeave(head,null);}}else V.reg=0;
+  V.cust=V.cust.filter(function(c){if(c.dead){if(c.me.root.parent)c.me.root.parent.remove(c.me.root);return false;}return true;});
+  V.stk.forEach(function(w2){var S=w2.tg>=0?V.sh[w2.tg]:null;switch(w2.st){case 'idle':var best=-1,br=.75,un=fmUnlocked();for(var i2=0;i2<un;i2++){if(V.load[i2]>0)continue;var r=(st[i2]+V.inc[i2])/mx;if(r<br){br=r;best=i2;}}
+      if(best>=0){w2.tg=best;w2.res=fmCarry();V.inc[best]+=w2.res;w2.path=fmRoute(w2.x,w2.z,V.ox-1+rnd(-.8,.8),-6.4);w2.st='toStock';}else{animLite(w2.me,dt,false);}break;
+    case 'toStock':if(fmMove(w2,dt,fmWSpeed())){w2.st='load';w2.t=(.3+.13*w2.res)*fmWMul();}break;
+    case 'load':w2.t-=dt;animLite(w2.me,dt,false);if(w2.t<=0){w2.carry=w2.res;if(!w2.box){w2.box=bx(.5,.35,.4,toon(0xb8845a),0,.9,.4,w2.me.root);}w2.box.visible=true;w2.path=fmRoute(w2.x,w2.z,S.ax+rnd(-1,1),S.az);w2.st='toShelf';}break;
+    case 'toShelf':if(fmMove(w2,dt,fmWSpeed())){w2.st='stock';w2.t=(.2+.11*Math.max(1,Math.min(w2.carry,mx-st[w2.tg])))*fmWMul();w2.me.root.rotation.y=Math.PI;}break;
+    case 'stock':w2.t-=dt;animLite(w2.me,dt,false);if(w2.t<=0){var add=Math.max(0,Math.min(w2.carry,mx-st[w2.tg]));st[w2.tg]+=add;V.inc[w2.tg]=Math.max(0,V.inc[w2.tg]-w2.res);if(add)bubble(w2.x,2.3,w2.z,'+'+add+' '+FM_MAIN[w2.tg][1],'good');w2.carry=0;w2.res=0;if(w2.box)w2.box.visible=false;w2.st='idle';w2.tg=-1;}break;}});
+  V.sound-=dt;if(V.sound<=0){V.sound=.5;fmShowStock();}}
+
+
 /* ---------- build a city ---------- */
 function build(city){
   city=city==null?curLoc().city:city;
@@ -6687,7 +6810,7 @@ O.frame=function(dt){
     if(CUT)updCut(dt);else{if(P.auto>0){P.auto-=dt;var o=V3(Math.sin(P.ry),0,Math.cos(P.ry));P.x+=o.x*dt*2.2;P.z+=o.z*dt*2.2;P.moving=true;animCust(P.me,dt,0,true);P.me.root.position.set(P.x,.2,P.z);P.me.root.rotation.y=P.ry;}
       else if(drv)driveStep(dt);else if(!(RIDE&&!RIDE.wait))moveWalk(dt);updRide(dt);}
     if(P.area==='city'){updTraffic(dt,tl);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
-    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updArcade(dt);updEat(dt);updMovie(dt);jobTick(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
+    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updArcade(dt);updEat(dt);updFresh(dt);updMovie(dt);jobTick(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
     if(!CUT)updCamera(dt);
     updActs();updNav(dt);updLabels(dt);if(frameN++%3===0)drawMini();
     var stn=P.area==='city'?streetAt(P.x,P.z):null,wk=districtName(P.x,P.z)+(stn?' · '+stn:'')+' · '+clockStrH(clockH)+(rain.on?' · rain':'')+(P.carry.length?' · carrying '+P.carry.length:'');if($('#o-where').textContent!==wk)$('#o-where').textContent=wk;

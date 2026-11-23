@@ -32,7 +32,7 @@ function rumor(p){
   homesForSale().slice(0,2).forEach(function(h){list.push(['hs'+h.key,'"'+h.owner+' over at '+h.name+' is trying to sell. Sign\'s been up for weeks."']);});
   BUS.forEach(function(b){var s=W4().biz[b.key];if(s&&s.own||b.home)return;if(b.pers==='tired')list.push(['tired'+b.key,'"I heard '+b.owner+' at '+b.name+' wants to retire. Says they\'re exhausted."']);if(b.pers==='sentimental')list.push(['sent'+b.key,'"'+b.owner+' at '+b.name+' would only sell to someone who keeps the staff on. Family business."']);
     if(b.pers==='proud')list.push(['proud'+b.key,'"Don\'t lowball '+b.owner+' at '+b.name+'. They\'ll throw you out."']);});
-  if(!(W4().found&&W4().found.valley))list.push(['valley','"See those Valley Farms trucks at FreshMart every morning? They supply half the town."']);
+  if(!(W4().found&&W4().found.valley))list.push(['valley','"See those Valley Farms trucks at the Fresh Market every morning? They supply half the town."']);
   var sale=places.filter(function(q){return q.kind==='sale';});if(sale.length)list.push(['sale','"There\'s an empty lot over in '+sale[0].name.replace('Lot for sale · ','')+'. Somebody should build there."']);
   G.locs.forEach(function(l){if(l.city===O.city&&l.comp&&l.comp.S<15)list.push(['weak'+l.id,'"'+l.comp.name+' looks like it\'s struggling. Half empty every time I pass."']);});
   if(!civ().council&&G.fame>=200)list.push(['council','"There\'s a council seat open. Someone like you could win it."']);

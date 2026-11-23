@@ -13,7 +13,7 @@ var BT={
   arcade:{base:1.3,arch:'modern',prop:'balloons',what:'an arcade'},fish:{base:1.3,arch:'warehouse',prop:'ice',what:'a fish market'},hardware:{base:1.4,arch:'warehouse',prop:'cart',what:'a hardware store'},
   pets:{base:1,arch:'classic',prop:'dog',what:'a pet shop'},auto:{base:1.4,arch:'warehouse',prop:'tires',what:'an auto shop'},shop:{base:1,arch:'classic',prop:'plant',what:'a shop'},
   office:{base:3,arch:'tower',nosale:1,what:'an office'}};
-var BT_RX=[[/FreshMart|Grocery/,'grocery'],[/Book/,'books'],[/Florist|Bloom|Lace|Linen/,'florist'],[/Pizza|Slice/,'pizza'],[/Deli|Diner/,'deli'],[/Vinyl|Record/,'records'],[/Toy/,'toys'],[/Cuts|Barber/,'barber'],
+var BT_RX=[[/FreshMart|Grocery|Fresh Market/,'grocery'],[/Book/,'books'],[/Florist|Bloom|Lace|Linen/,'florist'],[/Pizza|Slice/,'pizza'],[/Deli|Diner/,'deli'],[/Vinyl|Record/,'records'],[/Toy/,'toys'],[/Cuts|Barber/,'barber'],
   [/Nails/,'nails'],[/Laundr|Suds/,'laundry'],[/Phone/,'phones'],[/Copy|Print|Paper|Post$/,'copy'],[/Ramen|Noodle|Dumpling|Bao/,'ramen'],[/Bike/,'bikes'],[/Gym|Iron|Spin|Climb/,'gym'],[/Yoga/,'yoga'],
   [/Surf|Board|Sun & Sand/,'surf'],[/Taco|Fish Tacos/,'tacos'],[/Gift|Shell|Kite/,'gifts'],[/Antique|Clock|Apothecary|Old Post/,'antiques'],[/Tea|Cocoa/,'tea'],[/Ski|Snow|Gear|Wool/,'ski'],[/Inn|Fireside/,'inn'],
   [/Karaoke/,'karaoke'],[/Arcade|Lucky Cat/,'arcade'],[/Fish|Dock|Ship|Rope|Ferry/,'fish'],[/Hardware|Bolt/,'hardware'],[/Pet|Paws/,'pets'],[/Tire|Auto|Driving/,'auto'],
@@ -90,7 +90,7 @@ function propFor(g,k,w,r){var x=2.8,z=1.2;
 }
 function regBiz(lot,b,name,type,g,opt){
   var key=lot.key,city=O.city,D=b.D||null,bz={key:key,name:name,type:type,city:city,D:D,lot:lot,grocery:!!opt.grocery,cuisine:opt.cuisine||null};BUS.push(bz);
-  var r=seeded(hashS(key+name));bz.owner=OWNERS[Math.floor(r()*OWNERS.length)];bz.pers=Object.keys(PERS)[Math.floor(r()*6)];bz.phone='555-0'+(100+Math.floor(r()*899));
+  var r=seeded(hashS(key+name));bz.owner=OWNERS[Math.floor(r()*OWNERS.length)];bz.pers=Object.keys(PERS)[Math.floor(r()*6)];bz.phone='555-0'+(100+Math.floor(r()*899));if(opt.grocery){bz.owner='Mg1';bz.pers='sentimental';}
   var st=W4().biz[key];if(st&&st.own){plane(.9,.45,flat(0xffffff,{map:signT('A CREMA COMPANY',{bg:'#2a1a12',fg:'#ffc63d',w:256,h:120})}),DOORX+1.15,1.9,.26,g);var fp=new T.Group();fp.position.set(-lot.w/2+.6,3.8,.3);g.add(fp);cyB(.03,1.4,toon(0xd8d8d8),0,0,0,fp,4);plane(.7,.45,toon(0xffffff,{map:flagTex(),ds:1}),.38,1.15,0,fp);}
   var dw=L2W(lot,DOORX,.9);bz.door=dw;
   ACTS[curArea].push({x:dw.x,z:dw.z,r:1.7,door:true,dn:lot,label:function(){var s=W4().biz[key];return s&&s.own?'Check on '+name+' (yours)':(isEatery(bz)?'Eat at ':'Step into ')+name;},

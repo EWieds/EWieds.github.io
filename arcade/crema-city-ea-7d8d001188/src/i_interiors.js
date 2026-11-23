@@ -20,7 +20,7 @@ function wallSign(g,text,x,y,z,o){o=o||{};var p=plane(o.w||4,o.h||.8,flat(0xffff
 
 function buildInteriors(){
   var keep=stat;stat=new T.Group();
-  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();groceryRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();home2Room();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
+  buildManholes();addBusStops();supplyRoom();hallRoom();hallExtras();bankRoom();terminalRoom();if(superOf())superRoom();freshRoom();homeRoom();airportRoomExtra();storeRoom();buildEateries();theaterRoom();roastRoom();home2Room();officeRoom();mallRoom();sewerRoom();courtRoom();jailRoom();curArea='city';oddities();placeVendSpots();addSchoolAct();
   curArea='city';O.scene.add(mergeGroup(stat));stat=keep;
 }
 function supplyRoom(){

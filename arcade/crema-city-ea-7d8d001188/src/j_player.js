@@ -29,7 +29,7 @@ var retPos=null;
 function fade(fn,cb){var f=$('#o-fade');f.classList.add('on');setTimeout(function(){try{fn();}catch(e){console.error(e);}setTimeout(function(){f.classList.remove('on');if(cb)cb();},60);},230);}
 function enterArea(id){if(!AREAS[id]){popup('Closed','This building isn\'t open yet.',[{t:'OK'}]);return;}
   fade(function(){retPos={x:P.x,z:P.z,yaw:yaw};P.area=id;var A=AREAS[id];P.x=A.spawn.x;P.z=A.spawn.z;P.ry=Math.PI;yaw=0;pitch=A.cam.pitch;O.snap=true;doorCD=1;
-    if(id==='hall'){W4().tax.visited=true;}try{tone(1318,.25,'sine',.02);}catch(e){}updDaylight();});}
+    if(id==='hall'){W4().tax.visited=true;}if(id==='grocery')fmEnter();try{tone(1318,.25,'sine',.02);}catch(e){}updDaylight();});}
 function leaveArea(){if(jailLocked()){toast('The door is locked. Wait it out or post bail.','bad');return;}if(P.carry.length&&P.area==='supply'){/* fine: you carry crates out */}
   fade(function(){var r=retPos||placeById('hall')||{x:0,z:0};P.area='city';var back=outward(r);P.x=back.x;P.z=back.z;yaw=Math.atan2(back.x-r.x,back.z-r.z);P.ry=yaw;pitch=.44;O.snap=true;doorCD=1;updDaylight();});}
 function outward(r){var b=blockAt(r.x,r.z);if(!b)return {x:r.x-1.2,z:r.z};var dz=r.z>b.z?1:-1;return {x:r.x,z:r.z+dz*1.2};}

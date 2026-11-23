@@ -94,7 +94,7 @@ function genericSay(t,title,text,btns,kind,opt){var n=norm(t),qt=toks(t),best=nu
   popup(title,pick(['"Sorry, I didn\'t catch that."','"Hm? Say that another way?"','"Not sure I can help with that."']),btns,kind,Object.assign({},opt,{you:t,say:null}));}
 
 /* ----- places by name: "the bank", "freshmart", "campus", "Paper Moon", "home" ----- */
-var ALIAS=[[/airport|plane|flight|fly/,'airport'],[/city hall|town hall|taxes|permit|mayor/,'hall'],[/\bbank|loan|atm/,'bank'],[/realt|dana|real estate/,'realty'],[/supply|crates|ingredients|supplies|wholesale/,'supply'],[/grocery|freshmart|groceries|supermarket/,'biz:grocery'],[/central park|\bpark\b/,'park'],[/universit|campus|college/,'uni'],[/motors|car dealer|dealership|buy a car|pickup/,'motors'],[/ski|lift|mountain|slope|snow/,'lift'],[/pier|ferris|beach|ocean|boardwalk/,'pier'],[/superstore/,'super']];
+var ALIAS=[[/airport|plane|flight|fly/,'airport'],[/city hall|town hall|taxes|permit|mayor/,'hall'],[/\bbank|loan|atm/,'bank'],[/realt|dana|real estate/,'realty'],[/supply|crates|ingredients|supplies|wholesale/,'supply'],[/grocery|freshmart|fresh market|mg1|groceries|supermarket/,'biz:grocery'],[/central park|\bpark\b/,'park'],[/universit|campus|college/,'uni'],[/motors|car dealer|dealership|buy a car|pickup/,'motors'],[/ski|lift|mountain|slope|snow/,'lift'],[/pier|ferris|beach|ocean|boardwalk/,'pier'],[/superstore/,'super']];
 function findPlace(t){var n=norm(t),w=W4();
   if(/\b(go home|my home|my house|home)\b/.test(n)&&w.home){var hp=placeById('home:'+w.home);if(hp)return {x:hp.x,z:hp.z,name:'Home',id:hp.id,sc:3};}
   if(/my (shop|cafe|store|coffee)|back to (work|the shop)|the counter/.test(n)){var lc=G.locs.filter(function(l){return l.city===O.city;})[0];var sp2=lc&&placeById('shop:'+lc.id);if(sp2)return Object.assign({sc:3},sp2);}
@@ -105,7 +105,7 @@ function findPlace(t){var n=norm(t),w=W4();
   return bs>=1?Object.assign({sc:bs},best):null;}
 
 /* ----- the "do anything" box ----- */
-var DO_EX=['take me to the airport','buy a house','call Earl','find FreshMart','show me the whole city','I want to build something','call a cab to the pier','go home','get a loan','fly somewhere','order supplies'];
+var DO_EX=['take me to the airport','buy a house','call Earl','find the Fresh Market','show me the whole city','I want to build something','call a cab to the pier','go home','get a loan','fly somewhere','order supplies'];
 function doBox(){var ex=DO_EX.slice().sort(function(){return Math.random()-.5;}).slice(0,4);
   popup('What do you want to do?','Type anything. Places, people, things to buy, things to build.',ex.map(function(e){return {t:'"'+e+'"',fn:function(){doCmd(e);}};}).concat([{t:'Close',cls:'sec'}]),'',{say:{ph:'e.g. "buy the bakery" or "where is city hall"',fn:function(t){if(!doCmd(t))aiCommand(t);}}});
   if(!matchMedia('(pointer:coarse)').matches)setTimeout(function(){var i=document.querySelector('#o-pop .pp-say input');if(i)i.focus();},30);}
@@ -147,7 +147,7 @@ function doCmd(t,quiet){var n=norm(t),w=W4();if(!n)return false;if(secretCmd(n))
     if(/\b(land|lot|plot)\b/.test(n)){callDana();return true;}
     if(/\b(car|pickup|truck|vehicle|van)\b/.test(n)){var m=placeById('motors');if(m)return goTo(m);}
     if(/supplies|crates|ingredients|stock|beans|milk/.test(n)){var sp=placeById('supply');if(sp)return goTo(sp);}
-    if(/valley|farm|supplier/.test(n)){if(w.found&&w.found.valley){bizTalk(VALLEY(),true);}else popup('Who supplies who?','Somebody supplies FreshMart. The paperwork is probably in their back office.',[{t:'Directions to FreshMart',fn:function(){var g=placeById('biz:grocery');if(g)navTo(g);}},{t:'OK',cls:'sec'}]);return true;}
+    if(/valley|farm|supplier/.test(n)){if(w.found&&w.found.valley){bizTalk(VALLEY(),true);}else popup('Who supplies who?','Somebody supplies the Fresh Market. The paperwork is probably in their back office.',[{t:'Directions to the Fresh Market',fn:function(){var g=placeById('biz:grocery');if(g)navTo(g);}},{t:'OK',cls:'sec'}]);return true;}
     var q=toks(n.replace(/\b(buy|purchase|acquire|own|get|out|the|whole)\b/g,'')),bb2=null,bs2=0;BUS.forEach(function(b){var sc=overlap(q,b.name);if(sc>bs2){bs2=sc;bb2=b;}});
     if(bb2&&bs2>=1){var bp=placeById((bb2.home?'home:':'biz:')+bb2.key);if(bp)return goTo(bp,'Go talk to '+bb2.owner+' at '+bb2.name+'.');}
     if(/\b(business|shop|store|company|restaurant)\b/.test(n)){var cand=BUS.filter(function(b){return !b.home&&!(w.biz[b.key]||{}).own&&b.pers==='tired';})[0]||BUS.filter(function(b){return !b.home&&!(w.biz[b.key]||{}).own;})[0];if(cand)return goTo(placeById('biz:'+cand.key),cand.owner+' at '+cand.name+' might sell. Go make an offer.');}

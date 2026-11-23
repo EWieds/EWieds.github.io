@@ -78,7 +78,7 @@ function SUPCO(){var t=TM(O.city).pm;return {key:'supco:'+O.city,name:'Crema Sup
 function callValley(){var w=W4(),b=VALLEY(),s=dState(b),who={who:'Earl',role:'Valley Farms Distribution',col:'#6b8a3a'};
   if(s.own){popup('Valley Farms','"Trucks are rolling, boss. Every shop of yours gets ingredients 20% cheaper."',[{t:'Great',cls:'sec'}],'',who);return;}
   var ct=w.contract&&w.contract.until>now(),fee=Math.round(9000*TM(Math.max(0,(G.cities||1)-1)).pm*(w.haggled?.88:1));
-  popup('Valley Farms','"Earl speaking. Who gave you this number? ...FreshMart\'s invoices, huh. Smart. What do you want?"',[
+  popup('Valley Farms','"Earl speaking. Who gave you this number? ...Mg1\'s Fresh Market\'s invoices, huh. Smart. What do you want?"',[
     {t:ct?'Contract active · '+mmssS((w.contract.until-now())/1000)+' left':'Supply contract · '+fmt(fee),s:'12% cheaper ingredients at all your shops for 30 minutes',off:ct,why:'Your contract is still running.',fn:function(){if(!pay(fee,'The contract'))return;w.contract={pct:.12,until:now()+1800000};note('Supply contract signed','Ingredients 12% cheaper everywhere for 30 minutes.','good');save();}},
     {t:'Can you do better on the contract?',off:!!w.haggled,why:'Earl already gave you his best price.',fn:function(){w.haggled=1;if(Math.random()<.6)popup('Valley Farms','"For a regular? Fine. 12% off the fee."',[{t:'OK'}],'',who);else{w.haggled=2;popup('Valley Farms','"That IS the better price, friend."',[{t:'OK'}],'',who);}save();}},
     {t:'I want to buy Valley Farms',s:'The whole company',fn:function(){bizTalk(b,true);}},{t:'Bye',cls:'sec'}],'',who);}
@@ -88,7 +88,7 @@ function caseView(){if(!P.me)return;if(!P.caseM){P.caseM=new T.Group();P.caseM.p
 function caseMenu(){var amts=[10000,50000,250000,1000000].map(function(a){return Math.round(a*tierM());}).filter(function(a){return a<=G.cash;});
   popup('Cash briefcase','Walk into a negotiation with cash in hand and owners take you more seriously (+6% on your offer; greedy owners like it even more).\nIn the briefcase: '+fmt(caseAmt()),
     amts.map(function(a){return {t:'Fill it with '+fmt(a),fn:function(){G.cash-=a;W4().case=caseAmt()+a;caseView();note('Briefcase packed',fmt(caseAmt())+' in cash. Go make someone an offer.','good');save();}};}).concat(caseAmt()?[{t:'Deposit the briefcase · '+fmt(caseAmt()),fn:function(){G.cash+=caseAmt();W4().case=0;caseView();toast('Deposited.','good');save();}}]:[]).concat([{t:'Done',cls:'sec'}]),'',{who:'Teller',role:'Crema Savings & Loan',col:'#2f5a46'});}
-/* FreshMart: a grocery store you can walk around, with the supplier's invoices in the back office */
+/* the Fresh Market: a grocery store you can walk around, with the supplier's invoices in the back office */
 function groceryRoom(){
   var gb=BUS.filter(function(q){return q.grocery;})[0];if(!gb)return;
   var g=room('grocery',{name:gb.name,w:22,d:16,floor:floorT(0xf2f2ec,0xe0e4dc,4),wall:0xeef2e4,trim:0x2fa860,bg:0x2a3a2e,h:5.4}),ox=IOX.grocery;
@@ -105,6 +105,6 @@ function groceryRoom(){
   var own=npc(g,-5.5,-2,Math.PI/2,{shirt:0x8a5a3a});
   ACTS.grocery.push({x:ox-4.4,z:-2,r:1.8,label:function(){var s=W4().biz[gb.key];return s&&s.own?'Talk to '+gb.owner+' (your manager)':'Talk to '+gb.owner+' (owner)';},sub:function(){var s=W4().biz[gb.key];return s&&s.own?'Earning '+fmt(bizRev(gb))+'/min · ingredients 8% cheaper':'Ask about buying the store';},fn:function(){bizTalk(gb,false);}});
   ACTS.grocery.push({x:ox-8.6,z:-5,r:1.6,label:function(){return W4().found&&W4().found.valley?'Invoices (Valley Farms · 555-0199)':'Peek at the invoices on the desk';},sub:'Back office',fn:function(){var w=W4();w.found=w.found||{};var first=!w.found.valley;w.found.valley=1;save();
-    popup('Invoice','VALLEY FARMS DISTRIBUTION\n"Your farm-to-shelf partner since 1971"\nMilk 120 cs · Flour 80 sacks · Fruit 64 cs · Cream 40 cs\nQuestions? Call Earl: 555-0199',[{t:'Call Earl now',fn:callValley},{t:'Put it back',cls:'sec'}]);if(first)note('New contact: Valley Farms','Earl supplies FreshMart, and probably half the town. He\'s in your phone now.','good');}});
+    popup('Invoice','VALLEY FARMS DISTRIBUTION\n"Your farm-to-shelf partner since 1971"\nMilk 120 cs · Flour 80 sacks · Fruit 64 cs · Cream 40 cs\nQuestions? Call Earl: 555-0199',[{t:'Call Earl now',fn:callValley},{t:'Put it back',cls:'sec'}]);if(first)note('New contact: Valley Farms','Earl supplies the Fresh Market, and probably half the town. He\'s in your phone now.','good');}});
   for(var s2=0;s2<5;s2++){var sh2=liteMe();sh2.root.position.set(ox-8+s2*4,0,3);dyn.add(sh2.root);shoppers.push({me:sh2,x:ox-8+s2*4,z:3,tx:ox-8+s2*4,tz:3,w:rnd(0,3),area:'grocery'});}
 }
