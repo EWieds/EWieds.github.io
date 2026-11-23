@@ -2,11 +2,11 @@
 /* ---------- city plan: a grid of blocks, your district in the middle ---------- */
 function mkPlan(city){
   var ds=cityDistricts(city),air=null,list=[];ds.forEach(function(D){if(!air&&D.win==='runway')air=D;else list.push(D);});
-  var uni=list.some(function(D){return D.win==='campus';}),C=5,n=list.length+8+(uni?1:0),R=Math.max(4,Math.ceil(n/C)),slots=[];
+  var MPX=city===20,uni=list.some(function(D){return D.win==='campus';}),C=MPX?7:5,n=list.length+8+(uni?1:0),R=MPX?6:Math.max(4,Math.ceil(n/C)),slots=[];
   for(var r=0;r<R;r++)for(var c=0;c<C;c++)slots.push({c:c,r:r,d:Math.hypot(c-(C-1)/2,(r-(R-1)/2)*1.3)+c*.001+r*.0001});
   slots.sort(function(a,b){return a.d-b.d;});
   var order=[{t:'dist',D:list[0]},{t:'civic'},{t:'market'},{t:'park'}];
-  list.slice(1).forEach(function(D){order.push({t:'dist',D:D});});order.push({t:'motors'});if(uni)order.push({t:'uni'});order.push({t:'dining'});order.push({t:'mall'});order.push({t:'justice'});order.push({t:'dining'});
+  list.slice(1).forEach(function(D){order.push({t:'dist',D:D});});order.push({t:'motors'});if(uni)order.push({t:'uni'});order.push({t:'dining'});order.push({t:'mall'});order.push({t:'justice'});order.push({t:'dining'});if(MPX){order.push({t:'dining'});order.push({t:'dining'});order.push({t:'market'});}
   while(order.length<C*R)order.push({t:'homes'});
   var blocks=order.slice(0,C*R).map(function(o,i){var s=slots[i];return {t:o.t,D:o.D||null,c:s.c,r:s.r,x:s.c*PX,z:s.r*PZ,id:o.D?o.D.id:o.t+(o.t==='homes'?i:''),seed:city*131+i*17+7};});
   placeEdges({blocks:blocks,R:R});
@@ -17,9 +17,9 @@ function mkPlan(city){
   var xs=[],zs=[];for(var i=0;i<=C;i++)xs.push((i-.5)*PX);for(var j=0;j<=R;j++)zs.push((j-.5)*PZ);
   var jm=Math.floor(R/2),AZ=zs[jm],CX=xs[C]+RH+34,AX=CX+30;
   var p={city:city,C:C,R:R,blocks:blocks,xs:xs,zs:zs,air:air,AX:AX,AZ:AZ,CX:CX,jm:jm,name:cityName(city)};
-  var AV=['1st Ave','2nd Ave','3rd Ave','4th Ave','5th Ave','6th Ave'],SN=['North St','Oak St','Elm St','Cedar St','Harbor Rd','Bay St','Pine St','Lake St'],r0=seeded(city*13+3);SN.sort(function(){return r0()-.5;});
+  var AV=['1st Ave','2nd Ave','3rd Ave','4th Ave','5th Ave','6th Ave','7th Ave','8th Ave','9th Ave'],SN=['North St','Oak St','Elm St','Cedar St','Harbor Rd','Bay St','Pine St','Lake St','Broad St','Canal St'],r0=seeded(city*13+3);SN.sort(function(){return r0()-.5;});
   p.vn=xs.map(function(_,i){return AV[i];});p.hn=zs.map(function(_,j){return SN[j];});var hb=blocks[0];p.hn[hb.r+1]='Main St';
-  p.minX=xs[0]-44;p.maxX=AX-22;p.minZ=zs[0]-RH-34;p.maxZ=zs[R]+RH+24;
+  p.minX=xs[0]-(MPX?120:44);p.maxX=AX-22;p.minZ=zs[0]-RH-34;p.maxZ=zs[R]+RH+24;
   return p;
 }
 function blockOf(t){for(var i=0;i<plan.blocks.length;i++)if(plan.blocks[i].t===t)return plan.blocks[i];return null;}

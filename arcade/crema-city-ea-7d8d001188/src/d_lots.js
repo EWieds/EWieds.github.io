@@ -99,9 +99,10 @@ function forSaleLot(lot,D,key){
   places.push({id:'land:'+key,name:(own?'Your land':'Lot for sale')+' · '+D.name,kind:own?'land':'sale',x:p.x,z:p.z});
 }
 function buyLand(key,D,pr){
+  if(mpOther(key)){mpOwnedTalk(key);return;}
   if(G.lvl<D.lvl){popup(D.name+' opens at level '+D.lvl,'You are level '+G.lvl+'. Keep serving to unlock this district.',[{t:'OK'}],'bad');return;}
   popup('Buy this lot?',D.name+'\nPrice '+fmt(pr)+'\n\nOnce it is yours, call Bob\'s Builders to put up a shop, a patio, a building to lease out, a billboard or a parking lot.',[
-    {t:'Buy it · '+fmt(pr),fn:function(){if(!pay(pr,'This lot'))return;W4().land[key]={d:D.id,at:now(),use:null};W4().stats.lots=(W4().stats.lots||0)+1;note('Land purchased',D.name+'. Call Bob when you know what to build.','good',{label:'Call Bob',fn:function(){callBob(key);}});rebuild();}},
+    {t:'Buy it · '+fmt(pr),fn:function(){if(!pay(pr,'This lot'))return;W4().land[key]={d:D.id,at:now(),use:null};if(isMP())mpClaim(key,function(){delete W4().land[key];G.cash+=pr;note('Someone beat you to it','Another player bought that lot first. Refunded.','bad');save();rebuild();});W4().stats.lots=(W4().stats.lots||0)+1;note('Land purchased',D.name+'. Call Bob when you know what to build.','good',{label:'Call Bob',fn:function(){callBob(key);}});rebuild();}},
     {t:'Not now',cls:'sec'}]);
 }
 function siteLot(lot,b,D){

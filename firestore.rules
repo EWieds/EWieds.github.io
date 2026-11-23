@@ -617,5 +617,93 @@ service cloud.firestore {
         && request.resource.data.at == request.time;
     }
 
+
+    // ===================== Crema City: Crema Metro, the shared multiplayer city =====================
+    // Where everyone is right now. Only you write your own row; any signed-in player reads.
+    match /cremaMpPresence/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if arcadeAccount() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['n', 'x', 'z', 'r', 'a', 'v', 'c', 'h', 'lv', 'at'])
+        && request.resource.data.n is string && request.resource.data.n.size() >= 1 && request.resource.data.n.size() <= 24
+        && request.resource.data.x is number && request.resource.data.z is number && request.resource.data.r is number
+        && request.resource.data.a is string && request.resource.data.a.size() <= 16
+        && request.resource.data.v is string && request.resource.data.v.size() <= 10
+        && request.resource.data.c is int && request.resource.data.h is int && request.resource.data.lv is int
+        && request.resource.data.at == request.time;
+      allow delete: if arcadeAccount() && request.auth.uid == uid;
+    }
+    // City chat: 140 characters, one message every 2 seconds (written with the rate marker).
+    match /cremaMpChat/{msgId} {
+      allow read: if request.auth != null;
+      allow create: if arcadeAccount()
+        && request.resource.data.keys().hasOnly(['uid', 'n', 't', 'x', 'z', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.n is string && request.resource.data.n.size() <= 24
+        && request.resource.data.t is string && request.resource.data.t.size() >= 1 && request.resource.data.t.size() <= 140
+        && request.resource.data.x is number && request.resource.data.z is number
+        && request.resource.data.at == request.time
+        && getAfter(/databases/$(database)/documents/cremaMpChatRate/$(request.auth.uid)).data.at == request.time;
+      allow delete: if isArcadeAdmin() || (arcadeAccount() && resource.data.uid == request.auth.uid);
+    }
+    match /cremaMpChatRate/{uid} {
+      allow read: if arcadeAccount() && request.auth.uid == uid;
+      allow create: if arcadeAccount() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time;
+      allow update: if arcadeAccount() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time
+        && request.time > resource.data.at + duration.value(2, 's');
+    }
+    // Who owns what in Crema Metro. First come, first served; after that it only changes hands when the
+    // owner lists it, and the buyer must pay the asking price into the seller's inbox in the same write.
+    // The Roastery's front door belongs to the arcade's creator.
+    match /cremaMpLots/{key} {
+      function lotShape(d) {
+        return d.keys().hasOnly(['o', 'on', 'k', 'nm', 'pr', 'sale', 'to', 'b', 'bl', 'ba', 'bs', 'be', 'p', 'at'])
+          && d.o is string && d.on is string && d.on.size() <= 24
+          && d.k is string && d.k.size() <= 12 && d.nm is string && d.nm.size() <= 48
+          && d.pr is number && d.pr >= 0 && d.pr <= 1000000000000
+          && d.sale is number && d.sale >= 0 && d.sale <= 1000000000000
+          && (!('p' in d) || (d.p is list && d.p.size() <= 24))
+          && d.at == request.time;
+      }
+      function paidSeller() {
+        return getAfter(/databases/$(database)/documents/cremaMpInbox/$(resource.data.o)/items/$(key + '-' + request.auth.uid)).data.amt == resource.data.sale
+          && getAfter(/databases/$(database)/documents/cremaMpInbox/$(resource.data.o)/items/$(key + '-' + request.auth.uid)).data.at == request.time;
+      }
+      allow read: if request.auth != null;
+      allow create: if arcadeAccount() && request.resource.data.o == request.auth.uid && lotShape(request.resource.data)
+        && (key != 'roastdoor'
+          || (exists(/databases/$(database)/documents/arcadeRoles/$(request.auth.uid))
+            && get(/databases/$(database)/documents/arcadeRoles/$(request.auth.uid)).data.role == 'creator'));
+      allow update: if arcadeAccount() && lotShape(request.resource.data)
+        && ((resource.data.o == request.auth.uid && request.resource.data.o == request.auth.uid)
+          || (key != 'roastdoor' && resource.data.sale > 0
+            && (!('to' in resource.data) || resource.data.to == '' || resource.data.to == request.auth.uid)
+            && request.resource.data.o == request.auth.uid && request.resource.data.sale == 0
+            && paidSeller()));
+      allow delete: if arcadeAccount() && resource.data.o == request.auth.uid && key != 'roastdoor';
+    }
+    // Payments and messages between players: sale proceeds, customers at your shops, airport fees,
+    // Roastery cover charges, offers, sabotage. Anyone can drop one in; only the owner reads and clears them.
+    match /cremaMpInbox/{uid}/items/{id} {
+      allow read, delete: if arcadeAccount() && request.auth.uid == uid;
+      allow create: if arcadeAccount() && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['f', 'fn', 'amt', 'why', 'kind', 'x', 'at'])
+        && request.resource.data.f == request.auth.uid
+        && request.resource.data.fn is string && request.resource.data.fn.size() <= 24
+        && request.resource.data.amt is number && request.resource.data.amt >= 0 && request.resource.data.amt <= 1000000000000
+        && request.resource.data.why is string && request.resource.data.why.size() <= 100
+        && request.resource.data.kind is string && request.resource.data.kind.size() <= 12
+        && (!('x' in request.resource.data) || (request.resource.data.x is string && request.resource.data.x.size() <= 200))
+        && request.resource.data.at == request.time;
+    }
+    // City Hall ballots: one vote per player per measure.
+    match /cremaMpVotes/{mid}/v/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if arcadeAccount() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['y', 'at']) && request.resource.data.y is bool
+        && request.resource.data.at == request.time;
+    }
+
   }
 }

@@ -28,7 +28,7 @@ function roastRoom(){var g=room('roast',{name:'The back room',w:16,d:12,floor:fl
   var sal=npc(g,5.6,3.4,-Math.PI/2,{shirt:0x3a3a3a});bx(1.4,.08,.8,toon(0x2a1408),6.2,.9,3.4,g);bx(.5,.06,.4,toon(0xf4efe6),6.2,.96,3.4,g);addCol(ox+5.4,ox+7,2.9,3.9,'roast');
   bx(2,1.4,.06,toon(0xc8a878),-7.84,2.2,3.2,g).rotation.y=Math.PI/2;for(var ph=0;ph<6;ph++){var pp=plane(.35,.42,toon(0xffffff),-7.78,1.8+Math.floor(ph/3)*.6,2.6+(ph%3)*.45,g);pp.rotation.y=Math.PI/2;}}
 function roasteryDoor(){var w=W4(),s=syn();if(!w.f.roastInv&&!s.rank){popup('A door marked PRIVATE','Locked. Voices on the other side go quiet when you try the handle. A waiter steps between you and the door. "Restrooms are the other way."',[{t:'Leave it',cls:'sec'}]);return;}
-  fade(function(){P.area='roast';var A=AREAS.roast;P.x=A.ox;P.z=4.4;P.ry=Math.PI;O.snap=true;updDaylight();if(!s.rank)setTimeout(roasteryTalk,700);});}
+  mpRoastDoor(function(){fade(function(){P.area='roast';var A=AREAS.roast;P.x=A.ox;P.z=4.4;P.ry=Math.PI;O.snap=true;updDaylight();if(!s.rank)setTimeout(roasteryTalk,700);});});}
 function roasteryTalk(){var s=syn(),who={who:'Don Arabica',role:'The Roastery',col:'#3a2418'},w=W4();
   if(!s.rank){popup('The back room','Five old men stop talking. The oldest one sets down his espresso and smiles.\n"Vinnie says you\'re smart. Smart is good. Loyal is better. You want in?"',[{t:'I\'m in',fn:function(){s.rank=1;s.inf=1;addFame(2);note('Welcome to the Roastery','You\'re an Associate. Check the job board. Talk to Sal. Nobody talks about the Roastery.','good');save();}},{t:'Not for me',cls:'sec'}],'',
     {who:who.who,role:who.role,col:who.col,say:{ph:'Say something to the Don…',fn:function(t){aiFamily(t,'Don Arabica');}}});return;}

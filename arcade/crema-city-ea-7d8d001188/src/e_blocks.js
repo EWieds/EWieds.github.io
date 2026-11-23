@@ -18,7 +18,7 @@ function distBlock(b,r){
     if(mine&&key===mineKey){addShopAct(shopFront(lot,mine,D));return;}
     if(rivalKey===key){rivalFront(lot,mine,D);return;}
     var site=w.builds.filter(function(x){return x.key===key;})[0];if(site){siteLot(lot,site,D);return;}
-    var own=w.land[key];if(own){landUse(lot,b,D,key,own);return;}
+    if(mpOther(key)){mpLot(lot,b,D,key);return;}var own=w.land[key];if(own){landUse(lot,b,D,key,own);return;}
     if(rr()<.24){forSaleLot(lot,D,key);return;}
     genBuilding(lot,b,rr);});
   dressing(b,r);

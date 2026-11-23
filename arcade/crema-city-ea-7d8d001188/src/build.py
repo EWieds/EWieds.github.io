@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = '/home/claude/ewieds.github.io'
 SRC = os.path.join(REPO, 'arcade/crema-rush/index.html')
 OUT = os.path.join(REPO, 'arcade/crema-city-ea-7d8d001188/index.html')
-PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'z_bob.js', 'z_bank.js', 'z_fresh.js', 'z_law.js', 'z_mall2.js', 'z_fun.js', 'z_econ.js', 'l_main.js']
+PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'z_bob.js', 'z_bank.js', 'z_fresh.js', 'z_law.js', 'z_mall2.js', 'z_fun.js', 'z_econ.js', 'z_steps.js', 'z_mp.js', 'z_metro.js', 'l_main.js']
 
 s = open(SRC).read()
 def rep(a, b, count=1):
@@ -70,6 +70,9 @@ rep("function save(){if(!G)return;G.ts=now();try{localStorage.setItem(SAVEKEY,JS
 rep("  if(s.act>=s.locs.length)s.act=0;return s;}}catch(e){}return null;}",
     "  if(s.act>=s.locs.length)s.act=0;if(s.w4&&s.w4.led>0)s.cash+=s.w4.led;return s;}}catch(e){}return null;}")
 rep("closeModal();if(!G.started){G.started=true;}startShift();", "closeModal();if(!G.started){G.started=true;}startShift();if(OUT&&OUT.firstRun)OUT.firstRun();")
+rep("function cityName(n){return n<CITY_NAMES.length?CITY_NAMES[n]:'Metro '+(n+1);}", "function cityName(n){if(n===20)return 'Crema Metro';return n<CITY_NAMES.length?CITY_NAMES[n]:'Metro '+(n+1);}")
+rep("function cityDistricts(n){\n  if(n===0)return DIST0;", "function cityDistricts(n){\n  if(n===0)return DIST0;\n  if(n===20)return CITYC[20]||(CITYC[20]=[['main','Metro Center'],['finance','The Exchange'],['campus','Metro University'],['board','Metro Beach'],['old','Historic Quarter'],['air','Metro International'],['gym','Riverside Park'],['night','Neon Row'],['harbor','Metro Harbor'],['main','Midtown'],['finance','Tech Park'],['old','Arts District'],['night','Little Saigon'],['board','Pier 9']].map(function(q,i){var t=DIST0.filter(function(d){return d.id===q[0];})[0];return Object.assign({},t,{id:'m'+i,name:q[1],lvl:Math.min(12,1+i),cost:Math.round(60000*(1+.35*i)),tier:2});}));")
+rep("function TM(t){t=t||0;", "function TM(t){t=t||0;if(t===20)t=2;")
 rep("/* ================= INIT ================= */", mod + "\n\n/* ================= INIT ================= */")
 open(OUT, 'w').write(s)
 open(os.path.join(HERE, 'main_check.js'), 'w').write(s[s.rindex('<script>') + 8:s.rindex('</script>')])

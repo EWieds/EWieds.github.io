@@ -35,4 +35,23 @@ await t('play +1 cannot rewrite game code',setDoc(doc(atk,'communityGames','g1')
 await t('play +1 cannot steal ownership',setDoc(doc(atk,'communityGames','g1'),{plays:7,ownerUid:'atk'},{merge:true}),false);
 await t('play +1 cannot inflate likes',setDoc(doc(atk,'communityGames','g1'),{plays:7,likes:9999},{merge:true}),false);
 await t('play write cannot change title only',setDoc(doc(atk,'communityGames','g1'),{title:'Pwned'},{merge:true}),false);
+
+// ----- Crema Metro (multiplayer city)
+await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'arcadeRoles','boss'),{role:'creator',username:'Boss'});});
+const mpA=env.authenticatedContext('pa',{firebase:{sign_in_provider:'password'}}).firestore(),mpB=env.authenticatedContext('pb',{firebase:{sign_in_provider:'password'}}).firestore(),mpBoss=env.authenticatedContext('boss',{firebase:{sign_in_provider:'password'}}).firestore();
+const pres=(n)=>({n:n,x:1.5,z:-3,r:0,a:'city',v:'',c:1,h:0,lv:3,at:serverTimestamp()});
+await t('mp presence own',setDoc(doc(mpA,'cremaMpPresence','pa'),pres('A')),true);
+await t('mp presence someone else',setDoc(doc(mpA,'cremaMpPresence','pb'),pres('A')),false);
+const lot=(o,on,sale,extra)=>Object.assign({o:o,on:on,k:'biz',nm:'Corner Deli',pr:1,sale:sale,at:serverTimestamp()},extra||{});
+await t('mp claim free lot',setDoc(doc(mpA,'cremaMpLots','20:d1:1:0'),lot('pa','A',0)),true);
+await t('mp steal owned lot',setDoc(doc(mpB,'cremaMpLots','20:d1:1:0'),lot('pb','B',0)),false);
+await t('mp owner lists it',setDoc(doc(mpA,'cremaMpLots','20:d1:1:0'),lot('pa','A',5000)),true);
+await t('mp buy without paying',setDoc(doc(mpB,'cremaMpLots','20:d1:1:0'),lot('pb','B',0)),false);
+const {writeBatch}=await import('firebase/firestore');const bt=writeBatch(mpB);bt.set(doc(mpB,'cremaMpInbox','pa','items','20:d1:1:0-pb'),{f:'pb',fn:'B',amt:5000,why:'Bought Corner Deli',kind:'sale',at:serverTimestamp()});bt.set(doc(mpB,'cremaMpLots','20:d1:1:0'),lot('pb','B',0));
+await t('mp buy listed lot and pay',bt.commit(),true);
+await t('mp roastery door by player',setDoc(doc(mpA,'cremaMpLots','roastdoor'),lot('pa','A',0,{k:'door'})),false);
+await t('mp roastery door by creator',setDoc(doc(mpBoss,'cremaMpLots','roastdoor'),lot('boss','Boss',0,{k:'door'})),true);
+await t('mp inbox read other',getDoc(doc(mpB,'cremaMpInbox','pa','items','20:d1:1:0-pb')),false);
+await t('mp vote own',setDoc(doc(mpA,'cremaMpVotes','m1','v','pa'),{y:true,at:serverTimestamp()}),true);
+await t('mp vote for someone',setDoc(doc(mpA,'cremaMpVotes','m1','v','pb'),{y:true,at:serverTimestamp()}),false);
 console.log(R.join('\n'));await env.cleanup();if(R.some(x=>x.startsWith('FAIL')))process.exit(1);

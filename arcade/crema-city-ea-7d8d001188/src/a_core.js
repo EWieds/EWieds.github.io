@@ -37,7 +37,7 @@ function cityOfLot(key){return +String(key).split(':')[0];}
 /* ---------- money, popups, notes ---------- */
 function cityGain(x){x=+x||0;G.cash=G.cash+x;var w=G.w4;if(w)w.led=Math.max(0,(w.led||0)+x);}
 function citySpend(x){x=+x||0;G.cash=G.cash-x;var w=G.w4;if(w)w.led=Math.max(0,(w.led||0)-x);}
-function pay(c,what){c=Math.max(0,Math.round(c));if(G.cash>=c){G.cash-=c;try{sfx.buy();}catch(e){}save();return true;}
+function pay(c,what){c=Math.max(0,Math.round(c));c=mpShopCut(c);if(G.cash>=c){G.cash-=c;mpShopPaid(c);try{sfx.buy();}catch(e){}save();return true;}
   var short=c-G.cash;try{sfx.bad();}catch(e){}
   popup('Not enough cash',what+' costs '+fmt(c)+'. You have '+fmt(G.cash)+', so you are '+fmt(short)+' short.',[
     {t:'Ask the bank for a loan',s:'Crema Savings & Loan · rates on your phone',fn:function(){openPhone('bank');}},{t:'OK',cls:'sec'}],'bad');

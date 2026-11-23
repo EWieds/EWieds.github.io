@@ -6,7 +6,7 @@ var RENTERS=['a nurse and her cat','two grad students','a young couple','a retir
 function hwin(){if(!HWIN)HWIN=toon(0xa8d6f2);return HWIN;}
 function homeBase(){return Math.round(Math.max(600,2500*.45+G.lvl*120)*(O.city>0?TM(O.city).cm*.25+.75:1));}
 function homeAddr(lot,b,dw){var st=streetAt(dw.x,dw.z)||districtName(dw.x,dw.z),n=10+((Math.abs(Math.round(dw.x*3))+Math.abs(Math.round(dw.z*7)))%88)*2+(lot.s>0?1:0);return n+' '+st;}
-function homeState(h){return W4().biz[h.key]||{};}
+function homeState(h){if(mpOther(h.key)){var l=MP.lots[h.key];return {other:1,on:l.on,proj:(l.p||[]).map(function(p){return {k:p.k,label:p.l,done:p.d,at:p.at,color:p.c};})};}return W4().biz[h.key]||{};}
 
 /* a detached house: yard, porch, picket fence, mailbox, garden, sometimes a driveway and a car */
 function houseModel(lot,b,r,h){
@@ -67,6 +67,7 @@ function homeTalk(h){var s=homeState(h),w=W4(),mine=w.home===h.key,who={who:'You
       opts.push({t:'End the lease',s:'Then you can move in yourself',fn:function(){s.tenant=null;s.rentOut=0;O.dirty=true;save();note('Lease ended',h.name+' is empty.','info');}});}
     if(!mine&&!s.tenant)opts.push({t:'Look around inside',fn:function(){enterHome(h,false);}});
   }
+  if(isMP())opts.push({t:'Sell to another player',s:'List it in Crema Metro',fn:function(){mpPriceTalk(h);}});
   opts.push({t:'Hire Bob for a project',s:'Pool, deck, solar, a second story… or anything you can describe',fn:function(){bobProject(h);}});
   var rc=Math.round((h.val||1)*.35*Math.pow(1.6,s.ren||0));
   opts.push({t:'Renovate · '+fmt(rc),s:'+30% rent and resale value. You can keep going',fn:function(){if(!pay(rc,'The renovation'))return;s.ren=(s.ren||0)+1;note(h.name+' renovated','Worth more, rents for more.','good');save();}});

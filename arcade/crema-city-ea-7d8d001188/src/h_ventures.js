@@ -129,7 +129,7 @@ function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){
 function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev*devLive(l.dev.type);});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
 function econTick(dt){
   if(!G||!G.w4)return;var w=W4(),inc=0;if((w.led||0)>G.cash)w.led=Math.max(0,G.cash);
-  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll()+extraIncome();
+  for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}if(W4().mpVisited)inc+=ventureIncomeCity(MPC);inc+=bizIncome(-1)+kioskAll()+extraIncome();
   w.trucks.forEach(function(t){if(t.city!==O.city)return;var v=veh.filter(function(x){return x.truck===t;})[0];if(!v||(drv&&drv.v===v))return;var z=truckZone(v);if(!z||t.stock<=0)return;
     var r=truckRate(t,z),sold=r*dt/60/Math.max(1,IND[t.ind].pm*TM(t.city).pm*4);t.stock=Math.max(0,t.stock-sold);var m=r*dt/60;inc+=m;t.earned=(t.earned||0)+m;
     if(t.stock<=0)note(t.name+' sold out','Load crates or restock at Crema Supply Co.','bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});
@@ -149,7 +149,7 @@ function taxCredits(c){var v=civ(c),staff=0,dec=0,l=[];G.locs.forEach(function(x
   if(staff>=6)l.push(['Hire-local credit',.15]);if(patio||dec>=3)l.push(['Main Street revival credit',.1]);if(v.council)l.push(['Council member',.15]);if(v.policy==='holiday')l.push(['Small business tax holiday',.4]);
   var tot=Math.min(.75,l.reduce(function(s,q){return s+q[1];},0));return {list:l,total:tot,staff:staff};}
 function periodEnd(){
-  var w=W4(),amt=0;for(var c=0;c<Math.max(1,G.cities||1);c++)amt+=cityTax(c);amt=Math.round(amt);
+  var w=W4(),amt=0;for(var c=0;c<Math.max(1,G.cities||1);c++)amt+=cityTax(c);if(w.mpVisited)amt+=cityTax(MPC);amt=Math.round(amt);
   if(amt>0){var bill={id:now(),amt:amt,due:now()+PERIOD*1000,paid:false,late:false};w.tax.bills.push(bill);
     if(w.tax.auto&&G.cash>=amt){G.cash-=amt;bill.paid=true;w.tax.paid+=amt;}
     else if(!w.tax.auto)note('Tax bill: '+fmt(amt),'Due in '+mmssS(PERIOD)+'. Pay at City Hall'+(w.tax.visited?' or on your phone':'')+'.','info',{label:w.tax.visited?'Pay now':'Directions',fn:function(){if(w.tax.visited)payTaxes();else navTo(placeById('hall'));}});}
@@ -164,7 +164,7 @@ function periodEnd(){
   save();
 }
 function showStatements(){var w=W4(),s=w.stmts||[];popup('Your statements',s.length?s.slice(0,6).map(function(q){return new Date(q.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(q.took?'  −'+fmt(q.took):'')+'\n  '+q.lines.join('\n  ');}).join('\n\n'):'Nothing yet. Every 8 minutes the city bills taxes, and the bank charges loan interest and insurance.',[{t:'OK'}]);}
-function allTax(){var t=0;for(var c=0;c<Math.max(1,G.cities||1);c++)t+=cityTax(c);return Math.round(t);}
+function allTax(){var t=0;for(var c=0;c<Math.max(1,G.cities||1);c++)t+=cityTax(c);if(W4().mpVisited)t+=cityTax(MPC);return Math.round(t);}
 function unpaid(){return W4().tax.bills.filter(function(b){return !b.paid;});}
 function payTaxes(){var u=unpaid(),tot=u.reduce(function(s,b){return s+b.amt;},0);if(!tot){toast('You\'re all paid up.','good');return;}if(!pay(tot,'Your tax bills'))return;u.forEach(function(b){b.paid=true;});W4().tax.paid+=tot;note('Taxes paid',fmt(tot)+' to the city. Thank you for your business!','good');save();}
 function netWorth(){var n=G.cash+W4().bank.sav-W4().bank.loan;G.locs.forEach(function(l){n+=locCost(l.city,l.did,l.ind)*.6;});return Math.max(0,n);}
