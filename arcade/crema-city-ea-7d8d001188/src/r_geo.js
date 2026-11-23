@@ -61,4 +61,8 @@ function updGeo(dt,tl){anim.forEach(function(a){
   else if(a.sock){a.sock.rotation.y=Math.sin(tl*.3)*.6+1;a.sock.rotation.z=-.2+Math.sin(tl*2)*.08;}
   else if(a.tug){a.t+=dt*.06;var k2=(Math.sin(a.t)+1)/2;a.tug.position.z=a.z0+(a.z1-a.z0)*k2;a.tug.rotation.y=Math.cos(a.t)>0?0:Math.PI;}
   else if(a.kart){a.t+=dt*1.3;a.kart.position.set(Math.cos(a.t)*3.9,.4,-BDEP/2+Math.sin(a.t)*2.9);a.kart.rotation.y=-a.t;}
+  else if(a.belt){a.belt.position.x+=dt*a.v;if(a.belt.position.x>a.x1)a.belt.position.x=a.x0;}
+  else if(a.flick){a.flick.scale.y=.85+Math.sin(tl*9)*.08+Math.sin(tl*23)*.05;a.flick.material.emissiveIntensity=.8+Math.sin(tl*17)*.2;}
+  else if(a.smoke){a.t+=dt*.25;var k4=a.t%1;a.smoke.position.y=a.y0+k4*2.4;a.smoke.material.opacity=.1*(1-k4);a.smoke.scale.setScalar(1+k4*2);}
+  else if(a.fn){a.fn(dt,tl);}
   else if(a.roll){a.t+=dt*a.v;var k3=(a.t%1);a.roll.position.x=a.x0+(a.x1-a.x0)*k3;}});}

@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = '/home/claude/ewieds.github.io'
 SRC = os.path.join(REPO, 'arcade/crema-rush/index.html')
 OUT = os.path.join(REPO, 'arcade/crema-city-ea-7d8d001188/index.html')
-PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'l_main.js']
+PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'l_main.js']
 
 s = open(SRC).read()
 def rep(a, b, count=1):
@@ -69,6 +69,7 @@ rep("function save(){if(!G)return;G.ts=now();try{localStorage.setItem(SAVEKEY,JS
     "function save(){if(!G)return;G.ts=now();try{localStorage.setItem(SAVEKEY,JSON.stringify(G,function(k,v){return k==='cash'&&this===G&&G.w4&&G.w4.led?Math.max(0,Math.round((v-G.w4.led)*100)/100):v;}));}catch(e){}")
 rep("  if(s.act>=s.locs.length)s.act=0;return s;}}catch(e){}return null;}",
     "  if(s.act>=s.locs.length)s.act=0;if(s.w4&&s.w4.led>0)s.cash+=s.w4.led;return s;}}catch(e){}return null;}")
+rep("closeModal();if(!G.started){G.started=true;}startShift();", "closeModal();if(!G.started){G.started=true;}startShift();if(OUT&&OUT.firstRun)OUT.firstRun();")
 rep("/* ================= INIT ================= */", mod + "\n\n/* ================= INIT ================= */")
 open(OUT, 'w').write(s)
 open(os.path.join(HERE, 'main_check.js'), 'w').write(s[s.rindex('<script>') + 8:s.rindex('</script>')])

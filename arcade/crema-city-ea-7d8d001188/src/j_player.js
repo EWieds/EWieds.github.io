@@ -4,8 +4,8 @@ function inBounds(x,z){if(P.area!=='city'){var b=AREAS[P.area].b;return x>b.x0&&
 function blocked(x,z,r){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area!==P.area)continue;if(x+r>c.x0&&x-r<c.x1&&z+r>c.z0&&z-r<c.z1)return true;}return false;}
 function moveWalk(dt){
   var fx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+joy.x,fz=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+joy.y,l=Math.hypot(fx,fz);
-  var moving=l>.12&&!popOpen()&&!CUT&&!WIN&&!ARC&&!(RIDE&&!RIDE.wait);P.moving=moving;
-  if(moving){if(l>1){fx/=l;fz/=l;}var sp=(keys.shift||l>.95?5.4:3.2)*(phoneOpen()?.5:1),s=Math.sin(yaw),c=Math.cos(yaw);P.spd=Math.min(1,(P.spd||0)+dt*5);
+  var moving=l>.12&&!popOpen()&&!CUT&&!WIN&&!ARC&&!EAT&&!MOV&&!(RIDE&&!RIDE.wait);P.moving=moving;
+  if(moving){if(l>1){fx/=l;fz/=l;}var sp=(keys.shift||l>.95?5.4:3.2)*(phoneOpen()?.5:1)*(buffOn('fast')?1.2:1),s=Math.sin(yaw),c=Math.cos(yaw);P.spd=Math.min(1,(P.spd||0)+dt*5);
     var mx=(fx*c+fz*s)*sp*dt*P.spd,mz=(-fx*s+fz*c)*sp*dt*P.spd,r=.32;
     var nx=P.x+mx,nz=P.z+mz;
     if(!blocked(nx,P.z,r)&&inBounds(nx,P.z))P.x=nx;
@@ -48,7 +48,7 @@ O.deferSum=function(s){if(!O.on)return false;pendSum=s;note('Day '+s.day+' at '+
 /* ---------- camera ---------- */
 var camT=V3(0,0,0),camL=V3(0,0,0);
 function updCamera(dt){
-  updTalk(dt);if(talkCamera(dt))return;
+  updTalk(dt);if(eatCamera(dt)||movieCamera(dt))return;if(talkCamera(dt))return;
   var f,dd,pt;
   if(RIDE&&!RIDE.wait){f=RIDE.car.g.position;dd=12;pt=.4;yaw+=angD(yaw,RIDE.car.h+Math.PI)*Math.min(1,dt*2);}
   else if(drv){f=drv.v.g.position;dd=drv.v.kind==='truck'?15:13;pt=.4;yaw+=angD(yaw,drv.v.g.rotation.y+Math.PI)*Math.min(1,dt*2.2);}

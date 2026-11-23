@@ -16,10 +16,12 @@ function isEatery(b){return ['restaurant','pizza','deli','diner','ramen','tacos'
 function cuisine(b){return b.cuisine||CUISINE_OF[b.type]||'diner';}
 /* the owner waits behind the counter: the same face you met at the door */
 function placeRoomNpc(room,b,x,z,ry){var o=ROOMNPC[room];if(o&&o.me.root.parent)o.me.root.parent.remove(o.me.root);var me=talkerModel(b?b.key:'clerk:'+room);me.root.position.set(IOX[room]+x,0,z);me.root.rotation.y=ry||0;me.root.visible=true;dyn.add(me.root);ROOMNPC[room]={me:me,key:b?b.key:null,x:IOX[room]+x,z:z};}
-function enterBiz(b){CUR_B=b;var room=isEatery(b)?'eatery':'store';if(!AREAS[room]){bizTalk(b,false);return;}
+function enterBiz(b){CUR_B=b;var room=isEatery(b)?(STYLE_OF[cuisine(b)]||'e_bistro'):'store';if(!AREAS[room]){bizTalk(b,false);return;}
   AREAS[room].name=b.name;ENTRANCE[room]='biz:'+b.key;var s=W4().biz[b.key]||{};
-  drawSign(room,b.name.toUpperCase(),s.own?'A CREMA COMPANY':room==='eatery'?'NOW SERVING':'EST. '+(1950+hashS(b.key)%70),room==='eatery'?'#7a2a22':'#2a1a12','#ffe3a8');
-  placeRoomNpc(room,b,room==='eatery'?4:3.4,room==='eatery'?-3.6:-3.1,0);enterArea(room);}
+  drawSign(room,b.name.toUpperCase(),s.own?'A CREMA COMPANY':room!=='store'?(CUISINE_NAME[cuisine(b)]||'NOW SERVING'):'EST. '+(1950+hashS(b.key)%70),room!=='store'?(SIGNC[room]||'#7a2a22'):'#2a1a12','#ffe3a8');
+  placeRoomNpc(room,b,room!=='store'?4.2:3.4,room!=='store'?-5.1:-3.1,0);enterArea(room);}
+var CUISINE_NAME={italian:'CUCINA ITALIANA',pizza:'PIZZERIA',chinese:'DIM SUM · NOODLES',korean:'KOREAN BBQ',viet:'PHO · BANH MI',ramen:'RAMEN-YA',sushi:'SUSHI · OMAKASE',mexican:'TAQUERIA',bbq:'SMOKEHOUSE',steak:'STEAKHOUSE',burger:'BURGERS · SHAKES',diner:'OPEN 24 HOURS',french:'BISTRO',indian:'TANDOOR',mideast:'MEZZE · GRILL',seafood:'OYSTER BAR',deli:'DELICATESSEN',tea:'TEA ROOM'};
+var SIGNC={e_it:'#2f7a4a',e_asia:'#7a2a22',e_sushi:'#1a1a1a',e_mex:'#2fa860',e_steak:'#2a1a12',e_diner:'#e2553f',e_bistro:'#2a3a6a',e_speak:'#1a1210'};
 function enterOffice(kind,name,who){CUR_B={office:kind,name:name,owner:who||'Clerk',key:'office:'+kind};AREAS.office.name=name;ENTRANCE.office=kind==='realty'?'realty':kind==='police'||kind==='post'||kind==='library'||kind==='fire'?'off:'+kind:'hall';
   drawSign('office',name.toUpperCase(),{police:'TO PROTECT AND SERVE',post:'U.S. MAIL',library:'SILENCE PLEASE',fire:'STATION 1',realty:'HOMES · LAND · LEASES'}[kind]||'',{police:'#1f2f5a',post:'#2f5f90',library:'#5a3a28',fire:'#a8322a',realty:'#2fa860'}[kind]||'#2a1a12','#fff');
   placeRoomNpc('office',{key:'office:'+kind},0,-2.2,0);enterArea('office');}
@@ -44,7 +46,7 @@ function eateryRoom(){var g=room('eatery',{name:'Restaurant',w:16,d:12,floor:flo
   bx(1.3,2.3,.12,toon(0x5a3a28),-6,1.15,-5.85,g);ACTS.eatery.push({x:ox-6,z:-4.8,r:1.4,label:function(){return CUR_B&&CUR_B.cuisine==='italian'?'A door marked PRIVATE':'Kitchen door';},sub:function(){return CUR_B&&CUR_B.cuisine==='italian'?'Voices, cigar smoke, espresso':'Staff only';},fn:function(){if(CUR_B&&CUR_B.cuisine==='italian')roasteryDoor();else toast('Staff only, hon.','');}});
   ACTS.eatery.push({x:ox-2.8,z:1,r:1.4,label:'Talk to the owner',sub:function(){return CUR_B?CUR_B.owner:'';},fn:function(){if(CUR_B)bizTalk(CUR_B,false);}});}
 var fullUntil=0;
-function orderFood(cu,who,where){var m=MENUS[cu]||MENUS.diner,k=tierM()>3?1+Math.log(tierM())*.3:1;
+function orderFoodOld(cu,who,where){var m=MENUS[cu]||MENUS.diner,k=tierM()>3?1+Math.log(tierM())*.3:1;
   popup(where||'Order','"What can I get you?"',m.map(function(q){var pr=Math.round(q[1]*k);return {t:q[0]+' · '+fmt(pr),fn:function(){if(now()<fullUntil){toast('You\'re stuffed. Maybe later.','bad');return;}if(!pay(pr,q[0]))return;eat(q[0]);}};}).concat([{t:'Nothing, thanks',cls:'sec'}]),'',{who:who,role:where,col:'#7a2a22',
     say:{ph:'Order anything… or ask about the secret menu',fn:function(t){var n=norm(t);if(cu==='italian'&&/the usual|back room|the family|vinnie|roastery|don arabica/.test(n)){W4().f.roastInv=1;save();popup(where,'...Of course. Through the door marked PRIVATE. They are expecting you.',[{t:'Grazie'}],'',{who:who,role:where,col:'#7a2a22',you:t});return;}
       if(/secret|off.?menu|special|chef/.test(n)&&!W4().f['sec'+cu]){W4().f['sec'+cu]=1;popup(where,'"...You know about that? Okay. One house special, on the house. Don\'t tell anyone."',[{t:'Thank you',fn:function(){eat('The secret house special');addFame(2);addXP(30);}}],'',{who:who,role:where,col:'#7a2a22',you:t});return;}

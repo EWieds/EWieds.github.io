@@ -67,7 +67,7 @@ function aiDeal(b,phone,t){var s=dState(b),key='b:'+b.key,tok=++AI.tok,who={who:
 /* the same rules as the slider, decided by the game, phrased by the AI */
 function evalOffer(b,o,phone,cash){var s=dState(b);s.offers++;s.last=o;
   if(!canAfford(o))return {k:'broke',o:o,tell:'They offered '+fmt(o)+' but clearly do not have that much money. Tell them to come back when they do.'};
-  var eff=o*(cash?(b.pers==='greedy'?1.12:1.06):1)*(phone?.96:1)*(hasClass('neg')?1.05:1);
+  var eff=o*(cash?(b.pers==='greedy'?1.12:1.06):1)*(phone?.96:1)*(hasClass('neg')?1.05:1)*(buffOn('charm')?1.04:1);
   if(b.pers==='sentimental'&&!s.promise&&eff>=s.floor)return {k:'heart',o:o,tell:'The money ('+fmt(o)+') is fine, but you will not sell until they promise to look after your people and your place. Say so.'};
   if(eff>=s.ask||(eff>=s.floor&&Math.random()<.25+.6*(eff-s.floor)/Math.max(1,s.ask-s.floor)))return {k:'accept',o:o,over:eff>s.ask*1.2,tell:'You ACCEPT their offer of '+fmt(o)+'. Agree and shake on it.'};
   if(eff>=s.floor){var c=Math.round((o+s.ask)/2/10)*10;s.ask=Math.max(s.floor,c);s.known=1;return {k:'counter',o:o,tell:'Their offer of '+fmt(o)+' is close but not enough. Counter at exactly '+fmt(s.ask)+'.'};}
