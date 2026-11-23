@@ -129,7 +129,7 @@ function updRide(dt){if(!RIDE)return;var c=RIDE.car;
     if(!RIDE.honked){RIDE.honked=1;try{tone(392,.15,'square',.03);tone(392,.15,'square',.03,.25);}catch(e){}bubble(c.g.position.x,2.3,c.g.position.z,'Taxi for you!','');}
     if(d<3.5||(RIDE.board&&d<25)){RIDE.wait=false;P.me.root.visible=false;NAV=null;var pts=route({x:c.g.position.x,z:c.g.position.z},RIDE.to);RIDE.pts=pts;RIDE.L=routeLen(pts);RIDE.s=0;yaw=c.g.rotation.y+Math.PI;}
     RIDE.board=false;c.h=c.g.rotation.y;return;}
-  RIDE.s+=17*dt;if(RIDE.skip)RIDE.s=RIDE.L;
+  RIDE.v=RIDE.v||0;var tgt=rideTarget(RIDE);RIDE.v=RIDE.v<tgt?Math.min(tgt,RIDE.v+6*dt):Math.max(tgt,RIDE.v-18*dt);RIDE.s+=RIDE.v*dt;if(RIDE.skip)RIDE.s=RIDE.L;
   if(RIDE.s>=RIDE.L&&!RIDE.done){RIDE.done=1;var to=RIDE.to;fade(function(){P.x=to.x;P.z=to.z;P.me.root.visible=true;dyn.remove(c.g);RIDE=null;O.snap=true;},function(){note('You\'re here',to.name,'good');});return;}
   if(RIDE.done)return;
   var acc=0,pts=RIDE.pts;for(var k=0;k<pts.length-1;k++){var l=Math.hypot(pts[k+1].x-pts[k].x,pts[k+1].z-pts[k].z);if(acc+l>=RIDE.s){var p=laneOff(pts,k,(RIDE.s-acc)/Math.max(.01,l));c.g.position.set(p.x,0,p.z);c.g.rotation.y+=angD(c.g.rotation.y,p.h)*Math.min(1,dt*6);c.h=c.g.rotation.y;P.x=p.x;P.z=p.z;break;}acc+=l;}

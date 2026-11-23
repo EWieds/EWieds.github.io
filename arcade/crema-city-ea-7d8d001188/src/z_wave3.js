@@ -126,7 +126,7 @@ function jailLocked(){var j=W4().jail;return P.area==='jail'&&j&&j.until>now();}
 var RANKS=['Outsider','Associate','Soldier','Capo','Underboss','Don'];
 function syn(){var w=W4();return w.syn=w.syn||{rank:0,jobs:0,inf:0,heat:0};}
 function vinnie(){var s=syn(),who={who:'Vinnie',role:'Cell 3',col:'#ff8a3d'};if(s.rank>0){popup('Vinnie','"Hey, it\'s the '+RANKS[s.rank].toLowerCase()+'! Tell the Don I said hi."',[{t:'Will do',cls:'sec'}],'',who);return;}
-  popup('Vinnie','"You\'re the coffee kid. Listen… some old families in this town would like to meet a guy like you. Luigi\'s. Ask for the back room. Tell \'em Vinnie sent you."',[{t:'Thanks, Vinnie',fn:function(){W4().f.roastInv=1;save();}}],'',who);}
+  popup('Vinnie','"You\'re the coffee kid. Listen… some old families in this town would like to meet a guy like you. Luigi\'s, on the main drag. Sit down, and order the regular. It\'s not on the menu, and it ain\'t cheap. That\'s the point."',[{t:'Thanks, Vinnie',fn:function(){W4().f.roastInv=1;save();}}],'',who);}
 function roasteryDoorOld(){var w=W4(),s=syn();if(!w.f.roastInv&&!s.rank){toast('The door is locked. "PRIVATE".','');return;}fade(function(){roasteryTalk();});}
 function roasteryTalkOld(){var s=syn(),who={who:'Don Arabica',role:'The Roastery',col:'#3a2418'},w=W4();
   if(!s.rank){popup('The back room','Cigar smoke, espresso and five old men who stop talking when you walk in. The oldest one smiles.\n"Vinnie says you\'re smart. Smart is good. Loyal is better. You want in?"',[{t:'I\'m in',fn:function(){s.rank=1;addFame(2);note('Welcome to the Roastery','You\'re an Associate now. The Don has work for you. Nobody talks about the Roastery.','good');save();roasteryTalk();}},{t:'Not for me',cls:'sec'}],'',who);return;}
