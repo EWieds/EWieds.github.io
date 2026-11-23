@@ -4,14 +4,14 @@ function inBounds(x,z){if(P.area!=='city'){var b=AREAS[P.area].b;return x>b.x0&&
 function blocked(x,z,r){for(var i=0;i<cols.length;i++){var c=cols[i];if(c.area!==P.area)continue;if(x+r>c.x0&&x-r<c.x1&&z+r>c.z0&&z-r<c.z1)return true;}return false;}
 function moveWalk(dt){
   var fx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+joy.x,fz=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+joy.y,l=Math.hypot(fx,fz);
-  var moving=l>.12&&!popOpen()&&!CUT&&!WIN&&!ARC&&!EAT&&!MOV&&!(RIDE&&!RIDE.wait);P.moving=moving;
-  if(moving){if(l>1){fx/=l;fz/=l;}var sp=(keys.shift||l>.95?5.4:3.2)*(phoneOpen()?.5:1)*(buffOn('fast')?1.2:1),s=Math.sin(yaw),c=Math.cos(yaw);P.spd=Math.min(1,(P.spd||0)+dt*5);
+  var moving=l>.12&&!popOpen()&&!CUT&&!WIN&&!ARC&&!EAT&&!MOV&&!ESC&&!BOWL&&!CLAW3&&!(RIDE&&!RIDE.wait);P.moving=moving;
+  if(moving){if(l>1){fx/=l;fz/=l;}var sp=(keys.shift||l>.95?5.4:3.2)*(phoneOpen()?.5:1)*(buffOn('fast')?1.2:1)*(W4().shoes?1.08:1),s=Math.sin(yaw),c=Math.cos(yaw);P.spd=Math.min(1,(P.spd||0)+dt*5);
     var mx=(fx*c+fz*s)*sp*dt*P.spd,mz=(-fx*s+fz*c)*sp*dt*P.spd,r=.32;
     var nx=P.x+mx,nz=P.z+mz;
     if(!blocked(nx,P.z,r)&&inBounds(nx,P.z))P.x=nx;
     if(!blocked(P.x,nz,r)&&inBounds(P.x,nz))P.z=nz;
     P.mvx=mx/dt;P.mvz=mz/dt;P.ry=Math.atan2(mx,mz);doorCheck(mx,mz);}else P.spd=0;
-  var y=P.area==='city'&&onBlockSlab(P.x,P.z)?.2:0;
+  var y=ESC?(ESC.y||0):P.area==='city'&&onBlockSlab(P.x,P.z)?.2:((AREAS[P.area]&&AREAS[P.area].y)||0);
   P.me.root.position.set(P.x,y,P.z);P.me.root.rotation.y+=angD(P.me.root.rotation.y,P.ry)*Math.min(1,dt*12);animCust(P.me,dt,0,moving);
   if(P.phone)P.phone.visible=phoneOpen();if(phoneOpen()){P.me.arms[1].rotation.x=-1.6;P.me.head.rotation.x=.25;}else P.me.head.rotation.x*=.8;
   if(P.carry.length){P.me.arms[0].rotation.x=P.me.arms[1].rotation.x=-1.3;}
@@ -48,7 +48,7 @@ O.deferSum=function(s){if(!O.on)return false;pendSum=s;note('Day '+s.day+' at '+
 /* ---------- camera ---------- */
 var camT=V3(0,0,0),camL=V3(0,0,0);
 function updCamera(dt){
-  updTalk(dt);if(eatCamera(dt)||movieCamera(dt))return;if(talkCamera(dt))return;
+  updTalk(dt);if(eatCamera(dt)||movieCamera(dt)||bowlCam(dt)||clawCam(dt))return;if(talkCamera(dt))return;
   var f,dd,pt;
   if(RIDE&&!RIDE.wait){f=RIDE.car.g.position;dd=12;pt=.4;yaw+=angD(yaw,RIDE.car.h+Math.PI)*Math.min(1,dt*2);}
   else if(drv){f=drv.v.g.position;dd=drv.v.kind==='truck'?15:13;pt=.4;yaw+=angD(yaw,drv.v.g.rotation.y+Math.PI)*Math.min(1,dt*2.2);}
@@ -57,6 +57,7 @@ function updCamera(dt){
   if(W/H<.9)dd*=1.22;
   camT.set(f.x,f.y+1.3,f.z);
   var cp=V3(f.x+Math.sin(yaw)*Math.cos(pt)*dd,f.y+1.4+Math.sin(pt)*dd,f.z+Math.cos(yaw)*Math.cos(pt)*dd);
+  var ceilA=AREAS[P.area];if(ceilA&&ceilA.ceil&&cp.y>ceilA.ceil)cp.y=ceilA.ceil;
   // keep the camera out of walls
   if(P.area==='city'&&!BIRD){var hit=null;for(var k=0;k<16&&(hit=camInside(cp.x,cp.z,cp.y));k++){if(pt<1.15)pt=Math.min(1.15,pt+.12);else if(dd>1.8)dd*=.85;else break;cp.set(f.x+Math.sin(yaw)*Math.cos(pt)*dd,f.y+1.4+Math.sin(pt)*dd,f.z+Math.cos(yaw)*Math.cos(pt)*dd);}
     if(hit&&!drag){var fy=Math.atan2(f.x-(hit.x0+hit.x1)/2,f.z-(hit.z0+hit.z1)/2);yaw+=angD(yaw,fy)*Math.min(1,dt*2.5);}}

@@ -91,7 +91,7 @@ O.frame=function(dt){
     if(CUT)updCut(dt);else{if(P.auto>0){P.auto-=dt;var o=V3(Math.sin(P.ry),0,Math.cos(P.ry));P.x+=o.x*dt*2.2;P.z+=o.z*dt*2.2;P.moving=true;animCust(P.me,dt,0,true);P.me.root.position.set(P.x,.2,P.z);P.me.root.rotation.y=P.ry;}
       else if(drv)driveStep(dt);else if(!(RIDE&&!RIDE.wait))moveWalk(dt);updRide(dt);}
     if(P.area==='city'){updTraffic(dt,tl);lawTick(dt,tl);lawSlow(dt);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
-    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updArcade(dt);updEat(dt);updFresh(dt);updMovie(dt);jobTick(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
+    updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updArcade(dt);updEat(dt);updFresh(dt);updEsc(dt);updElev();updKids(dt);updBowl(dt);updClaw(dt);funHud();updMovie(dt);jobTick(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
     if(!CUT)updCamera(dt);
     updActs();updNav(dt);updLabels(dt);if(frameN++%3===0)drawMini();
     var stn=P.area==='city'?streetAt(P.x,P.z):null,wk=districtName(P.x,P.z)+(stn?' · '+stn:'')+' · '+clockStrH(clockH)+(rain.on?' · rain':'')+(P.carry.length?' · carrying '+P.carry.length:'');if($('#o-where').textContent!==wk)$('#o-where').textContent=wk;
