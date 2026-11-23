@@ -3820,7 +3820,7 @@ function rivalTruckActs(){return rtrucks.map(function(r){var p=r.g.position;retu
 /* ---------- money on a timer: tenants, trucks, superstores, taxes, the bank ---------- */
 var econT=0,PERIOD=480;
 function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){t+=60*TM(+c).pm*w.kiosk[c];});return t;}
-function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev;});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
+function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev*devLive(l.dev.type);});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
 function econTick(dt){
   if(!G||!G.w4)return;var w=W4(),inc=0;if((w.led||0)>G.cash)w.led=Math.max(0,G.cash);
   for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll()+extraIncome();
@@ -3831,7 +3831,7 @@ function econTick(dt){
   if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);econTick2(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
@@ -5802,15 +5802,15 @@ function devGuess(t){var n=norm(t),M=[['office',/office|cowork|corporate|headqua
 function devQuote(key,text){var w=W4(),own=w.land[key];if(!own){toast('You don\'t own that lot anymore.','bad');return;}var D=district(cityOfLot(key),own.d),lp=landPrice(D),who={who:'Bob',role:'Bob\'s Builders',col:'#f2b632'};
   var go=function(type,label,line2){var T2=DEV[type]||[label,3,.07,'modern',[]],banned=T2[4].indexOf(D.win)>=0&&!(own.variance);
     if(banned){popup('Zoning says no','"'+T2[0]+' in '+D.name+'? Zoning won\'t allow it. Get a variance from the zoning office at City Hall… or know somebody who can make it happen."',[{t:'Directions to City Hall',fn:function(){navTo(placeById('hall'));}},{t:'Build something else',fn:function(){devPrompt(key);}},{t:'OK',cls:'sec'}],'',who);return;}
-    var cost=Math.round(lp*T2[1]*(DEV[type]?1:(.9+Math.random()*.4))),rev=lp*T2[2]*(D.demand||1)*(.85+((hashS(key+type)%30)/100)),secs=Math.round(60+T2[1]*25),ana=own.analyst&&own.analyst[type];
+    var cost=Math.round(lp*T2[1]*(DEV[type]?1:(.9+(hashS(key+(label||''))%40)/100))),rev=lp*T2[2]*(D.demand||1)*(.85+((hashS(key+type)%30)/100)),secs=Math.round(60+T2[1]*25),ana=own.analyst&&own.analyst[type];
     var est=ana?fmt(rev)+'/min (analyst verified) · pays for itself in ~'+mmssS(cost/rev*60):'somewhere between '+fmt(rev*.55)+' and '+fmt(rev*1.5)+'/min';
     popup('Quote · '+(label||T2[0]),'"'+(line2||'I can build that.')+'"\nCost '+fmt(cost)+' · about '+mmssS(secs)+'\nProjected income: '+est,[
       {t:'Build it · '+fmt(cost),fn:function(){own.pendingDev={type:DEV[type]?type:'custom',label:label||T2[0],rev:Math.round(rev),arch:T2[3]};startBuild(key,D,{kind:'dev',cost:cost,sec:secs});}},
       ana?null:{t:'Hire a financial analyst · '+fmt(Math.round(cost*.02+200*tierM())),s:'Exact numbers, payback time, and what would earn more here',fn:function(){var c=Math.round(cost*.02+200*tierM());if(!pay(c,'The analyst'))return;own.analyst=own.analyst||{};own.analyst[type]=1;analystReport(key,type,rev,cost);}},
       {t:'Borrow to pay for it',s:'Crema Savings & Loan',fn:function(){bankWindow('loan');}},{t:'Something else',fn:function(){devPrompt(key);}},{t:'Never mind',cls:'sec'}].filter(Boolean),'',who);};
   var g=devGuess(text);if(!aiOk()){if(g)go(g,DEV[g][0]);else go('custom',titleCase(text).slice(0,40),'Never built one of those. I\'ll figure it out.');return;}
-  thinking('Bob\'s Builders',text,who);var tok=AI.tok;aiCall('You are Bob, a gruff contractor in a cozy city-builder game. The player wants to build on an empty lot in '+D.name+'. Known building types: '+Object.keys(DEV).map(function(k){return k+'='+DEV[k][0];}).join(', ')+'. Map the request to the closest type, or "custom" if nothing fits. Refuse (type null) only if it is dangerous, illegal or offensive. '+SAFE+'\nReturn only JSON: {"type": string|null, "label": short project name (max 5 words), "say": one short line in your voice}.',[],text.slice(0,240)).then(function(r){if(tok!==AI.tok)return;
-    if(!r){if(g)go(g,DEV[g][0]);else go('custom',titleCase(text).slice(0,40));return;}if(r.type===null){popup('Bob\'s Builders','"'+clean(r.say||'Not building that, boss.')+'"',[{t:'OK'}],'',who);return;}go(DEV[r.type]?r.type:(g||'custom'),clean(r.label||text).slice(0,40),clean(r.say||'').replace(/^"|"$/g,''));});}
+  thinking('Bob\'s Builders',text,who);var tok=AI.tok;aiCall('You are Bob, a gruff contractor in a cozy city-builder game. The player wants to build on an empty lot in '+D.name+'. Known building types: '+Object.keys(DEV).map(function(k){return k+'='+DEV[k][0];}).join(', ')+'. Map the request to the closest type, or "custom" if nothing fits. Never refuse: if it is unsafe or illegal, build the closest legal version. '+SAFE+'\nReturn only JSON: {"type": string|null, "label": short project name (max 5 words), "say": one short line in your voice}.',[],text.slice(0,240)).then(function(r){if(tok!==AI.tok)return;
+    if(!r){if(g)go(g,DEV[g][0]);else go('custom',titleCase(text).slice(0,40));return;}go(DEV[r.type]?r.type:(g||'custom'),clean(r.label||text).slice(0,40),clean(r.say||'').replace(/^"|"$/g,''));});}
 function devPrompt(key){var w=W4(),own=w.land[key],D=district(cityOfLot(key),own.d);popup('Build anything','"It\'s your dirt. What are we putting on it?" ('+D.name+')',['office','hotel','waterpark','racetrack'].map(function(k){return {t:DEV[k][0],fn:function(){devQuote(key,DEV[k][0]);}};}).concat([{t:'Never mind',cls:'sec'}]),'',{who:'Bob',role:'Bob\'s Builders',col:'#f2b632',say:{ph:'Anything… "a water park", "a robot museum", "HQ for Crema"',fn:function(t){devQuote(key,t);}}});}
 function analystReport(key,type,rev,cost){var w=W4(),own=w.land[key],D=district(cityOfLot(key),own.d),lp=landPrice(D),alts=Object.keys(DEV).filter(function(k){return DEV[k][4].indexOf(D.win)<0;}).map(function(k){var r=lp*DEV[k][2]*(D.demand||1),c=lp*DEV[k][1];return {k:k,r:r,c:c,pb:c/r};}).sort(function(a,b){return a.pb-b.pb;});
   var best=alts[0],big=alts.slice().sort(function(a,b){return b.r-a.r;})[0];
@@ -5830,7 +5830,7 @@ function devLot(lot,b,own,D){var d=own.dev||{},r=seeded(hashS(lot.key)),a=d.arch
 var STK={CRMA:['Crema Coffee Co.',40,.018],BEAN:['Valley Farms Co-op',22,.012],TACO:['Taco Tornado Inc.',15,.03],AIR:['Air Crema',68,.02],MALL:['Galleria REIT',31,.009],GOLD:['Brewport Gold',12,.045],NWND:['Northwind Labs',140,.035],SODA:['Fizzy Pop Bottling',9,.025]};
 function mkt(){var w=W4();if(!w.mkt){w.mkt={px:{},hist:{},own:{},cost:{}};}Object.keys(STK).forEach(function(k){if(w.mkt.px[k]==null){w.mkt.px[k]=STK[k][1];w.mkt.hist[k]=[STK[k][1]];}});return w.mkt;}
 var mktT=0;
-function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(STK).forEach(function(k){var v=STK[k][2],drift=k==='CRMA'?.002+Math.min(.004,ownedBiz().length*.0004):k==='TACO'&&rtrucks.length<1?-.003:.0004;
+function mktTickOld(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();Object.keys(STK).forEach(function(k){var v=STK[k][2],drift=k==='CRMA'?.002+Math.min(.004,ownedBiz().length*.0004):k==='TACO'&&rtrucks.length<1?-.003:.0004;
   var shock=0;if(Math.random()<.004){shock=(Math.random()<.5?-1:1)*rnd(.06,.16);if(O.on)note(k+(shock>0?' jumps ':' drops ')+Math.round(Math.abs(shock)*100)+'%',pick(shock>0?[STK[k][0]+' beat earnings.','Analysts upgraded '+STK[k][0]+'.','A viral video about '+STK[k][0]+'.']:[STK[k][0]+' missed earnings.','A recall at '+STK[k][0]+'.','The CEO of '+STK[k][0]+' said something weird on TV.']),shock>0?'good':'bad');}
   m.px[k]=Math.max(.5,m.px[k]*Math.exp(drift+v*(Math.random()*2-1)*.7+shock));var h=m.hist[k];h.push(+m.px[k].toFixed(2));if(h.length>60)h.shift();});}
 function stockApp(){var m=mkt(),pv=0;Object.keys(m.own).forEach(function(k){pv+=(m.own[k]||0)*m.px[k];});
@@ -5838,7 +5838,7 @@ function stockApp(){var m=mkt(),pv=0;Object.keys(m.own).forEach(function(k){pv+=
     return '<button type="button" class="ph-row" data-stk="'+k+'"><i style="background:'+(ch>=0?'#2fa860':'#e2553f')+'">'+k.charAt(0)+'</i><div><b>'+k+' · '+fmt(m.px[k])+'</b><small>'+esc(STK[k][0])+(own?' · you own '+own:'')+'</small></div><span style="color:'+(ch>=0?'#2fa860':'#e2553f')+'">'+(ch>=0?'+':'')+ch.toFixed(1)+'%</span></button>';}).join('')+'</div>';}
 function stockTrade(k){var m=mkt(),px=m.px[k],own=m.own[k]||0,lots=(k==='BIGB'?[100,1000,10000]:[10,100,1000]).map(function(n){return k==='BIGB'?n:Math.round(n*Math.max(1,tierM()));});
   popup(k+' · '+STK[k][0],'Price '+fmt(px)+(k==='BIGB'?'\nOwn more than 50% ('+(BB_SHARES/2+1)+' shares) and the company is yours. You own '+Math.round(bbPct()*1000)/10+'%.':'')+(own?'\nYou own '+own+' shares (avg '+fmt(m.cost[k]||px)+')':''),lots.map(function(n){return {t:'Buy '+n+' · '+fmt(n*px),fn:function(){if(!pay(n*px,'Shares'))return;m.cost[k]=((m.cost[k]||0)*own+n*px)/(own+n);m.own[k]=own+n;if(k==='BIGB'){m.px[k]*=1+n/250000;bbAfterTrade();}insiderCheck(k);save();toast('Bought '+n+' '+k,'good');}};})
-    .concat(own?[{t:'Sell all '+own+' · '+fmt(own*px),fn:function(){cityGain(own*px);var gain=own*(px-(m.cost[k]||px));m.own[k]=0;insiderCheck(k);save();toast((gain>=0?'Profit ':'Loss ')+fmt(Math.abs(gain)),gain>=0?'good':'bad');}}]:[]).concat([{t:'Done',cls:'sec'}]));}
+    .concat(own?[{t:'Sell all '+own+' · '+fmt(own*px),fn:function(){cityGain(own*px);var gain=own*(px-(m.cost[k]||px));m.own[k]=0;insiderCheck(k);save();toast((gain>=0?'Profit ':'Loss ')+fmt(Math.abs(gain)),gain>=0?'good':'bad');}}]:[]).concat([{t:'Research note on every stock',s:'Priya Shah, CFA',fn:researchNote},{t:'Done',cls:'sec'}]));}
 function insiderCheck(k){var w=W4();if(w.tip&&w.tip.k===k&&now()-w.tip.t<120000&&Math.random()<.3){w.tip=null;summon('Insider trading','The SEC noticed some suspiciously well-timed trades in '+k+'.',Math.round(20000*tierM()));}}
 
 /* ===== school: classes at the university ===== */
@@ -6357,7 +6357,7 @@ var SECRETS=[['lockbox','"Josiah never trusted banks. His first money is where t
 function salSecrets(){var w=W4(),f=w.f||{},s=syn(),got=(w.beans||{})[O.city]||[],open=SECRETS.filter(function(q){return q[0]==='beans'?got.length<12:q[0]==='dog'?!(w.dog&&w.dog.own):!f[q[0]];});
   if(!open.length){popup('Sal the Ledger','"You know everything I know. That makes me nervous."',[{t:'Ha'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});return;}var q=open[0];
   popup('Sal the Ledger',(s.rank>=3?q[2]:q[1])+(s.rank<3?'\n(He\'d say more to a Capo.)':''),[{t:'Thanks, Sal',cls:'sec'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});}
-function salStocks(){var w=W4(),s=syn(),ks=Object.keys(STK).filter(function(k){return k!=='BIGB'&&k!=='CRMA';}),k=pick(ks);if(w.salTip&&now()-w.salTip<300000){popup('Sal the Ledger','"One tip every five minutes. Greed gets people caught."',[{t:'OK'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});return;}
+function salStocksOld(){var w=W4(),s=syn(),ks=Object.keys(STK).filter(function(k){return k!=='BIGB'&&k!=='CRMA';}),k=pick(ks);if(w.salTip&&now()-w.salTip<300000){popup('Sal the Ledger','"One tip every five minutes. Greed gets people caught."',[{t:'OK'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});return;}
   w.salTip=now();w.tip={k:k,t:now()};save();popup('Sal the Ledger','"'+STK[k][0]+'. Buy before lunch. Something\'s about to come out."',[{t:'Open Stocks',fn:function(){openPhone('stk');}},{t:'Got it',cls:'sec'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});setTimeout(function(){var m=mkt();m.px[k]*=1.16+s.rank*.02;mkt().hist[k].push(+m.px[k].toFixed(2));if(O.on)note(k+' jumps','Surprise announcement from '+STK[k][0]+'.','good');save();},45000);}
 function salHall(){var v=civ(),m=v.measure,p=billOdds(),sw=v.council?.35:.08,mline='"Nothing on the agenda right now. Propose something yourself."';if(m&&m.until>now()&&m.roll!=null){var base=m.roll<.5,yes=m.roll<.5+sw,no=m.roll<.5-sw;mline='"'+LAWS[m.k][0]+': '+(base?'it passes if nobody does anything':'it fails if nobody does anything')+'. '+(base!==no?'A no vote from you kills it.':base!==yes?'A yes vote from you saves it.':'Your vote won\'t change it.')+'"';}
   popup('Sal the Ledger',mline+'\n"A bill of yours passes '+Math.round(Math.min(1,p)*100)+'% of the time right now'+(v.council?'':'. A council seat adds 25')+'."\n"Pruitt takes envelopes about four times in five. The fifth time, there\'s a photographer."',[{t:'Thanks',cls:'sec'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});}
@@ -7026,6 +7026,46 @@ function arcExtra(A,g,dt){var W2=300,H2=380;
     g.fillStyle='#ffd24a';g.font='bold 14px system-ui';g.fillText('TIME '+Math.max(0,Math.ceil(dur-A.t)),10,20);if(A.t>dur+.5)arcDone(A.score*2);return true;}
   return false;}
 function whack(A,h){if(!h.up){try{tone(120,.05,'square',.02);}catch(e){}return;}h.up=0;A.score+=h.k==='gold'?5:h.k==='burnt'?-3:1;try{tone(h.k==='burnt'?120:880,.06,'square',.04);}catch(e){}}
+
+
+/* ---------- an economy that behaves: stock prices follow the companies' real fundamentals, earnings season, and buildings that earn on a real schedule ---------- */
+function stat2(k){var s=W4().stats||{};return s[k]||0;}
+function fundOf(k){var w=W4(),rate=Math.max(1,empireRate()),tm=Math.max(1,tierM()),shops=G.locs.length,ob=ownedBiz().length;
+  switch(k){case 'CRMA':return .6+.4*Math.sqrt(rate/(300*tm))+.03*shops;
+    case 'BEAN':return .8+.04*(shops+ob)+(w.biz.valley&&w.biz.valley.own?.2:0);
+    case 'TACO':return Math.max(.3,.7+.15*(rtrucks?rtrucks.length:0)-.08*(w.truckWins||0));
+    case 'AIR':return .8+(typeof apOwned==='function'&&apOwned()?.3:0)+.06*Math.max(0,(G.cities||1)-1)+Math.min(.2,stat2('flights')*.01);
+    case 'MALL':return .8+(w.mallK?Object.keys(w.mallK).length*.12:0)+Math.min(.35,(stat2('bowl')+stat2('claws')+stat2('movies')+stat2('meals'))*.006);
+    case 'GOLD':return 1.25-.25*Math.min(1,rate/(2500*tm))+.08*Math.sin(now()/600000);
+    case 'NWND':var m=mkt();m.nw=m.nw||1;return m.nw;
+    case 'SODA':return .8+Math.min(.4,stat2('meals')*.008)+(typeof fmOwned==='function'&&fmOwned()?.1:0);
+    case 'BIGB':var share=shops/(shops+6);return Math.max(.3,1.25-.7*share-(w.recipe?.3:0));}
+  return 1;}
+function fairPx(k){var m=mkt(),raw=STK[k][1]*fundOf(k);m.cal=m.cal||{};if(m.cal[k]==null)m.cal[k]=Math.max(.5,Math.min(2,m.px[k]/raw));return raw*m.cal[k];}
+function mktTick(dt){mktT+=dt;if(mktT<6)return;mktT=0;var m=mkt();m.last=m.last||{};m.nw=Math.max(.4,Math.min(3,(m.nw||1)*Math.exp((Math.random()-.5)*.03)));
+  Object.keys(STK).forEach(function(k){var v=STK[k][2],fair=fairPx(k);m.cal[k]+=(1-m.cal[k])*.002;if(m.last[k]==null)m.last[k]=fair;
+    var px=m.px[k];px=px*Math.exp(.05*Math.log(fair/px)+v*(Math.random()*2-1)*.55);
+    if(Math.random()<.012){var surprise=fair/m.last[k]-1,jump=Math.max(-.25,Math.min(.25,surprise*.8+(Math.random()-.5)*.03));px*=1+jump;m.last[k]=fair;var beat=jump>=0;
+      if(O.on&&(m.own[k]||Math.abs(jump)>.05))note(k+(beat?' beats':' misses')+' earnings · '+(beat?'+':'')+Math.round(jump*100)+'%',earnWhy(k,beat),beat?'good':'bad');
+      if(m.own[k]&&DIVS[k]){var dv=Math.round(m.own[k]*px*DIVS[k]);if(dv>0){cityGain(dv);toast(k+' dividend: '+fmt(dv),'good');}}}
+    m.px[k]=Math.max(.5,px);var h=m.hist[k];h.push(+m.px[k].toFixed(2));if(h.length>60)h.shift();});}
+var DIVS={BEAN:.012,MALL:.015,SODA:.01,AIR:.008,CRMA:.006};
+function earnWhy(k,beat){var t={CRMA:beat?'Crema\'s stores are packed. (That\'s you.)':'Same-store sales were soft this quarter.',BEAN:beat?'More coffee shops in town means more bean orders.':'Coffee orders slowed down.',TACO:beat?'Taco trucks are everywhere.':'Losing the truck wars is expensive.',AIR:beat?'Flights are full.':'Empty seats this quarter.',
+  MALL:beat?'Foot traffic at the Galleria is up: bowling, movies, the food court.':'Quiet quarter at the mall.',GOLD:beat?'Nervous investors buy gold.':'The economy is booming. Nobody wants gold.',NWND:beat?'Northwind\'s new gadget is a hit.':'Northwind delayed its launch again.',SODA:beat?'Snack bars and food courts are selling a lot of soda.':'Soda sales went flat.',BIGB:beat?'Big Bean is holding its ground.':'Big Bean is losing customers to independent shops.'}[k];return t||'';}
+/* Sal's tip is real: the company whose numbers have improved the most since its last report */
+function salStocks(){var w=W4(),m=mkt(),s=syn();if(w.salTip&&now()-w.salTip<300000){popup('Sal the Ledger','"One tip every five minutes. Greed gets people caught."',[{t:'OK'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});return;}
+  m.last=m.last||{};var best=null,bs=-9,worst=null,ws=9;Object.keys(STK).forEach(function(k){if(k==='BIGB')return;var f=fairPx(k),r=f/(m.last[k]||f)-1+(f/m.px[k]-1)*.5;if(r>bs){bs=r;best=k;}if(r<ws){ws=r;worst=k;}});
+  w.salTip=now();w.tip={k:best,t:now()};save();
+  popup('Sal the Ledger',bs>.03?'"'+STK[best][0]+'. Their numbers are better than anybody knows. Buy before they report."'+(ws<-.03?'\n"And get out of '+worst+' if you\'re in it."':''):'"Honestly? Nothing\'s mispriced right now. Sit on your hands."',[{t:'Open Stocks',fn:function(){openPhone('stk');}},{t:'Got it',cls:'sec'}],'',{who:'Sal the Ledger',col:'#3a3a3a'});}
+function researchNote(){var m=mkt(),c=Math.round(300*tierM());popup('Research desk','Priya Shah, CFA will write you a note on every company: fair value vs price. '+fmt(c)+'.',[{t:'Buy the report · '+fmt(c),fn:function(){if(!pay(c,'The report'))return;var rows=Object.keys(STK).map(function(k){var f=fairPx(k),g=f/m.px[k]-1;return {k:k,g:g,t:k+'  '+fmt(m.px[k])+' → fair '+fmt(f)+'  ('+(g>=0?'+':'')+Math.round(g*100)+'%) '+(g>.08?'BUY':g<-.08?'SELL':'HOLD')};}).sort(function(a,b){return b.g-a.g;});
+  popup('Research note',rows.map(function(r){return r.t;}).join('\n')+'\n\nFair value comes from each company\'s business: your empire for CRMA, mall traffic for MALL, flights for AIR, the truck wars for TACO.',[{t:'Thanks, Priya'}],'',{who:'Priya Shah',role:'Financial analyst',col:'#2a3a6a'});}},{t:'No thanks',cls:'sec'}]);}
+/* buildings earn on a real schedule: nightclubs at night, water parks in the sun, stadiums on game days. The analyst's number is the daily average. */
+var GAMEDAY=0;
+function devLive(type){var h=clockH,night=h>=21||h<3,day=h>=10&&h<18,wet=(typeof rain!=='undefined'&&rain.k)||0;
+  switch(type){case 'nightclub':return night?2.3:h>=18||h<5?1.1:.3;case 'waterpark':return (day?1.8:.25)*(1-wet*.8)+.1;case 'stadium':return GAMEDAY>now()?4:.55;case 'restaurant':return (h>=11&&h<14)||(h>=17&&h<21)?1.7:.55;
+    case 'office':return h>=8&&h<18?1.6:.35;case 'cinema':return h>=17?1.7:.6;case 'hotel':return 1;case 'arcade':return h>=15&&h<23?1.6:.5;case 'retail':return h>=10&&h<20?1.5:.25;case 'marina':return (day?1.5:.4)*(1-wet*.6)+.1;case 'racetrack':return (day?1.6:.3)*(1-wet*.7)+.1;default:return 1;}}
+var gameT=500;
+function econTick2(dt){gameT-=dt;if(gameT<=0){gameT=rnd(500,800);var w=W4(),has=Object.keys(w.land).some(function(k){var l=w.land[k];return l.use==='dev'&&l.dev&&l.dev.type==='stadium';});if(has){GAMEDAY=now()+90000;note('Game day!','Your stadium is sold out. Tickets, hot dogs, parking: about 4× normal for the next 90 seconds.','good');}}}
 
 
 /* ---------- build a city ---------- */

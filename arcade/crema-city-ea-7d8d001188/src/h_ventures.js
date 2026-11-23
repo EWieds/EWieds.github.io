@@ -126,7 +126,7 @@ function rivalTruckActs(){return rtrucks.map(function(r){var p=r.g.position;retu
 /* ---------- money on a timer: tenants, trucks, superstores, taxes, the bank ---------- */
 var econT=0,PERIOD=480;
 function kioskAll(){var w=W4(),t=0;Object.keys(w.kiosk||{}).forEach(function(c){t+=60*TM(+c).pm*w.kiosk[c];});return t;}
-function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev;});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
+function ventureIncomeCity(c){var w=W4(),inc=superIncome(c)+bizIncome(c);Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)===c&&l.use==='dev'&&l.dev)inc+=l.dev.rev*devLive(l.dev.type);});Object.keys(w.land).forEach(function(k){var l=w.land[k];if(cityOfLot(k)!==c||l.use!=='lease'||!l.tenant)return;inc+=leaseRate(district(c,l.d))*(1+.1*(l.bump||0))*(l.tower?2:1)*(c===O.city?1:1);});return inc;}
 function econTick(dt){
   if(!G||!G.w4)return;var w=W4(),inc=0;if((w.led||0)>G.cash)w.led=Math.max(0,G.cash);
   for(var c=0;c<Math.max(1,G.cities||1);c++){var v=ventureIncomeCity(c);inc+=v;}inc+=bizIncome(-1)+kioskAll()+extraIncome();
@@ -137,7 +137,7 @@ function econTick(dt){
   if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
-  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
+  homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);econTick2(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
   econT+=dt;if(econT>=PERIOD){econT=0;periodEnd();}
 }
 O.econTick=econTick;
