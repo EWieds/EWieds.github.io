@@ -27,4 +27,12 @@ await t('read other live',getDoc(doc(env.authenticatedContext('u2',{firebase:{si
 await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'usernames','u3'),{uid:'u3',username:'New',usernameLower:'new',guest:false});});
 const db3=env.authenticatedContext('u3',{firebase:{sign_in_provider:'password'}}).firestore();
 await t('new player first write',setDoc(doc(db3,'arcadePlayers','u3'),{username:'New',lp:50,games:{crema:{lp:50,best:1,plays:1,last:1}},prog:{},updatedAt:serverTimestamp()}),true);
+// community game counter branches may ONLY touch the counter (no content/ownership tampering)
+await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'communityGames','g1'),{ownerUid:'owner1',ownerName:'Owner',title:'Game',data:'ORIG',engine:'studio2d',status:'live',plays:5,likes:0,createdAt:new Date(),updatedAt:new Date()});});
+const atk=env.authenticatedContext('atk',{firebase:{sign_in_provider:'password'}}).firestore();
+await t('clean play +1',setDoc(doc(atk,'communityGames','g1'),{plays:6},{merge:true}),true);
+await t('play +1 cannot rewrite game code',setDoc(doc(atk,'communityGames','g1'),{plays:7,data:'HACKED'},{merge:true}),false);
+await t('play +1 cannot steal ownership',setDoc(doc(atk,'communityGames','g1'),{plays:7,ownerUid:'atk'},{merge:true}),false);
+await t('play +1 cannot inflate likes',setDoc(doc(atk,'communityGames','g1'),{plays:7,likes:9999},{merge:true}),false);
+await t('play write cannot change title only',setDoc(doc(atk,'communityGames','g1'),{title:'Pwned'},{merge:true}),false);
 console.log(R.join('\n'));await env.cleanup();if(R.some(x=>x.startsWith('FAIL')))process.exit(1);
