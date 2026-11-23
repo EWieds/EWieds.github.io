@@ -21,7 +21,7 @@ function build(city){
   P.me=makeCustomer(district(city,plan.blocks[0].D.id),{staff:acc});P.me.root.scale.setScalar(1.05);sc.add(P.me.root);
   P.hand=new T.Group();P.hand.position.set(0,.72,.5);P.me.root.add(P.hand);carryView();
   P.phone=new T.Group();P.phone.position.set(0,-.42,.1);P.me.arms[1].add(P.phone);rb(.12,.22,.03,.02,toon(0x1a1a1e),0,0,0,P.phone);plane(.1,.18,flat(0x8fd3ff),0,0,.017,P.phone);P.phone.visible=false;
-  initTraffic();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();brickDecor();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
+  initTraffic();initLaw();initPeds();initVehicles();initRivalTrucks();initRain();P.caseM=null;caseView();trayM=null;trayView();hatView();WIN=null;CRASH=null;goldBeans();lostCat();initDog();initGhost();brickDecor();CELEB=null;endTalk(true);TALKERS={};syncBizRev();
   O.dirty=false;
   if(lowEnd()){sc.fog.far=140;}
 }
@@ -90,7 +90,7 @@ O.frame=function(dt){
     if(BIRD){updTraffic(dt,tl);updPeds(dt,tl);updWalkers(dt);updShops(dt);updAnim(dt,tl);updGeo(dt,tl);updDaylight();birdFrame(dt);renderHud();renderer.render(O.scene,O.cam);return true;}
     if(CUT)updCut(dt);else{if(P.auto>0){P.auto-=dt;var o=V3(Math.sin(P.ry),0,Math.cos(P.ry));P.x+=o.x*dt*2.2;P.z+=o.z*dt*2.2;P.moving=true;animCust(P.me,dt,0,true);P.me.root.position.set(P.x,.2,P.z);P.me.root.rotation.y=P.ry;}
       else if(drv)driveStep(dt);else if(!(RIDE&&!RIDE.wait))moveWalk(dt);updRide(dt);}
-    if(P.area==='city'){updTraffic(dt,tl);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
+    if(P.area==='city'){updTraffic(dt,tl);lawTick(dt,tl);lawSlow(dt);updPeds(dt,tl);updMovers(dt);updRivalTrucks(dt);}
     updWalkers(dt);updShops(dt);updShoppers(dt);updTravelers(dt);updAnim(dt,tl);updGeo(dt,tl);updWeather(dt);updDaylight();drawClock();updSecurity(dt);updMission(dt);updPedErrands();updWindow(dt);updArcade(dt);updEat(dt);updFresh(dt);updMovie(dt);jobTick(dt);updDog(dt);updGhost(dt);updCeleb(dt);peds.forEach(function(p){if(p.stop>100&&!popOpen())p.stop=1;});
     if(!CUT)updCamera(dt);
     updActs();updNav(dt);updLabels(dt);if(frameN++%3===0)drawMini();

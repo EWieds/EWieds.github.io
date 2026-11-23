@@ -93,7 +93,7 @@ function aheadBlock(c,x,z,rad){var dx=x-c.x,dz=z-c.z,fx=Math.sin(c.h),fz=Math.co
 function updTraffic(dt,tl){
   var ph=phase(tl),pv=drv?drv.v.g.position:null;
   cars.forEach(function(c){
-    var lim=c.vmax,hit=false;
+    if(c.chase)return;var lim=c.vmax,hit=false;
     if(c.stop>0){c.stop-=dt;lim=0;}
     if(c.st==='edge'){
       var rem=c.G.len-c.s,lt=ph[c.G.ax];
