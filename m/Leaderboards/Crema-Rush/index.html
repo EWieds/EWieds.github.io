@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +40,7 @@
       user-select: none;
     }
 
-    h2 {
+    h1 {
       margin: 100px 16px 40px;
       color: #00d1b2;
       font-size: 32px;
@@ -123,7 +126,7 @@
     }
 
     @media (max-width: 480px) {
-      h2 {
+      h1 {
         font-size: 25px;
       }
 
@@ -140,9 +143,10 @@
   </style>
 </head>
 <body>
+{% include navbar.html %}
   <script src="/m/nav-bar.js"></script>
 
-  <h2>CREMA RUSH — GLOBAL LEADERBOARD</h2>
+  <h1>CREMA RUSH — GLOBAL LEADERBOARD</h1>
   <p>Scores from both versions of Crema Rush share this leaderboard.</p>
   <div class="actions">
     <a href="/m/Crema-Rush/">Play Crema Rush</a>

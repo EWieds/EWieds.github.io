@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en">
   
@@ -56,8 +59,14 @@
       height: 100vh;
     }
 
-    h2 {
+    h1, h2 {
       font-size: 32px;
+    }
+
+    /* Was an h3; keep its original look. */
+    #usernamePrompt h2 {
+      font-size: 1.17em;
+      margin: 1em 0;
     }
 
     #ui-layer {
@@ -171,12 +180,57 @@
       color: white;
       font-weight: bold;
     }
+    #uc-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(10, 10, 10, 0.97);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+    }
+    #uc-overlay[hidden] { display: none; }
+    /* Keep the site navbar usable above the construction overlay. */
+    .cz-nav { z-index: 100001 !important; }
+    .cz-drawer-backdrop { z-index: 100002 !important; }
+    #uc-overlay .uc-box {
+      max-width: 420px;
+      padding: 28px 24px;
+      border: 1px solid #00d1b2;
+      border-radius: 12px;
+      background: #111;
+    }
+    #uc-overlay h2 { margin: 0 0 12px; color: #00d1b2; letter-spacing: 2px; }
+    #uc-overlay p { margin: 0 0 18px; line-height: 1.5; }
+    #uc-overlay a {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 6px;
+      background: #00d1b2;
+      color: #0a0a0a;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    #uc-overlay .uc-warn { color: #ff6b6b; }
   </style>
 </head>
 
 <body>
+{% include navbar.html %}
 
   <script src="/m/nav-bar.js"></script>
+
+  <div id="uc-overlay" role="dialog" aria-modal="true" aria-labelledby="uc-title">
+    <div class="uc-box">
+      <h2 id="uc-title">UNDER CONSTRUCTION</h2>
+      <p id="uc-message">Rhythm Runner is being worked on. Sign in with an admin account to get access.</p>
+      <a id="uc-signin" href="/m/auth/sign-in/">SIGN IN</a>
+    </div>
+  </div>
 
   <div class="stats">
     SCORE: <span id="score">0</span><br>
@@ -189,7 +243,7 @@
 
   <div id="ui-layer">
     <img src="https://carzzyapps.github.io/Rhythm-Runner/rhythm-dj.png" style="width: 60px;" alt="Rhythm Runner Icon">
-    <h2 id="title">RHYTHM RUNNER</h2>
+    <h1 id="title">RHYTHM RUNNER</h1>
     <p><b>JUMP</b> spikes | <b>DUCK</b> drones</p>
     <p class="username-notice">Inappropriate or invalid usernames will be replaced with a randomly generated name. Scores are saved and appear on the leaderboard.</p>
 
@@ -199,7 +253,7 @@
 
   <!-- USERNAME PROMPT -->
   <div id="usernamePrompt">
-    <h3>ENTER USERNAME</h3>
+    <h2>ENTER USERNAME</h2>
     <p class="username-disclaimer">Use 2–20 letters, numbers, or underscores. Do not use your real name or claim someone else's username. Inappropriate or invalid usernames will be replaced with a randomly generated username. Your scores are saved and shown on the <a href="https://www.carzzyapps.com/Leaderboards/RR/" style="color: #00d1b2" target="_blank" rel="noopener" title="Opens in a new tab">leaderboard</a>.</p>
     <input id="usernameInput" type="text" maxlength="20" placeholder="Do not use your real name">
     <button id="saveUsernameBtn" class="menu-btn">SAVE</button>
@@ -216,8 +270,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+    import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
     if (!window.CARZZY_FIREBASE_CONFIG) {
       throw new Error("Rhythm Runner Firebase configuration is unavailable.");
@@ -226,7 +279,6 @@
     const app = initializeApp(window.CARZZY_FIREBASE_CONFIG);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const submitRhythmRunnerScore = httpsCallable(getFunctions(app), "submitRhythmRunnerScore");
 
     const LEGACY_SCORE_URL = "https://script.google.com/macros/s/AKfycbyUqQ31FsONw4J5ibyvLFzIoSMvcd8qfkFwbc_j-BXEO0S3pTiqARVZ4mOm5C3rI-7sIA/exec";
     const RR_USERNAME_KEY = "rr_username";
@@ -368,8 +420,51 @@
       askForUsername();
     };
 
+    // Under-construction gate: only accounts with siteAdmins/{uid} { enabled: true } can play.
+    const ucOverlay = document.getElementById("uc-overlay");
+    const ucMessage = document.getElementById("uc-message");
+    const ucSignIn = document.getElementById("uc-signin");
+    ucSignIn.addEventListener("click", () => {
+      sessionStorage.setItem("prevPage", window.location.href);
+    });
+    // Block game keyboard input while the overlay is showing.
+    window.addEventListener("keydown", (e) => {
+      if (!ucOverlay.hidden) e.stopImmediatePropagation();
+    }, true);
+
+    async function isAdmin(user) {
+      try {
+        const snap = await getDoc(doc(db, "siteAdmins", user.uid));
+        return snap.exists() && snap.data().enabled === true;
+      } catch (error) {
+        console.warn("Could not check admin status.", error);
+        return false;
+      }
+    }
+
+    async function updateConstructionGate(user) {
+      if (!user || user.isAnonymous) {
+        ucMessage.classList.remove("uc-warn");
+        ucMessage.textContent = "Rhythm Runner is being worked on. Sign in with an admin account to play.";
+        ucSignIn.textContent = "SIGN IN";
+        ucSignIn.hidden = false;
+        ucOverlay.hidden = false;
+        return;
+      }
+      if (await isAdmin(user)) {
+        ucOverlay.hidden = true;
+        return;
+      }
+      ucMessage.classList.add("uc-warn");
+      ucMessage.textContent = "You're signed in, but your account is not an admin. Rhythm Runner is only available to admins while it's under construction.";
+      ucSignIn.textContent = "SIGN IN WITH A DIFFERENT ACCOUNT";
+      ucSignIn.hidden = false;
+      ucOverlay.hidden = false;
+    }
+
     onAuthStateChanged(auth, async (user) => {
       currentAuthUser = user;
+      updateConstructionGate(user);
       if (user) {
         await loadAuthUsername();
         await importLegacyScoresForUser();
@@ -382,19 +477,19 @@
 
     updateUsernameDisplay();
 
+    // Saves the player's best score to carzzyPlayers/{uid}.RRBest (only ever raises it).
     async function submitScore(name, score) {
-      let playerToken = currentAuthUser ? currentAuthUser.uid : localStorage.getItem("game_token");
-      if (!playerToken) {
-        playerToken = `rr-${crypto.randomUUID().replaceAll("-", "")}`;
-        localStorage.setItem("game_token", playerToken);
-      }
-
-      const result = await submitRhythmRunnerScore({
-        playerId: playerToken,
-        username: name,
-        score
+      const user = auth.currentUser;
+      if (!user) return null;
+      const newScore = Math.max(0, Math.floor(Number(score) || 0));
+      const ref = doc(db, "carzzyPlayers", user.uid);
+      return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const current = snap.exists() && Number.isInteger(snap.data().RRBest) ? snap.data().RRBest : 0;
+        if (newScore <= current) return current;
+        tx.set(ref, { RRBest: newScore }, { merge: true });
+        return newScore;
       });
-      return result.data;
     }
 
     const canvas = document.getElementById('gameCanvas');
@@ -599,13 +694,8 @@
         localStorage.setItem('rr_best_pro', bestScore);
         document.getElementById('best-score').innerText = bestScore;
       }
-      if (username) {
+      if (auth.currentUser) {
         submitScore(username, score)
-          .then((saved) => {
-            username = saved.username;
-            localStorage.setItem("rr_username", username);
-            updateUsernameDisplay();
-          })
           .catch((error) => {
             console.error("Could not save the Rhythm Runner score.", error);
             alert("Your score could not be saved. Check your connection and try again.");

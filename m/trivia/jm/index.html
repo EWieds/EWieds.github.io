@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
@@ -50,7 +53,7 @@
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
-      padding: 20px;
+      padding: 100px 20px 20px; /* top leaves room for the site navbar */
     }
     .app {
       width: 100%;
@@ -89,6 +92,7 @@
       text-shadow: #00d1b2;
     }
     .title {
+      margin: 0;
       font-size: 20px;
       font-weight: 700;
       text-shadow: #00d1b2;
@@ -327,11 +331,13 @@
   </style>
 </head>
 <body>
+{% include navbar.html %}
+<script src="/m/nav-bar.js"></script>
   <div class="app">
     <div class="x2-badge" id="x2Badge">×2</div>
 
     <div class="header">
-      <div class="title">Jewish Music Trivia</div>
+      <h1 class="title">Jewish Music Trivia</h1>
       <div class="score">Score: <span id="score">0</span></div>
     </div>
 
@@ -1332,7 +1338,6 @@ function shuffle(array) {
 
     init();
   </script>
-  <script src="/m/feedback-popup.js"></script>
 </body>
 	<script data-goatcounter="https://carzzyapps.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>

@@ -1,0 +1,639 @@
+/* Shared navbar styles. Every selector is prefixed with .cz- so nothing here
+   changes the rest of the page. */
+
+/* Undo any page-wide styles (like `button { width: 100% }` or `a { ... }`)
+   on the navbar's own elements, so every page shows the same navbar.
+   The rules below this one then set the navbar's look. */
+/* (:where keeps this rule's priority low so the rules below win; SVG icons
+   are skipped because resetting them would erase their drawing.) */
+.cz-nav,
+.cz-nav :where(*:not(svg, svg *)),
+.cz-drawer-backdrop,
+.cz-drawer-backdrop :where(*:not(svg, svg *)) {
+    all: revert;
+}
+
+.cz-nav svg,
+.cz-drawer-backdrop svg {
+    display: block;
+    flex: none;
+    fill: none;
+}
+
+.cz-nav,
+.cz-drawer-backdrop {
+    --cz-accent: #00d1b2;
+    --cz-accent-soft: rgba(0, 209, 178, 0.12);
+    --cz-bar: rgba(17, 17, 17, 0.92);
+    --cz-panel: #161616;
+    --cz-line: #2c2c2c;
+    --cz-text: #f2f2f2;
+    --cz-muted: #a6a6a6;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.3;
+    -webkit-font-smoothing: antialiased;
+}
+
+.cz-nav *,
+.cz-drawer-backdrop * {
+    box-sizing: border-box;
+}
+
+/* ---------- Bar ---------- */
+
+.cz-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 80px;
+    margin: 0;
+    padding: 0 24px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    background: var(--cz-bar);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--cz-line);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    color: var(--cz-text);
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.cz-logo {
+    flex: none;
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+}
+
+.cz-logo img {
+    display: block;
+    width: 150px;
+    height: 50px;
+    object-fit: contain;
+}
+
+/* ---------- Page links ---------- */
+
+.cz-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.cz-link,
+.cz-link:visited {
+    position: relative;
+    padding: 9px 13px;
+    border-radius: 10px;
+    color: #d4d4d4;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+/* Underline: hidden until hover; always shown under the current page. */
+.cz-link::after {
+    content: "";
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    bottom: 3px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--cz-accent);
+    transform: scaleX(0);
+    transition: transform 0.2s ease-out;
+}
+
+.cz-link:hover {
+    color: var(--cz-accent);
+    background-color: rgba(0, 209, 178, 0.14);
+}
+
+.cz-link:hover::after,
+.cz-link[aria-current="page"]::after {
+    transform: scaleX(1);
+}
+
+.cz-link[aria-current="page"] {
+    color: var(--cz-accent);
+}
+
+.cz-lzr,
+.cz-lzr:visited,
+.cz-lzr[aria-current="page"] {
+    background-image: linear-gradient(90deg, #a78bfa, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 800;
+}
+
+.cz-link.cz-lzr:hover {
+    color: transparent;
+    background-color: transparent;
+}
+
+/* The gradient text clips its own background to the letters, so Lazer
+   Arcade's hover tint is drawn on a separate layer behind the text. */
+.cz-lzr {
+    isolation: isolate;
+}
+
+.cz-lzr::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(167, 139, 250, 0.18);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.cz-lzr:hover::before {
+    opacity: 1;
+}
+
+.cz-link.cz-lzr::after {
+    background: linear-gradient(90deg, #a78bfa, #22d3ee);
+}
+
+/* ---------- Right side ---------- */
+
+.cz-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cz-nav .cz-when-out {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cz-nav[data-auth="in"] .cz-when-out,
+.cz-nav[data-auth="out"] .cz-when-in,
+.cz-drawer-backdrop[data-auth="in"] .cz-when-out,
+.cz-drawer-backdrop[data-auth="out"] .cz-when-in {
+    display: none;
+}
+
+.cz-btn,
+.cz-btn:visited {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 18px;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background: none;
+    color: var(--cz-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.cz-btn:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+.cz-btn-quiet:hover {
+    border-color: var(--cz-accent);
+    background: var(--cz-accent-soft);
+    color: var(--cz-accent);
+}
+
+.cz-btn-solid,
+.cz-btn-solid:visited {
+    background: var(--cz-accent);
+    color: #04100e;
+}
+
+.cz-btn-solid:hover {
+    background: #2ef0d1;
+    box-shadow: 0 0 0 3px rgba(0, 209, 178, 0.25), 0 6px 22px rgba(0, 209, 178, 0.55);
+    transform: translateY(-1px);
+}
+
+.cz-btn-outline,
+.cz-btn-outline:visited {
+    border-color: var(--cz-accent);
+    color: var(--cz-accent);
+}
+
+.cz-btn-outline:hover {
+    background: rgba(0, 209, 178, 0.18);
+    color: #2ef0d1;
+    border-color: #2ef0d1;
+    box-shadow: 0 0 18px rgba(0, 209, 178, 0.4);
+}
+
+/* Signed-in account button + dropdown */
+
+.cz-account {
+    position: relative;
+}
+
+.cz-account-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 4px 10px 4px 4px;
+    border: 1px solid var(--cz-line);
+    border-radius: 999px;
+    background: #1c1c1c;
+    color: var(--cz-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.cz-account-button:hover,
+.cz-account-button[aria-expanded="true"] {
+    border-color: var(--cz-accent);
+    background: rgba(0, 209, 178, 0.12);
+    box-shadow: 0 0 16px rgba(0, 209, 178, 0.3);
+}
+
+.cz-account-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cz-chevron {
+    color: var(--cz-muted);
+    transition: transform 0.2s;
+}
+
+.cz-account-button[aria-expanded="true"] .cz-chevron {
+    transform: rotate(180deg);
+}
+
+.cz-avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #00d1b2, #0a8f7c);
+    color: #04100e;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.cz-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cz-avatar-lg {
+    width: 44px;
+    height: 44px;
+    font-size: 19px;
+}
+
+.cz-account-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 260px;
+    padding: 8px;
+    border: 1px solid var(--cz-line);
+    border-radius: 16px;
+    background: var(--cz-panel);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.cz-account-menu[hidden] {
+    display: none;
+}
+
+.cz-account-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 10px 14px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--cz-line);
+}
+
+.cz-account-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cz-account-card-name {
+    color: var(--cz-text);
+    font-size: 16px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cz-account-email {
+    color: var(--cz-muted);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cz-menu-item,
+.cz-menu-item:visited {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 11px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--cz-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cz-menu-item svg {
+    color: var(--cz-muted);
+}
+
+.cz-menu-item:hover {
+    background: rgba(0, 209, 178, 0.12);
+    color: var(--cz-accent);
+}
+
+.cz-menu-item:hover svg {
+    color: var(--cz-accent);
+}
+
+.cz-sign-out:hover {
+    background: rgba(255, 107, 107, 0.12);
+}
+
+.cz-sign-out:hover,
+.cz-sign-out:hover svg {
+    color: #ff6b6b;
+}
+
+/* Hamburger (small screens only) */
+
+.cz-menu-button {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--cz-line);
+    border-radius: 12px;
+    background: #1c1c1c;
+    color: var(--cz-text);
+    cursor: pointer;
+}
+
+.cz-menu-button:hover {
+    border-color: var(--cz-accent);
+    background: rgba(0, 209, 178, 0.12);
+    color: var(--cz-accent);
+}
+
+.cz-nav :focus-visible,
+.cz-drawer :focus-visible {
+    outline: 2px solid var(--cz-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Drawer (small screens) ---------- */
+
+.cz-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1001;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    animation: cz-fade 0.2s ease-out;
+}
+
+.cz-drawer-backdrop[hidden] {
+    display: none;
+}
+
+.cz-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 88vw);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 18px 28px;
+    overflow-y: auto;
+    background: var(--cz-panel);
+    border-left: 1px solid rgba(0, 209, 178, 0.35);
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
+    color: var(--cz-text);
+    animation: cz-slide 0.25s ease-out;
+}
+
+.cz-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.cz-drawer-title {
+    color: var(--cz-muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.cz-drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--cz-text);
+    cursor: pointer;
+}
+
+.cz-drawer-close:hover {
+    background: #232323;
+    color: var(--cz-accent);
+}
+
+.cz-drawer-account {
+    padding: 16px;
+    border: 1px solid var(--cz-line);
+    border-radius: 16px;
+    background: #1b1b1b;
+}
+
+.cz-drawer-account .cz-account-card {
+    padding: 0 0 14px;
+    margin-bottom: 14px;
+}
+
+.cz-drawer-pitch {
+    margin: 0 0 14px;
+    color: var(--cz-muted);
+    font-size: 14.5px;
+    line-height: 1.45;
+}
+
+.cz-drawer-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.cz-drawer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 18px;
+}
+
+.cz-drawer-link,
+.cz-drawer-link:visited {
+    display: block;
+    padding: 14px 14px;
+    border-radius: 12px;
+    color: var(--cz-text);
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.cz-drawer-link {
+    position: relative;
+    transition: background-color 0.2s, color 0.2s, padding-left 0.2s;
+}
+
+.cz-drawer-link:hover {
+    padding-left: 20px;
+    background-color: rgba(0, 209, 178, 0.14);
+    color: var(--cz-accent);
+    box-shadow: inset 3px 0 0 var(--cz-accent);
+}
+
+.cz-drawer-link[aria-current="page"] {
+    color: var(--cz-accent);
+    background-color: var(--cz-accent-soft);
+}
+
+.cz-drawer-link.cz-lzr,
+.cz-drawer-link.cz-lzr:visited,
+.cz-drawer-link.cz-lzr:hover,
+.cz-drawer-link.cz-lzr[aria-current="page"] {
+    color: transparent;
+}
+
+.cz-drawer-link.cz-lzr:hover {
+    background-color: transparent;
+    box-shadow: inset 3px 0 0 #a78bfa;
+}
+
+@keyframes cz-fade {
+    from { opacity: 0; }
+}
+
+@keyframes cz-slide {
+    from { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cz-drawer-backdrop,
+    .cz-drawer {
+        animation: none;
+    }
+
+    .cz-nav *,
+    .cz-drawer * {
+        transition: none !important;
+    }
+
+    .cz-btn-solid:hover,
+    .cz-btn:active {
+        transform: none;
+    }
+}
+
+/* ---------- Breakpoints ---------- */
+
+@media (max-width: 1080px) {
+    .cz-links,
+    .cz-nav .cz-when-out {
+        display: none;
+    }
+
+    .cz-menu-button {
+        display: inline-flex;
+    }
+
+    /* On small screens the account dropdown lives in the drawer instead;
+       keep just the avatar in the bar as a shortcut to it. */
+    .cz-account-name,
+    .cz-nav .cz-chevron {
+        display: none;
+    }
+
+    .cz-account-button {
+        padding: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cz-nav {
+        padding: 0 14px 0 10px;
+    }
+
+    .cz-logo img {
+        width: 130px;
+    }
+}
