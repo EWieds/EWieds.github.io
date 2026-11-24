@@ -13,6 +13,7 @@ var SECRET={italian:[['The Godfather\'s ziti',28,'charm','Baked ziti the way Non
   speak:[['The Inkwell old-fashioned (zero proof)',14,'charm','Smoke and vanilla. Lou knows everybody.'],['The house riddle',1,'history','Written on a napkin.']]};
 /* ---- the rooms ---- */
 function eatRoom(id,st){var g=room(id,{name:'Restaurant',w:16,d:12,floor:st.floor,wall:st.wall,trim:st.trim,bg:st.bg,h:4.6,cam:{dist:8,pitch:.52}}),ox=IOX[id];SEATS[id]=[];
+  ACTS[id].push({x:ox+6.2,z:-3.1,r:1.3,when:function(){return rsOwned(CUR_B)&&!RS;},label:'Work a shift here',sub:'You own this place. Run the floor for 3 minutes',fn:rsStart});
   roomSign(id,5.5,1,0,3.6,-5.8,g);counterTop(g,4.2,-4.4,5,st.counter,st.top);npcCounterCol(ox,4.2,-4.4);
   st.tables.forEach(function(t,i){st.table(g,t[0],t[1]);addCol(ox+t[0]-.8,ox+t[0]+.8,t[1]-.8,t[1]+.8,id);SEATS[id].push({x:ox+t[0]-1,z:t[1],ry:Math.PI/2,tx:ox+t[0],tz:t[1],busy:i%2===0});
     if(i%2===0){var d=liteMe();d.sit=true;d.root.position.set(t[0]+1,.1,t[1]);d.root.rotation.y=-Math.PI/2;g.add(d.root);foodModel(pick(['pasta','burger','soup','steak','sushi','cake']),g,t[0]+.35,st.th||.98,t[1]);}});

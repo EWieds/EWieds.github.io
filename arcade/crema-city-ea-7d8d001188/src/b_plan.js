@@ -1,14 +1,16 @@
 
 /* ---------- city plan: a grid of blocks, your district in the middle ---------- */
 function mkPlan(city){
-  var ds=cityDistricts(city),air=null,list=[];ds.forEach(function(D){if(!air&&D.win==='runway')air=D;else list.push(D);});
-  var MPX=city===20,uni=list.some(function(D){return D.win==='campus';}),C=MPX?7:5,n=list.length+8+(uni?1:0),R=MPX?6:Math.max(4,Math.ceil(n/C)),slots=[];
+  var ds=cityDistricts(city),air=null,list=[];var x2=[];ds.forEach(function(D){if(!air&&D.win==='runway')air=D;else if(D.x2)x2.push(D);else list.push(D);});
+  var MPX=city===20,uni=list.some(function(D){return D.win==='campus';}),C=MPX?11:5,n=list.length+8+(uni?1:0),R=MPX?10:Math.max(4,Math.ceil(n/C)),slots=[];
   for(var r=0;r<R;r++)for(var c=0;c<C;c++)slots.push({c:c,r:r,d:Math.hypot(c-(C-1)/2,(r-(R-1)/2)*1.3)+c*.001+r*.0001});
   slots.sort(function(a,b){return a.d-b.d;});
   var order=[{t:'dist',D:list[0]},{t:'civic'},{t:'market'},{t:'park'}];
   list.slice(1).forEach(function(D){order.push({t:'dist',D:D});});order.push({t:'motors'});if(uni)order.push({t:'uni'});order.push({t:'dining'});order.push({t:'mall'});order.push({t:'justice'});order.push({t:'dining'});if(MPX){order.push({t:'dining'});order.push({t:'dining'});order.push({t:'market'});}
+  // Crema Metro grew: the original 42 blocks keep their ids (so everyone's property stays put), the new ring is added after them
+  if(MPX){while(order.length<42)order.push({t:'homes'});order=order.slice(0,42);x2.forEach(function(D,i){order.push({t:'dist',D:D});if(i%3===0)order.push({t:'dining',id:'dining_x'+i});if(i%4===1)order.push({t:'park',id:'park_x'+i});if(i%5===2)order.push({t:'market',id:'market_x'+i});});}
   while(order.length<C*R)order.push({t:'homes'});
-  var blocks=order.slice(0,C*R).map(function(o,i){var s=slots[i];return {t:o.t,D:o.D||null,c:s.c,r:s.r,x:s.c*PX,z:s.r*PZ,id:o.D?o.D.id:o.t+(o.t==='homes'?i:''),seed:city*131+i*17+7};});
+  var blocks=order.slice(0,C*R).map(function(o,i){var s=slots[i];return {t:o.t,D:o.D||null,c:s.c,r:s.r,x:s.c*PX,z:s.r*PZ,id:o.id||(o.D?o.D.id:o.t+(o.t==='homes'?i:'')),seed:city*131+i*17+7};});
   placeEdges({blocks:blocks,R:R});
   // the university sits right next to Campus Corner
   var cb=blocks.filter(function(q){return q.D&&q.D.win==='campus';})[0],ub=blocks.filter(function(q){return q.t==='uni';})[0];

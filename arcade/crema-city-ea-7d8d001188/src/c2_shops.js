@@ -37,7 +37,7 @@ function bizPick(b,lot){var win=b.D?b.D.win:'street',key=String(lot&&lot.key!=nu
   var nm2=(BIZ.street.concat(BIZ_X.street))[h%28];return nm2+' '+['North','South','East','West','Uptown','Midtown'][h%6];}
 function hashS(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function bizOf(key){for(var i=0;i<BUS.length;i++)if(BUS[i].key===key)return BUS[i];return null;}
-function bizRev(b){if(b.revv)return Math.round(b.revv*(1+.3*((W4().biz[b.key]||{}).ren||0)));var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*(1+.3*((W4().biz[b.key]||{}).ren||0)));}
+function bizRev(b){if(b.revv)return Math.round(b.revv*(1+.3*((W4().biz[b.key]||{}).ren||0)));var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*(1+.3*((W4().biz[b.key]||{}).ren||0))*(1+Math.min(.25,(W4().biz[b.key]||{}).svc||0)));}
 function bizValue(b){var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*95);}
 
 /* building styles: classic, brick, modern, cottage, diner, warehouse/market, tower */

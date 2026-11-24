@@ -124,5 +124,5 @@ function goHome2(h){var s=homeState(h),pr=(s.proj||[]).filter(function(p){return
   AREAS.home2.name=has('floor2')?'Upstairs · '+h.name:'The new wing · '+h.name;AREAS.home2.h=h;
   fade(function(){P.area='home2';var A=AREAS.home2;P.x=A.ox;P.z=5.2;P.ry=Math.PI;O.snap=true;updDaylight();});}
 function wrapT(g,t,x,y,mw,lh){var ws=String(t).split(' '),line='',yy=y;ws.forEach(function(w2){var tt=line?line+' '+w2:w2;if(g.measureText(tt).width>mw&&line){g.fillText(line,x,yy);line=w2;yy+=lh;}else line=tt;});g.fillText(line,x,yy);}
-function home2When(a){if(!a.when||P.area!=='home2'||!AREAS.home2||!AREAS.home2.h)return true;var s=homeState(AREAS.home2.h),pr=(s.proj||[]).filter(function(p){return p.done;});return a.when==='bed'?pr.some(function(p){return p.k==='floor2';}):pr.some(function(p){return p.k===a.when;});}
+function home2When(a){if(typeof a.when==='function')return a.when();if(!a.when||P.area!=='home2'||!AREAS.home2||!AREAS.home2.h)return true;var s=homeState(AREAS.home2.h),pr=(s.proj||[]).filter(function(p){return p.done;});return a.when==='bed'?pr.some(function(p){return p.k==='floor2';}):pr.some(function(p){return p.k===a.when;});}
 function watchHome(f){MOV={f:f,t:-2,t0:now()+2000,home:1,scr:HSCREEN};var b=$('#o-cut');b.hidden=false;b.textContent='Stop ›';b.onclick=function(){endMovie(true);};}
