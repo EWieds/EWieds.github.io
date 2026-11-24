@@ -52,6 +52,7 @@ function hallRoom(){
   ACTS.hall.push({x:ox-7,z:-4.6,r:1.8,label:'Permits window',sub:'Street vending · commercial zoning · block parties · regional offices',fn:permitsWindow});
   ACTS.hall.push({x:ox,z:-4.6,r:1.8,label:'Taxes window',sub:function(){var u=unpaid();return u.length?plural(u.length,'unpaid bill')+' · '+fmt(u.reduce(function(s,b){return s+b.amt;},0)):'All paid up';},fn:taxWindow});
   ACTS.hall.push({x:ox+7,z:-4.6,r:1.8,label:'Elections office',sub:function(){var v=civ();return v.mayor?'You are the mayor':v.council?'You hold a council seat':'Run for city council';},fn:electionsWindow});
+  councilRoom(g,ox);
   if(mayor){bx(1.4,2.6,.15,toon(0x6b4a30),11.85,1.3,2,g).rotation.y=Math.PI/2;ACTS.hall.push({x:ox+10.8,z:2,r:1.6,label:'Mayor\'s office',sub:'Set city policy',fn:policyDesk});}
 }
 var hallBoard=null;
