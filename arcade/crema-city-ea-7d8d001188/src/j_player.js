@@ -100,6 +100,7 @@ function drawMini(){
   g.fillStyle='#d8dee6';g.fillRect(plan.AX-22,plan.AZ-40,44,80);
   if(NAV&&NAV.pts){g.strokeStyle='#18c8f0';g.lineWidth=3/sc;g.beginPath();NAV.pts.forEach(function(p,i){if(i)g.lineTo(p.x,p.z);else g.moveTo(p.x,p.z);});g.stroke();g.fillStyle='#18c8f0';g.beginPath();g.arc(NAV.to.x,NAV.to.z,4/sc,0,7);g.fill();}
   places.forEach(function(p){if(p.kind==='shop'||p.kind==='supply'||p.kind==='civic'||p.kind==='airport'||p.kind==='motors'){g.fillStyle=p.kind==='shop'?'#e2553f':p.kind==='supply'?'#2f5f90':p.kind==='airport'?'#7a5ad8':'#2a1a12';g.beginPath();g.arc(p.x,p.z,3.2/sc,0,7);g.fill();}});
+  if(hasBar()&&MH){g.strokeStyle='#2a2a2a';g.lineWidth=2/sc;MH.forEach(function(m){g.beginPath();g.arc(m.x,m.z,3/sc,0,7);g.stroke();});}
   g.fillStyle='rgba(42,26,18,.5)';cars.forEach(function(c){g.fillRect(c.x-1,c.z-1,2,2);});
   g.restore();
   g.save();g.translate(s/2,s/2);g.fillStyle='#2f8fd0';g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.moveTo(0,-8);g.lineTo(6,6);g.lineTo(0,3);g.lineTo(-6,6);g.closePath();
