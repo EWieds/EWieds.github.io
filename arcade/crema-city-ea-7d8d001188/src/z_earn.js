@@ -36,3 +36,4 @@ function holdApp(){var w=W4(),list=earnBreak(),city=earnSum(list),sh=shopLines()
   var oh=ownedHomes().filter(function(k){var s=w.biz[k];return !s.tenant;});if(oh.length)h+='<div class="ph-h">Homes with no tenant</div><div class="ph-list">'+oh.map(function(k){var s=w.biz[k];return '<div class="ph-msg"><b>'+esc(s.name||k)+(w.home===k?' · you live here':'')+'</b><span>'+(w.home===k?'Your home':'Empty. Find a tenant to earn rent')+'</span></div>';}).join('')+'</div>';
   if(!list.length&&!sh.length)h+='<p class="ph-empty">Nothing earning yet. Buy a business, a lot, or a house and it shows up here.</p>';
   return h;}
+O.empire=function(){return G&&G.w4?empireRate():null;};
