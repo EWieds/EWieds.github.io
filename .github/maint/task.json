@@ -1,15 +1,17 @@
 {
- "id": "2026-11-20-comp-apply",
+ "id": "2026-11-23-lazeryudel-20m",
  "mode": "apply",
+ "skipAchievements": true,
  "exclude": [
   "Mg1"
  ],
  "grants": [
   {
-   "username": "M&M",
+   "username": "LazerYudel",
    "game": "crema",
-   "cash": 10000,
-   "note": "Requested by LazerYudel"
+   "cash": 20000000,
+   "city": true,
+   "note": "$20M city money from Lazer Arcade staff"
   }
  ]
 }

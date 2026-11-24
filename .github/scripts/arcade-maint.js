@@ -60,7 +60,7 @@ function floors(r) {
         const gref = db.collection("arcadeGrants").doc(hits[0].id), id = task.id + ":" + g.game;
         await db.runTransaction(async (tx) => {
           const cur = (await tx.get(gref)).data() || {}, items = (cur.items || []).filter((x) => x.id !== id);
-          items.push({ id, game: g.game, cash: g.cash, note: g.note || "" });
+          items.push(Object.assign({ id, game: g.game, cash: g.cash, note: g.note || "" }, g.city ? { city: true } : {}));
           tx.set(gref, { items, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
         });
       }
@@ -78,7 +78,8 @@ function floors(r) {
   out.push("", "## Achievements", "", "missing = earned (lifetime totals count) but never unlocked; short = unlocked but bonus underpaid (e.g. cut off by the 20k-per-write cap)", "",
     "| player | LP before | missing unlocks | missing LP | short LP | total paid |", "|---|---|---|---|---|---|");
   let grand = 0, people = 0;
-  for (const d of players.docs) {
+  if (task.skipAchievements) out.push("_Skipped for this task._");
+  for (const d of (task.skipAchievements ? [] : players.docs)) {
     const r = d.data(), prog = r.prog || {}, have = Object.assign({}, prog.ach || {}), part = prog.achPart || {};
     const f = floors(r), n = live.length, miss = [];
     ach.forEach((a) => { const t = a.type === "allGames" ? n : a.target; if (have[a.id]) return; if (Math.max(measure(a.type, prog.days, t), f[a.type] || 0) >= t) miss.push(a.id); });
