@@ -4084,9 +4084,9 @@ function moveWalk(dt){
   var moving=l>.12&&!popOpen()&&!CUT&&!WIN&&!ARC&&!EAT&&!MOV&&!ESC&&!BOWL&&!CLAW3&&!TRAIN&&!COMM.g&&!SLIDE&&!DVS.riding&&!(RIDE&&!RIDE.wait);P.moving=moving;
   if(moving){if(l>1){fx/=l;fz/=l;}var sp=(keys.shift||l>.95?5.4:3.2)*(phoneOpen()?.5:1)*(buffOn('fast')?1.2:1)*(W4().shoes?1.08:1),s=Math.sin(yaw),c=Math.cos(yaw);P.spd=Math.min(1,(P.spd||0)+dt*5);
     var mx=(fx*c+fz*s)*sp*dt*P.spd,mz=(-fx*s+fz*c)*sp*dt*P.spd,r=.32;
-    var nx=P.x+mx,nz=P.z+mz;
-    if(!blocked(nx,P.z,r)&&inBounds(nx,P.z))P.x=nx;
-    if(!blocked(P.x,nz,r)&&inBounds(P.x,nz))P.z=nz;
+    var nx=P.x+mx,nz=P.z+mz,stuck=blocked(P.x,P.z,r);
+    if((stuck||!blocked(nx,P.z,r))&&inBounds(nx,P.z))P.x=nx;
+    if((stuck||!blocked(P.x,nz,r))&&inBounds(P.x,nz))P.z=nz;
     P.mvx=mx/dt;P.mvz=mz/dt;P.ry=Math.atan2(mx,mz);doorCheck(mx,mz);}else P.spd=0;
   var y=ESC?(ESC.y||0):P.area==='city'&&onBlockSlab(P.x,P.z)?.2:((AREAS[P.area]&&AREAS[P.area].y)||0);
   P.me.root.position.set(P.x,y,P.z);P.me.root.rotation.y+=angD(P.me.root.rotation.y,P.ry)*Math.min(1,dt*12);animCust(P.me,dt,0,moving);
