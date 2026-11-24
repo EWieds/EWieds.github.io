@@ -20,7 +20,7 @@ function airportDetail(){
   var tw=new T.Group();tw.position.set(AX+30,32,AZ-56);dyn.add(tw);var rd=new T.Group();tw.add(rd);bx(4,.6,.2,toon(0xffffff),0,0,0,rd);cyB(.15,1,toon(0x8a8f99),0,-1,0,tw,6);anim.push({radar:rd});
   var ws=new T.Group();ws.position.set(rx+22,0,AZ+60);dyn.add(ws);cyB(.08,6,toon(0xd8d8d8),0,0,0,ws,6);var sock=new T.Group();sock.position.y=6;ws.add(sock);var sk=cone(.5,2.6,toon(0xffffff,{map:stripeT(0xff6b2b,0xffffff)}),0,0,1.3,sock,10);sk.rotation.x=-Math.PI/2;anim.push({sock:sock});
   for(var k2=0;k2<3;k2++){var tg=new T.Group();dyn.add(tg);rb(1.6,1,2.2,.15,toon(0xffc63d),0,.7,0,tg);for(var c=1;c<4;c++){rb(1.4,.9,1.8,.1,toon(0x8a8f99),0,.7,-c*2.3,tg);rb(1,.6,1.2,.1,toon(pick([0x2f5a46,0x8a2a3a,0x2a3a6a,0x3a3f4b])),0,1.4,-c*2.3,tg);}tg.position.set(AX+34+k2*6,0,AZ);anim.push({tug:tg,z0:AZ-40,z1:AZ+40,t:k2*2.1});}
-  var ft=carModel('delivery',0xffffff);ft.position.set(AX+50,0,AZ+18);dyn.add(ft);
+  var ft=carModel('delivery',0xffffff);ft.position.set(AX+50,0,AZ+18);dyn.add(ft);apExterior();
 }
 function terminalDetail(g,ox){
   // queue lines (posts and belts) in front of check-in

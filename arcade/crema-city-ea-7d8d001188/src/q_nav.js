@@ -111,12 +111,12 @@ var MIS=[
   {ch:'Living large',t:'Pass a university class',h:'Admissions office at the university.',p:'uni',ok:function(w){return w.cls&&Object.keys(w.cls).length>0;}},
   {ch:'Living large',t:'Buy a stock',h:'Phone → Stocks.',ok:function(w){return w.mkt&&Object.keys(w.mkt.own).some(function(k){return w.mkt.own[k]>0;});}},
   {ch:'Living large',t:'Build something on your own land',h:'Buy a lot, then ask Bob for anything. A water park? A race track?',ok:function(w){return Object.keys(w.land).some(function(k){return w.land[k].use==='dev';});}}];
-function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
+function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;var bq=basicCur();if(bq)return bq;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
 var misT=0;
-function updMission(dt){var w=W4();w.f=w.f||{};misT-=dt;if(misT>0)return;misT=.5;var m=misCur();
-  if(m.ok(w)){var i=w.mis,cash=Math.round((400+i*450)*tierM());G.cash+=cash;addXP(60+i*30);if(!m.endless)w.mis++;else w.endless=m.endless;banner('Goal complete!',m.t+' · +'+fmt(cash),'good');try{sfx.ding();}catch(e){}save();misT=1.5;el2=null;}
+function updMission(dt){var w=W4();w.f=w.f||{};basicsTick(dt);misT-=dt;if(misT>0)return;misT=.5;var m=misCur();
+  if(m.ok(w)){var i=w.mis,cash=Math.round((400+i*450)*tierM());G.cash+=cash;addXP(60+i*30);if(m.basic)w.basics++;else if(!m.endless)w.mis++;else w.endless=m.endless;banner('Goal complete!',m.t+' · +'+fmt(cash),'good');try{sfx.ding();}catch(e){}save();misT=1.5;el2=null;}
   var el=$('#o-goal'),cur=misCur(),k=cur.t;if(el.dataset.k===k)return;el.dataset.k=k;
   var pl=typeof cur.p==='function'?cur.p():cur.p?placeById(cur.p):null;
-  el.innerHTML='<small>'+esc(cur.ch.toUpperCase())+(cur.endless?'':' · '+(W4().mis+1)+'/'+MIS.length)+'</small><b>'+esc(cur.t)+'</b><span>'+esc(cur.h)+'</span>'+'<div class="g-b"><button type="button" class="g-how">How?</button>'+(pl||cur.p?'<button type="button" class="g-show">Show me</button>':'')+'</div>';
+  el.innerHTML='<small>'+esc(cur.ch.toUpperCase())+(cur.endless?'':cur.basic?' · '+(W4().basics+1)+'/'+BASICS.length:' · '+(W4().mis+1)+'/'+MIS.length)+'</small><b>'+esc(cur.t)+'</b><span>'+esc(cur.h)+'</span>'+'<div class="g-b"><button type="button" class="g-how">How?</button>'+(pl||cur.p?'<button type="button" class="g-show">Show me</button>':'')+'</div>';
   el.querySelector('.g-how').onclick=function(){goalHow(cur);};var bt=el.querySelector('.g-show');if(bt)bt.onclick=function(){var p2=typeof cur.p==='function'?cur.p():placeById(cur.p);if(p2)navTo(p2);else toast('Not on the map yet.');};}
 var el2=null;

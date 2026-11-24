@@ -1,0 +1,22 @@
+
+/* ---------- the basics: before any story goals, make sure a new player knows the fundamentals ---------- */
+var BASICS=[
+  {ch:'The basics',t:'Get in your pickup truck',h:'You have a truck! Follow the bouncing arrow to it and get in.',p:function(){var v=myVeh();return v?{x:v.g.position.x,z:v.g.position.z,name:'Your pickup'}:null;},ok:function(w){return w.f.b_drive;}},
+  {ch:'The basics',t:'Open your phone',h:'Maps, Bank, Bob the builder, Holdings, flights, cabs: it all lives on your phone.',ok:function(w){return w.f.b_phone;}},
+  {ch:'The basics',t:'Get directions somewhere',h:'Tap the map button, pick any place, and follow the green line on the ground.',ok:function(w){return w.f.b_nav;}},
+  {ch:'The basics',t:'Walk into any building',h:'Almost every door opens. Shops, restaurants, City Hall, the bank, the mall.',ok:function(w){return w.f.b_in;}},
+  {ch:'The basics',t:'Check your Holdings',h:'Phone → Holdings shows your money and exactly what everything you own earns.',ok:function(w){return w.f.b_hold;}}];
+function basicCur(){var w=W4();if(w.basics==null)w.basics=(w.mis||0)>2?BASICS.length:0;if(w.basics>=BASICS.length)return null;var b=BASICS[w.basics];b.basic=true;return b;}
+var BX={walk:0,lx:null,lz:null,tipT:0,arrow:null};
+function basicsTick(dt){var w=W4();w.f=w.f||{};if(drv)w.f.b_drive=1;if(phoneOpen()){w.f.b_phone=1;if(PH.app==='hold')w.f.b_hold=1;}if(NAV)w.f.b_nav=1;if(P.area!=='city')w.f.b_in=1;
+  // a bouncing arrow over your truck until you've driven it a few times
+  var v=myVeh(),show=v&&!drv&&P.area==='city'&&((w.stats.drives||0)<3||!w.f.b_drive);if(show&&!BX.arrow){var a=new T.Group();var c=cone(.55,1,toon(0xffc63d,{e:0xffc63d,ei:.6}),0,0,0,a,10);c.rotation.x=Math.PI;var lb=plane(2.6,.55,flat(0xffffff,{map:signT('YOUR PICKUP',{bg:'#2a1a12',fg:'#ffd24a',w:384,h:80})}),0,1,0,a);lb.userData.bb=1;dyn.add(a);BX.arrow={g:a,lb:lb,t:0};}
+  if(BX.arrow){var A=BX.arrow;if(!show||!A.g.parent){if(A.g.parent)A.g.parent.remove(A.g);BX.arrow=null;}else{A.t+=dt;A.g.position.set(v.g.position.x,3.6+Math.sin(A.t*4)*.3,v.g.position.z);A.lb.quaternion.copy(O.cam.quaternion);}}
+  // walking a long way on foot? remind them about the truck (and the cab)
+  if(!drv&&P.area==='city'&&BX.lx!=null){var stp=Math.hypot(P.x-BX.lx,P.z-BX.lz);if(stp<3)BX.walk+=stp;}else if(drv)BX.walk=0;BX.lx=P.x;BX.lz=P.z;BX.tipT-=dt;
+  if(BX.walk>160&&BX.tipT<=0&&v&&Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z)>25){BX.walk=0;BX.tipT=240;note('Long walk?','Your pickup is parked '+Math.round(Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z))+' m away. You can also call a City Cab from your phone.','info',{label:'Walk me to my truck',fn:function(){navTo({x:v.g.position.x,z:v.g.position.z,name:'Your pickup'});}});}}
+STEPS['Get in your pickup truck']=function(c){return ['Look for the yellow arrow that says YOUR PICKUP. That\'s your truck. Tap "Show me" for a line to it.','Walk right up to the driver\'s door.','When "Drive your pickup" shows up, '+c.use+'.','Drive with '+c.move+'. To get out, '+c.use+' again. Park at the curb, not in the middle of the road, or you get a ticket.'];};
+STEPS['Open your phone']=function(c){return ['Press '+c.phone+'.','Every app is a shortcut: Phone (call Bob, Dana, the bank), Maps, Holdings, City Cab, Air Crema, Stocks, and more.','Close it with the ✕ or by pressing the same button again.'];};
+STEPS['Get directions somewhere']=function(c){return ['Tap the map button on the right side (under the phone).','Tap any place on the map, or search, and choose Directions.','A green line appears on the ground. Follow it on foot or by car.'];};
+STEPS['Walk into any building']=function(c){return ['Walk up to any door with a sign: a shop, restaurant, City Hall, the bank.','When the yellow button says "Step into…" or "Enter…", '+c.use+'.','Inside, people talk back. Type anything to them. Leave through the same door.'];};
+STEPS['Check your Holdings']=function(c){return ['Open your phone ('+c.phone+').','Tap Holdings (the brown ▦ app).','It shows your money and exactly what everything you own earns per minute.'];};

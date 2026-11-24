@@ -3352,7 +3352,7 @@ function buildAirport(){
   var ti=planeR(tdp-6,8.6,6,1,toon(0xffffff,{map:termInT()}),fx-.04,4.5,AZ,g);ti.rotation.y=-Math.PI/2;bx(.2,9,tdp-6,glass(0x9fd2f2,.35),fx-.3,5,AZ,g);for(var k=-6;k<=6;k++)bx(.3,9.4,.3,toon(0xc8d0d8),fx,4.9,AZ+k*6.4,g);
   bx(9,.6,tdp+6,toon(0xffffff),fx-3.5,9.8,AZ,g);bx(10,.3,tdp+4,toon(0xd8dee6),fx-4,10.15,AZ,g);
   for(k=-5;k<=5;k+=2)cyB(.22,9.6,toon(0xd8dee6),fx-7.5,.2,AZ+k*7,g,10);
-  plane(28,3,flat(0xffffff,{map:signT(p.name.toUpperCase()+' INTERNATIONAL',{bg:'#2a1a12',fg:'#ffffff',w:1024,h:110})}),fx-.2,13.6,AZ,g).rotation.y=-Math.PI/2;
+  plane(28,3,flat(0xffffff,{map:signT(apName().toUpperCase(),{bg:'#2a1a12',fg:'#ffffff',w:1024,h:110})}),fx-.2,13.6,AZ,g).rotation.y=-Math.PI/2;
   [['DEPARTURES',-18],['ARRIVALS',18]].forEach(function(q){var s=plane(8,1.2,flat(0xffffff,{map:signT(q[0],{bg:'#2f8fd0',fg:'#fff',w:512,h:80})}),fx-7.4,8,AZ+q[1],g);s.rotation.y=-Math.PI/2;});
   // sliding doors that open as you walk up
   var dg=new T.Group();dyn.add(dg);var dl=bx(1.6,3.2,.12,glass(0xdff2ff,.55),fx-.3,1.8,AZ-.8,dg),dr=bx(1.6,3.2,.12,glass(0xdff2ff,.55),fx-.3,1.8,AZ+.8,dg);dl.rotation.y=dr.rotation.y=Math.PI/2;anim.push({slide:[dl,dr],x:fx,z:AZ});
@@ -3570,7 +3570,7 @@ function vehAct(){ // actions for vehicles are computed live (they move)
 function trunkView(){var v=myVeh();if(!v||!v.g.userData.bed)return;var b=v.g.userData.bed;while(b.children.length)b.remove(b.children[0]);W4().trunk.forEach(function(k,i){crate(k,b,(i%2?.38:-.38),.25+Math.floor(i/4)*.52,(Math.floor(i/2)%2?.45:-.45));});}
 function crate(k,p,x,y,z){var s=SUP[k],m=rb(.7,.5,.55,.06,toon(s.col),x||0,y||0,z||0,p);rb(.72,.08,.57,.03,toon(0x8a5a3a),0,.14,0,m);return m;}
 function carryView(){var h=P.hand;if(!h)return;while(h.children.length)h.remove(h.children[0]);P.carry.forEach(function(k,i){crate(k,h,0,i*.52,0);});}
-function enterVeh(v){if(P.carry.length){toast('Put the crates down first (load them into the bed).','bad');return;}drv={v:v,speed:0};P.me.root.visible=false;yaw=v.g.rotation.y+Math.PI;try{tone(180,.2,'sawtooth',.03,0,320);}catch(e){}
+function enterVeh(v){try{var ws=W4().stats;ws.drives=(ws.drives||0)+1;}catch(e){}if(P.carry.length){toast('Put the crates down first (load them into the bed).','bad');return;}drv={v:v,speed:0};P.me.root.visible=false;yaw=v.g.rotation.y+Math.PI;try{tone(180,.2,'sawtooth',.03,0,320);}catch(e){}
   if(v.kind==='truck'){var aw=v.g.userData.awning;if(aw)aw.rotation.z=0;}}
 function exitVeh(){if(drv&&drv.v){drv.v.mine=1;drv.v.ticketed=0;drv.v.parkT=0;}
   if(!drv)return true;var v=drv.v,g=v.g,h=g.rotation.y,c=Math.cos(h),s=Math.sin(h),cand=[[-1.9,0],[1.9,0],[0,-3.6],[0,3.6],[-1.9,1.5],[1.9,-1.5]];
@@ -4822,13 +4822,13 @@ var MIS=[
   {ch:'Living large',t:'Pass a university class',h:'Admissions office at the university.',p:'uni',ok:function(w){return w.cls&&Object.keys(w.cls).length>0;}},
   {ch:'Living large',t:'Buy a stock',h:'Phone → Stocks.',ok:function(w){return w.mkt&&Object.keys(w.mkt.own).some(function(k){return w.mkt.own[k]>0;});}},
   {ch:'Living large',t:'Build something on your own land',h:'Buy a lot, then ask Bob for anything. A water park? A race track?',ok:function(w){return Object.keys(w.land).some(function(k){return w.land[k].use==='dev';});}}];
-function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
+function misCur(){var w=W4();w.f=w.f||{};w.mis=w.mis||0;var bq=basicCur();if(bq)return bq;if(w.mis>=MIS.length){var n=ownedBiz().length;if(w.endless==null)w.endless=Math.floor(n/3)*3;var goal=w.endless+3;return {ch:'Endless',t:'Own '+goal+' businesses',h:'You own '+n+'. Every one makes money forever.',ok:function(){return ownedBiz().length>=goal;},endless:goal};}return MIS[w.mis];}
 var misT=0;
-function updMission(dt){var w=W4();w.f=w.f||{};misT-=dt;if(misT>0)return;misT=.5;var m=misCur();
-  if(m.ok(w)){var i=w.mis,cash=Math.round((400+i*450)*tierM());cityGain(cash);addXP(60+i*30);if(!m.endless)w.mis++;else w.endless=m.endless;banner('Goal complete!',m.t+' · +'+fmt(cash),'good');try{sfx.ding();}catch(e){}save();misT=1.5;el2=null;}
+function updMission(dt){var w=W4();w.f=w.f||{};basicsTick(dt);misT-=dt;if(misT>0)return;misT=.5;var m=misCur();
+  if(m.ok(w)){var i=w.mis,cash=Math.round((400+i*450)*tierM());cityGain(cash);addXP(60+i*30);if(m.basic)w.basics++;else if(!m.endless)w.mis++;else w.endless=m.endless;banner('Goal complete!',m.t+' · +'+fmt(cash),'good');try{sfx.ding();}catch(e){}save();misT=1.5;el2=null;}
   var el=$('#o-goal'),cur=misCur(),k=cur.t;if(el.dataset.k===k)return;el.dataset.k=k;
   var pl=typeof cur.p==='function'?cur.p():cur.p?placeById(cur.p):null;
-  el.innerHTML='<small>'+esc(cur.ch.toUpperCase())+(cur.endless?'':' · '+(W4().mis+1)+'/'+MIS.length)+'</small><b>'+esc(cur.t)+'</b><span>'+esc(cur.h)+'</span>'+'<div class="g-b"><button type="button" class="g-how">How?</button>'+(pl||cur.p?'<button type="button" class="g-show">Show me</button>':'')+'</div>';
+  el.innerHTML='<small>'+esc(cur.ch.toUpperCase())+(cur.endless?'':cur.basic?' · '+(W4().basics+1)+'/'+BASICS.length:' · '+(W4().mis+1)+'/'+MIS.length)+'</small><b>'+esc(cur.t)+'</b><span>'+esc(cur.h)+'</span>'+'<div class="g-b"><button type="button" class="g-how">How?</button>'+(pl||cur.p?'<button type="button" class="g-show">Show me</button>':'')+'</div>';
   el.querySelector('.g-how').onclick=function(){goalHow(cur);};var bt=el.querySelector('.g-show');if(bt)bt.onclick=function(){var p2=typeof cur.p==='function'?cur.p():placeById(cur.p);if(p2)navTo(p2);else toast('Not on the map yet.');};}
 var el2=null;
 
@@ -4924,7 +4924,7 @@ function airportDetail(){
   var tw=new T.Group();tw.position.set(AX+30,32,AZ-56);dyn.add(tw);var rd=new T.Group();tw.add(rd);bx(4,.6,.2,toon(0xffffff),0,0,0,rd);cyB(.15,1,toon(0x8a8f99),0,-1,0,tw,6);anim.push({radar:rd});
   var ws=new T.Group();ws.position.set(rx+22,0,AZ+60);dyn.add(ws);cyB(.08,6,toon(0xd8d8d8),0,0,0,ws,6);var sock=new T.Group();sock.position.y=6;ws.add(sock);var sk=cone(.5,2.6,toon(0xffffff,{map:stripeT(0xff6b2b,0xffffff)}),0,0,1.3,sock,10);sk.rotation.x=-Math.PI/2;anim.push({sock:sock});
   for(var k2=0;k2<3;k2++){var tg=new T.Group();dyn.add(tg);rb(1.6,1,2.2,.15,toon(0xffc63d),0,.7,0,tg);for(var c=1;c<4;c++){rb(1.4,.9,1.8,.1,toon(0x8a8f99),0,.7,-c*2.3,tg);rb(1,.6,1.2,.1,toon(pick([0x2f5a46,0x8a2a3a,0x2a3a6a,0x3a3f4b])),0,1.4,-c*2.3,tg);}tg.position.set(AX+34+k2*6,0,AZ);anim.push({tug:tg,z0:AZ-40,z1:AZ+40,t:k2*2.1});}
-  var ft=carModel('delivery',0xffffff);ft.position.set(AX+50,0,AZ+18);dyn.add(ft);
+  var ft=carModel('delivery',0xffffff);ft.position.set(AX+50,0,AZ+18);dyn.add(ft);apExterior();
 }
 function terminalDetail(g,ox){
   // queue lines (posts and belts) in front of check-in
@@ -5430,13 +5430,13 @@ function airportRoomExtra(){var A=AREAS.terminal;if(!A)return;var ox=IOX.termina
   bx(.2,3,2.2,toon(0x2f5f90),-32.8,1.5,-4,g);bx(.12,2.4,1.4,toon(0x6b4a30),-32.65,1.2,-4,g);
   wallSign(g,own?'OPERATIONS · '+apName().toUpperCase():'AIRPORT AUTHORITY',-32.7,3.6,-4,{bg:'#2f5f90',fg:'#fff',w:5,h:.7,ry:Math.PI/2});
   ACTS.terminal.push({x:ox-31.4,z:-4,r:1.9,label:function(){return apOwned()?'Operations office':'Airport Authority';},sub:function(){return apOwned()?fmt(AIRPORT().revv)+'/min · '+apSat()+'% happy':'Ask about buying the airport';},fn:directorTalk});
-  var s=apState()||{},up=s.up||{},nb=own?(up.bar||0):0;
+  var s=apState()||{},up=s.up||{},nb=own?(up.bar||0):0;apInterior(g,ox);
   for(var i=0;i<nb;i++){var x=11+i*6,z=-12.5,k=new T.Group();k.position.set(x,0,z);g.add(k);rb(3.6,1.05,1.3,.08,toon(0x2a1a12),0,.52,0,k);bx(3.7,.08,1.4,toon(0xf4efe6),0,1.08,0,k);rb(3.8,.25,1.6,.06,toon(0xffc63d),0,3.1,0,k);
     cyB(.06,2,toon(0x2a1a12),-1.75,1.1,0,k,6);cyB(.06,2,toon(0x2a1a12),1.75,1.1,0,k,6);plane(2.8,.55,flat(0xffffff,{map:signT('CREMA · GATE '+String.fromCharCode(66+i)+(4+i),{bg:'#2a1a12',fg:'#ffc63d',w:512,h:100})}),0,3.55,.02,k);
     bx(.5,.6,.4,toon(0x8a8f96),-1,1.4,-.2,k);npc(k,.4,-.9,0,{shirt:0xffc63d});addCol(ox+x-1.9,ox+x+1.9,z-.7,z+.7,'terminal');
     for(var q=0;q<2+i%2;q++){var c=liteMe();c.root.position.set(x-.6+q*.7,0,z+1.4+q*.8);c.root.rotation.y=Math.PI;c.cup.visible=q===0;g.add(c.root);}
     (function(i,x){ACTS.terminal.push({x:ox+x,z:z+1.6,r:1.8,label:'Crema Gate '+String.fromCharCode(66+i)+(4+i)+' (yours)',sub:function(){return 'About '+fmt(AIRPORT().revv*AP_UP.bar.inc/(1+0))+'/min of the airport\'s take';},fn:function(){popup('Crema Gate '+String.fromCharCode(66+i)+(4+i),'"Line\'s been out the door since the 6 a.m. to '+cityName(Math.min((G.cities||1),O.city+1))+'. Need more cups, boss."',[{t:'Great work',cls:'sec'}],'',{who:'Barista',role:'Your coffee bar',col:'#ffc63d'});}});})(i,x);}
-  if(own&&up.lounge){var lg=new T.Group();lg.position.set(18,0,14);g.add(lg);bx(10,.1,4,toon(0x3a2a22),0,.05,0,lg);[-3,0,3].forEach(function(x){rb(2,.7,.9,.1,toon(0x8a3a4a),x,.35,-.8,lg);rb(2,.5,.25,.1,toon(0x8a3a4a),x,.75,-1.25,lg);});plane(4,.6,flat(0xffffff,{map:signT('CREMA LOUNGE',{bg:'#2a1a12',fg:'#ffc63d',w:512,h:80})}),0,3,-1.9,lg);}
+  if(own&&up.lounge){var lg=new T.Group();lg.position.set(22,0,7.6);g.add(lg);bx(10,.1,4,toon(0x3a2a22),0,.05,0,lg);[-3,0,3].forEach(function(x){rb(2,.7,.9,.1,toon(0x8a3a4a),x,.35,-.8,lg);rb(2,.5,.25,.1,toon(0x8a3a4a),x,.75,-1.25,lg);});plane(4,.6,flat(0xffffff,{map:signT('CREMA LOUNGE',{bg:'#2a1a12',fg:'#ffc63d',w:512,h:80})}),0,3,-1.9,lg);}
   if(own){var sc=npc(g,5.6,-7.5,-Math.PI/2,{shirt:0x2a3a6a});ACTS.terminal.push({x:ox+5,z:-7.5,r:1.6,label:'Talk to your security chief',sub:function(){return apSat()+'% traveler satisfaction';},fn:function(){var u=(apState().up||{}).sec||0;popup('Security','"'+(u>=3?'Lines are under five minutes. Best in the region.':u?'Better, but the morning rush still backs up. Another lane would help.':'We\'re short-staffed, boss. Morning lines go out the door.')+'"',[{t:u>=3?'Keep it up':'Open a lane · '+fmt(apCost('sec')),off:u>=3,fn:function(){if(!pay(apCost('sec'),'Security lane'))return;var st=apState();st.up.sec=(st.up.sec||0)+1;apSync();O.dirty=true;save();toast('New lane open.','good');}},{t:'OK',cls:'sec'}],'',{who:'Chief Ramos',role:'Airport security',col:'#2a3a6a'});}});}
   curArea='city';}
 /* delays, rushes, airlines asking for deals */
@@ -7681,6 +7681,51 @@ function rsEnd(silent){var R=RS;if(!R)return;RS=null;document.body.classList.rem
   s.shifts=(s.shifts||0)+1;s.best=Math.max(s.best||0,tot);if(avg>=4)s.svc=Math.min(.25,(s.svc||0)+.02);else if(avg&&avg<2.5)s.svc=Math.max(0,(s.svc||0)-.02);addXP(Math.round(10+R.served*3));if(avg>=4.5)addFame(2);syncBizRev();save();
   if(silent)return;popup('Shift report · '+R.b.name,'Guests served: '+R.served+(R.walk?' · walked out: '+R.walk:'')+'\nSales '+fmt(R.rev)+' · tips '+fmt(R.tips)+'\nTotal '+fmt(tot)+(avg?' · '+avg.toFixed(1)+'★ average':'')+'\n'+(avg>=4?'Great service. Word gets around: this place now earns '+Math.round((s.svc||0)*100)+'% more while you\'re away.':avg&&avg<2.5?'Rough night. Reviews dipped a little.':'Solid shift.')+'\nShifts worked here: '+s.shifts+' · best '+fmt(s.best),
     [{t:'Work another shift',fn:rsStart},{t:'Done',cls:'sec'}]);}
+
+
+/* ---------- your airport upgrades are things you can see: gates with planes at the jet bridges, lanes, shops, a garage, your name on the roof ---------- */
+function apGates(){var s=apState()||{};return 2+(s.own?((s.up||{}).gate||0):0);}
+function apInterior(g,ox){var own=apOwned(),s=apState()||{},up=s.up||{},N=apGates();
+  for(var gi=0;gi<N;gi++){var z=-15+gi*(30/Math.max(1,N-1)),k=new T.Group();k.position.set(29,0,z);g.add(k);
+    plane(2.2,.6,flat(0xffffff,{map:signT('GATE '+(gi+1),{bg:'#14161c',fg:'#ffd24a',w:256,h:70,sub:gi%2?cityName((O.city+1+gi)%Math.max(2,G.cities||2)).toUpperCase():'ON TIME'})}),2.6,3.4,0,k).rotation.y=-Math.PI/2;
+    for(var r=0;r<2;r++)for(var c=0;c<4;c++)rb(.55,.45,.55,.08,toon(0x2f5f90),-2.6-r*1.3,.4,-1.2+c*.8,k);rb(.8,1.1,.6,.06,toon(0x3a3f4b),1.6,.55,1.4,k);
+    if(gi>0){var pl=planeModel([0xe2553f,0x2f8fd0,0x2fa860,0xffc63d][gi%4]);pl.scale.setScalar(.55);pl.position.set(ox+44+(gi%2)*12,0,z);pl.rotation.y=-Math.PI/2;stat.add(pl);bx(8,2.2,2,toon(0xd8dee6),37,3.4,z,g);}}
+  if(!own)return;
+  for(var l=0;l<(up.sec||0);l++){var zz=[-9,9,-13][l],sl=new T.Group();sl.position.set(0,0,zz);g.add(sl);rb(1.2,1.1,2.6,.08,toon(0x8a8f96),0,.55,0,sl);bx(1.3,.6,.3,toon(0x2a2a30),0,1.1,0,sl);npc(sl,1.2,.8,-Math.PI/2,{shirt:0x2a3a6a});plane(1.4,.4,flat(0xffffff,{map:signT('LANE '+(l+3),{bg:'#2a3a6a',fg:'#fff',w:200,h:56})}),0,2.4,-1.35,sl);}
+  var shops=[['TRAVEL ESSENTIALS','#2fa860'],['CANDY PORT','#ff79b4']];for(var sh=0;sh<(up.shops||0);sh++){var sf=new T.Group();sf.position.set(sh?28:7,0,14);g.add(sf);bx(7,3.2,.2,toon(0xffffff),0,1.6,2.6,sf);for(var i=0;i<2;i++){rb(2.2,1.5,.7,.04,toon(0x2a2a30),-1.6+i*3.2,.75,1.6,sf);for(var j=0;j<6;j++)bx(.24,.36,.24,toon([0xffd24a,0xff79b4,0x46a9e6,0x6cc76a][j%4]),-2.3+i*3.2+j*.28,1.7,1.6,sf);}
+    plane(3.6,.7,flat(0xffffff,{map:signT(shops[sh][0],{bg:shops[sh][1],fg:'#fff',w:512,h:100})}),0,3.4,1.4,sf).rotation.y=Math.PI;npc(sf,0,1,Math.PI,{shirt:0xffffff});}
+  if(up.park){wallSign(g,'P · PARKING GARAGE →',-14,3.4,16.6,{bg:'#2f5f90',fg:'#fff',w:6,h:.8,ry:Math.PI});}
+  wallSign(g,apName().toUpperCase(),-8,5.6,-16.6,{bg:'#2f8fd0',fg:'#fff',w:14,h:1.1});}
+function apExterior(){var p=plan;if(!p.AX)return;var AX=p.AX,AZ=p.AZ,own=apOwned(),s=apState()||{},up=s.up||{},N=apGates(),keep=stat;stat=new T.Group();var g=stat;
+  for(var gi=0;gi<N;gi++){var z=AZ-36+gi*(72/Math.max(1,N-1)),x0=AX+25;bx(12,2.6,2.4,toon(0xd8dee6),x0+6,4.2,z,g);cyB(.25,3,toon(0x8a8f96),x0+10,0,z,g,8);
+    var pl=planeModel([0xe2553f,0x2f8fd0,0x2fa860,0xffc63d][gi%4]);pl.scale.setScalar(.7);pl.position.set(x0+24+(gi%2)*14,0,z);pl.rotation.y=-Math.PI/2;g.add(pl);
+    var gs=plane(3,1,flat(0xffffff,{map:signT('GATE '+(gi+1),{bg:'#14161c',fg:'#ffd24a',w:256,h:84})}),x0+12.2,4.2,z,g);gs.rotation.y=Math.PI/2;}
+  if(own&&up.park){var gx=p.CX-RH-20,gz=AZ-37;for(var f=0;f<3;f++){bx(32,.35,14,toon(0xc8c2b6),gx,2.4+f*2.4,gz,g);}for(var c=0;c<6;c++)bx(.6,9.6,.6,toon(0xb8b2a6),gx-15+c*6,4.8,gz-6.6,g);
+    var ps=plane(10,1.4,flat(0xffffff,{map:signT('P · '+apName().toUpperCase(),{bg:'#2f5f90',fg:'#fff',w:768,h:110})}),gx,10.2,gz+7.1,g);ps.rotation.y=Math.PI;}
+  O.scene.add(mergeGroup(stat));stat=keep;}
+
+
+/* ---------- the basics: before any story goals, make sure a new player knows the fundamentals ---------- */
+var BASICS=[
+  {ch:'The basics',t:'Get in your pickup truck',h:'You have a truck! Follow the bouncing arrow to it and get in.',p:function(){var v=myVeh();return v?{x:v.g.position.x,z:v.g.position.z,name:'Your pickup'}:null;},ok:function(w){return w.f.b_drive;}},
+  {ch:'The basics',t:'Open your phone',h:'Maps, Bank, Bob the builder, Holdings, flights, cabs: it all lives on your phone.',ok:function(w){return w.f.b_phone;}},
+  {ch:'The basics',t:'Get directions somewhere',h:'Tap the map button, pick any place, and follow the green line on the ground.',ok:function(w){return w.f.b_nav;}},
+  {ch:'The basics',t:'Walk into any building',h:'Almost every door opens. Shops, restaurants, City Hall, the bank, the mall.',ok:function(w){return w.f.b_in;}},
+  {ch:'The basics',t:'Check your Holdings',h:'Phone → Holdings shows your money and exactly what everything you own earns.',ok:function(w){return w.f.b_hold;}}];
+function basicCur(){var w=W4();if(w.basics==null)w.basics=(w.mis||0)>2?BASICS.length:0;if(w.basics>=BASICS.length)return null;var b=BASICS[w.basics];b.basic=true;return b;}
+var BX={walk:0,lx:null,lz:null,tipT:0,arrow:null};
+function basicsTick(dt){var w=W4();w.f=w.f||{};if(drv)w.f.b_drive=1;if(phoneOpen()){w.f.b_phone=1;if(PH.app==='hold')w.f.b_hold=1;}if(NAV)w.f.b_nav=1;if(P.area!=='city')w.f.b_in=1;
+  // a bouncing arrow over your truck until you've driven it a few times
+  var v=myVeh(),show=v&&!drv&&P.area==='city'&&((w.stats.drives||0)<3||!w.f.b_drive);if(show&&!BX.arrow){var a=new T.Group();var c=cone(.55,1,toon(0xffc63d,{e:0xffc63d,ei:.6}),0,0,0,a,10);c.rotation.x=Math.PI;var lb=plane(2.6,.55,flat(0xffffff,{map:signT('YOUR PICKUP',{bg:'#2a1a12',fg:'#ffd24a',w:384,h:80})}),0,1,0,a);lb.userData.bb=1;dyn.add(a);BX.arrow={g:a,lb:lb,t:0};}
+  if(BX.arrow){var A=BX.arrow;if(!show||!A.g.parent){if(A.g.parent)A.g.parent.remove(A.g);BX.arrow=null;}else{A.t+=dt;A.g.position.set(v.g.position.x,3.6+Math.sin(A.t*4)*.3,v.g.position.z);A.lb.quaternion.copy(O.cam.quaternion);}}
+  // walking a long way on foot? remind them about the truck (and the cab)
+  if(!drv&&P.area==='city'&&BX.lx!=null){var stp=Math.hypot(P.x-BX.lx,P.z-BX.lz);if(stp<3)BX.walk+=stp;}else if(drv)BX.walk=0;BX.lx=P.x;BX.lz=P.z;BX.tipT-=dt;
+  if(BX.walk>160&&BX.tipT<=0&&v&&Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z)>25){BX.walk=0;BX.tipT=240;note('Long walk?','Your pickup is parked '+Math.round(Math.hypot(v.g.position.x-P.x,v.g.position.z-P.z))+' m away. You can also call a City Cab from your phone.','info',{label:'Walk me to my truck',fn:function(){navTo({x:v.g.position.x,z:v.g.position.z,name:'Your pickup'});}});}}
+STEPS['Get in your pickup truck']=function(c){return ['Look for the yellow arrow that says YOUR PICKUP. That\'s your truck. Tap "Show me" for a line to it.','Walk right up to the driver\'s door.','When "Drive your pickup" shows up, '+c.use+'.','Drive with '+c.move+'. To get out, '+c.use+' again. Park at the curb, not in the middle of the road, or you get a ticket.'];};
+STEPS['Open your phone']=function(c){return ['Press '+c.phone+'.','Every app is a shortcut: Phone (call Bob, Dana, the bank), Maps, Holdings, City Cab, Air Crema, Stocks, and more.','Close it with the ✕ or by pressing the same button again.'];};
+STEPS['Get directions somewhere']=function(c){return ['Tap the map button on the right side (under the phone).','Tap any place on the map, or search, and choose Directions.','A green line appears on the ground. Follow it on foot or by car.'];};
+STEPS['Walk into any building']=function(c){return ['Walk up to any door with a sign: a shop, restaurant, City Hall, the bank.','When the yellow button says "Step into…" or "Enter…", '+c.use+'.','Inside, people talk back. Type anything to them. Leave through the same door.'];};
+STEPS['Check your Holdings']=function(c){return ['Open your phone ('+c.phone+').','Tap Holdings (the brown ▦ app).','It shows your money and exactly what everything you own earns per minute.'];};
 
 
 /* ---------- build a city ---------- */

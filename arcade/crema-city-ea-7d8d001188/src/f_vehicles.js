@@ -144,7 +144,7 @@ function vehAct(){ // actions for vehicles are computed live (they move)
 function trunkView(){var v=myVeh();if(!v||!v.g.userData.bed)return;var b=v.g.userData.bed;while(b.children.length)b.remove(b.children[0]);W4().trunk.forEach(function(k,i){crate(k,b,(i%2?.38:-.38),.25+Math.floor(i/4)*.52,(Math.floor(i/2)%2?.45:-.45));});}
 function crate(k,p,x,y,z){var s=SUP[k],m=rb(.7,.5,.55,.06,toon(s.col),x||0,y||0,z||0,p);rb(.72,.08,.57,.03,toon(0x8a5a3a),0,.14,0,m);return m;}
 function carryView(){var h=P.hand;if(!h)return;while(h.children.length)h.remove(h.children[0]);P.carry.forEach(function(k,i){crate(k,h,0,i*.52,0);});}
-function enterVeh(v){if(P.carry.length){toast('Put the crates down first (load them into the bed).','bad');return;}drv={v:v,speed:0};P.me.root.visible=false;yaw=v.g.rotation.y+Math.PI;try{tone(180,.2,'sawtooth',.03,0,320);}catch(e){}
+function enterVeh(v){try{var ws=W4().stats;ws.drives=(ws.drives||0)+1;}catch(e){}if(P.carry.length){toast('Put the crates down first (load them into the bed).','bad');return;}drv={v:v,speed:0};P.me.root.visible=false;yaw=v.g.rotation.y+Math.PI;try{tone(180,.2,'sawtooth',.03,0,320);}catch(e){}
   if(v.kind==='truck'){var aw=v.g.userData.awning;if(aw)aw.rotation.z=0;}}
 function exitVeh(){if(drv&&drv.v){drv.v.mine=1;drv.v.ticketed=0;drv.v.parkT=0;}
   if(!drv)return true;var v=drv.v,g=v.g,h=g.rotation.y,c=Math.cos(h),s=Math.sin(h),cand=[[-1.9,0],[1.9,0],[0,-3.6],[0,3.6],[-1.9,1.5],[1.9,-1.5]];

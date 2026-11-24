@@ -226,7 +226,7 @@ function buildAirport(){
   var ti=planeR(tdp-6,8.6,6,1,toon(0xffffff,{map:termInT()}),fx-.04,4.5,AZ,g);ti.rotation.y=-Math.PI/2;bx(.2,9,tdp-6,glass(0x9fd2f2,.35),fx-.3,5,AZ,g);for(var k=-6;k<=6;k++)bx(.3,9.4,.3,toon(0xc8d0d8),fx,4.9,AZ+k*6.4,g);
   bx(9,.6,tdp+6,toon(0xffffff),fx-3.5,9.8,AZ,g);bx(10,.3,tdp+4,toon(0xd8dee6),fx-4,10.15,AZ,g);
   for(k=-5;k<=5;k+=2)cyB(.22,9.6,toon(0xd8dee6),fx-7.5,.2,AZ+k*7,g,10);
-  plane(28,3,flat(0xffffff,{map:signT(p.name.toUpperCase()+' INTERNATIONAL',{bg:'#2a1a12',fg:'#ffffff',w:1024,h:110})}),fx-.2,13.6,AZ,g).rotation.y=-Math.PI/2;
+  plane(28,3,flat(0xffffff,{map:signT(apName().toUpperCase(),{bg:'#2a1a12',fg:'#ffffff',w:1024,h:110})}),fx-.2,13.6,AZ,g).rotation.y=-Math.PI/2;
   [['DEPARTURES',-18],['ARRIVALS',18]].forEach(function(q){var s=plane(8,1.2,flat(0xffffff,{map:signT(q[0],{bg:'#2f8fd0',fg:'#fff',w:512,h:80})}),fx-7.4,8,AZ+q[1],g);s.rotation.y=-Math.PI/2;});
   // sliding doors that open as you walk up
   var dg=new T.Group();dyn.add(dg);var dl=bx(1.6,3.2,.12,glass(0xdff2ff,.55),fx-.3,1.8,AZ-.8,dg),dr=bx(1.6,3.2,.12,glass(0xdff2ff,.55),fx-.3,1.8,AZ+.8,dg);dl.rotation.y=dr.rotation.y=Math.PI/2;anim.push({slide:[dl,dr],x:fx,z:AZ});
