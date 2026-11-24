@@ -51,6 +51,7 @@ layout: null
 
 
             body {
+                margin: 0;
                 background: #0a0a0a;
                 color: #00d1b2;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -102,12 +103,8 @@ layout: null
                 box-shadow: 0px 0px 15px rgba(0, 209, 178, 0.5);
             }
 
-            footer {
-                margin-top: 50px;
-                margin-bottom: 29px;
-                font-size: 12.8px;
-                color: #444;
-            }
+
+
 
         </style>
 
@@ -127,12 +124,10 @@ layout: null
 			<button type="submit" class="submit-btn">Send</button>
         </form>
 
-        <footer>Avis & DeBus v1.0.0 PRO</footer>
 
+{% include site-footer.html %}
 </body>
     <script src="/m/feedback/firebase-config.js"></script>
     <script type="module" src="/m/contact-us/firebase-contact.js"></script>
-	<script data-goatcounter="https://carzzyapps.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
 
 </html>
