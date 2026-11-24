@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = '/home/claude/ewieds.github.io'
 SRC = os.path.join(REPO, 'arcade/crema-rush/index.html')
 OUT = os.path.join(REPO, 'arcade/crema-city-ea-7d8d001188/index.html')
-PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'z_bob.js', 'z_bank.js', 'z_fresh.js', 'z_law.js', 'z_mall2.js', 'z_fun.js', 'z_econ.js', 'z_steps.js', 'z_mp.js', 'z_metro.js', 'z_cabin2.js', 'z_gfx.js', 'l_main.js']
+PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'z_bob.js', 'z_bank.js', 'z_fresh.js', 'z_law.js', 'z_mall2.js', 'z_fun.js', 'z_econ.js', 'z_steps.js', 'z_mp.js', 'z_metro.js', 'z_cabin2.js', 'z_gfx.js', 'z_devin.js', 'z_earn.js', 'z_comm.js', 'l_main.js']
 
 s = open(SRC).read()
 def rep(a, b, count=1):

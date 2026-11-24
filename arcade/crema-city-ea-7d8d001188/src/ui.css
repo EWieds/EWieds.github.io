@@ -181,3 +181,11 @@ body.mini #o-acts,body.mini #o-joy,body.mini #o-goal,body.mini #o-nav,body.mini 
 #o-mpc span{font-size:10px;font-weight:700;opacity:.9}#o-mpc:not(.on){background:#9a8fb0}
 #o-cabui{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 168px);transform:translateX(-50%);display:flex;gap:8px;z-index:30}
 #o-cabui button{background:#fff6e6;border:3px solid #2a1a12;border-radius:14px;padding:9px 12px;font:800 13px system-ui;box-shadow:0 3px 0 #2a1a12;white-space:nowrap}
+#o-comm{position:fixed;inset:0;z-index:95;background:#07051a;display:flex;flex-direction:column}
+#o-comm[hidden]{display:none}
+#o-comm .cm-top{display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#130d33;color:#fff;font:700 14px system-ui;border-bottom:1px solid #2a2260}
+#o-comm .cm-top span{color:#a99ee0;font-weight:600;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#o-comm .cm-x{border:0;border-radius:10px;background:#ff3d8a;color:#fff;font:800 13px system-ui;padding:8px 12px;cursor:pointer;white-space:nowrap}
+#o-comm iframe{flex:1;width:100%;border:0;background:#07051a}
+.ph-h{font:800 12px system-ui;text-transform:uppercase;letter-spacing:.04em;color:#8a7a68;margin:12px 4px 4px}
+.ph-note{font-size:12px;color:#8a7a68;margin:6px 4px 2px;line-height:1.4}

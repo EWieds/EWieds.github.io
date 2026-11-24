@@ -152,7 +152,7 @@ function genBuildingV1(lot,b,r,opt){
   // ground floor: shop window, door and a sign
   var gcol=st==='glass'?0xe8eef2:col;rb(w,3.5,.25,.05,toon(gcol),0,1.75,.02,g);
   plane(w-3.2,2.3,toon(0xffffff,{map:shopInT(b.D?b.D.win:'street')}),.9,1.55,.13,g);bx(w-3.2,2.3,.06,glass(0xbfe6ff,.35),.9,1.55,.2,g);bx(1.2,2.4,.14,toon(0x5a3a28),DOORX,1.2,.18,g);
-  var biz=opt.name||pick(BIZ[b.D?b.D.win:'street']||BIZ.street),sgc=pal.cols[(Math.floor(r()*9))%pal.cols.length];
+  var biz=opt.name||bizPick(b,lot),sgc=pal.cols[(Math.floor(r()*9))%pal.cols.length];
   plane(Math.min(w-1.5,6.4),.9,flat(0xffffff,{map:signT(biz,{bg:'#fffaf0',fg:'#3a2317',w:512,h:128})}),.6,3.05,.17,g);
   if(st!=='glass'){var aw=cy(.5,.5,w-2.6,toon(0xffffff,{map:stripeT(sgc,0xffffff)}),.9,2.85,.55,g,14);aw.rotation.z=Math.PI/2;aw.scale.set(1,1,.55);}
   if(r()<.35)rb(1.4,.5,.5,.1,toon(0x7fbf5a),2.8,.45,.6,g);

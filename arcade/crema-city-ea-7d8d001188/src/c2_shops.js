@@ -21,7 +21,20 @@ var BT_RX=[[/FreshMart|Grocery|Fresh Market/,'grocery'],[/Book/,'books'],[/Flori
 function bizType(n){for(var i=0;i<BT_RX.length;i++)if(BT_RX[i][0].test(n))return BT_RX[i][1];return 'shop';}
 var OWNERS=['Sal','Rosa','Marty','Dee','Hank','Priya','Gus','Lorraine','Tomás','Bev','Ike','Nadia','Walt','Mei','Frank','Ines','Ray','Odette','Vic','Sunny'];
 var PERS={tired:{ask:1.3,floor:1.08,pat:5},practical:{ask:1.5,floor:1.2,pat:4},shrewd:{ask:1.8,floor:1.38,pat:3},proud:{ask:2,floor:1.5,pat:2},sentimental:{ask:1.7,floor:1.35,pat:4},greedy:{ask:2.2,floor:1.55,pat:3}};
-var BUS=[];
+var BUS=[],BIZ_USED={};
+var BIZ_X={street:['Chapter Two Books','Petal & Stem Florist','Brick Oven Slice','Main St Deli','Spin Records','Toy Chest','Clean Cuts Barber','Polish Nails','Suds Laundromat','Phone Doctor','Corner Print','Bolt Hardware','Paws Pet Supply','Second Story Books','Daisy Florist','Uptown Deli'],
+  campus:['Quad Books','Late Night Noodle','Spoke Bike Co','Print & Pixel','Dumpling Dorm','Study Copy','Varsity Pizza','Chalk Books'],
+  towers:['Harbor Capital','Granite Bank','Keystone Law','Helix Labs','Beacon Media','Crown Partners','Pinnacle Capital','Silverline Bank'],
+  ocean:['Wave Board Co','Baja Taco','Seashell Gifts','Sunny Surf','Reef Fish Tacos','Driftwood Gifts','Tide Board Shop'],
+  old:['Grand Antiques','Tick Tock Clock','Rose Tea Room','Apothecary Row','Linen Lane','Heritage Antiques','Copper Kettle Tea'],
+  snow:['Powder Ski Shop','Cocoa Cabin','Alpine Gear','Snowcap Inn','Wool Works','Summit Ski'],
+  park:['Iron Works Gym','Lotus Yoga','Spin City','Boulder Climb','Sunrise Yoga','Iron Temple'],
+  night:['Golden Noodle','Bao Down','Karaoke Box','Lucky Cat Lounge','Dumpling King','Pixel Arcade','Noodle Night'],
+  harbor:['Dockside Fish','Anchor Ship Supply','Harbor Ferry','Rope Works Dock','Pier Fish Co']};
+/* every lot gets the same name every time (and for every player in Crema Metro), and no two shops in a city share a name */
+function bizPick(b,lot){var win=b.D?b.D.win:'street',key=String(lot&&lot.key!=null?lot.key:(lot?lot.x+','+lot.z:Math.random()));try{var s=G&&G.w4?W4().biz[key]:null;if(s&&s.own&&s.name&&!s.home)return s.name;}catch(e){}
+  var all=(BIZ[win]||BIZ.street).concat(BIZ_X[win]||[]),h=hashS(key),n=all.length;for(var i=0;i<n;i++){var nm=all[(h+i)%n];if(!BIZ_USED[nm]){BIZ_USED[nm]=1;return nm;}}
+  var nm2=(BIZ.street.concat(BIZ_X.street))[h%28];return nm2+' '+['North','South','East','West','Uptown','Midtown'][h%6];}
 function hashS(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function bizOf(key){for(var i=0;i<BUS.length;i++)if(BUS[i].key===key)return BUS[i];return null;}
 function bizRev(b){if(b.revv)return Math.round(b.revv*(1+.3*((W4().biz[b.key]||{}).ren||0)));var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.cost||0)*.75)*BT[b.type].base*TM(b.city).pm*(1+.3*((W4().biz[b.key]||{}).ren||0)));}
@@ -29,7 +42,7 @@ function bizValue(b){var D=b.D||{cost:1500};return Math.round((54+Math.sqrt(D.co
 
 /* building styles: classic, brick, modern, cottage, diner, warehouse/market, tower */
 function genBuilding(lot,b,r,opt){
-  opt=opt||{};var pal=palette(b),biz=opt.name||pick(BIZ[b.D?b.D.win:'street']||BIZ.street),type=opt.type||bizType(biz),T0=BT[type];
+  opt=opt||{};var pal=palette(b),biz=opt.name||bizPick(b,lot),type=opt.type||bizType(biz),T0=BT[type];
   var arch=opt.arch||(pal.style==='glass'?'tower':pal.style==='old'&&r()<.6?'cottage':b.D&&b.D.win==='snow'?'cottage':b.D&&b.D.win==='campus'&&r()<.6?'brick':T0.arch);
   var g=lotGroup(lot),w=lot.w-.3,d=BDEP-.4,col=pal.cols[Math.floor(r()*pal.cols.length)],acc=pal.cols[(Math.floor(r()*7)+1)%pal.cols.length];if(acc===col)acc=0x2a1a12;
   var h=3.6,fl=1,fh=3.2;

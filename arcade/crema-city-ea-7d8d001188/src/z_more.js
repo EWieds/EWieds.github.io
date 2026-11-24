@@ -13,7 +13,7 @@ function valet(v){var e=nearestEdge(P.x,P.z);if(!e)return;var a=GR.N[e.e[0]],b=G
 
 /* ===== money you can feel ===== */
 var incT=0,lastInc=0;
-function empireRate(){var r=0;for(var c=0;c<Math.max(1,G.cities||1);c++)r+=ventureIncomeCity(c);if(W4().mpVisited)r+=ventureIncomeCity(MPC);return r+bizIncome(-1)+kioskAll()+extraIncome();}
+function empireRate(){return earnSum();}
 function incTick(dt){if(!O.on)return;incT+=dt;if(incT<10)return;incT=0;var r=empireRate();if(r<1)return;var el=$('#o-inc');if(!el)return;el.innerHTML='<b>+'+fmt(r/6)+'</b><span>empire · '+fmt(r)+'/min</span>';el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 function awayReport(){var w=W4(),was=w.ledOut;if(was==null)return;var d=(w.led||0)-was;w.ledOut=null;if(d>50)setTimeout(function(){note('While you were behind the counter','Your city businesses made '+fmt(d)+'.','good');},1200);}
 

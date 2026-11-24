@@ -26,6 +26,7 @@ function funRoom(){var g=room('fun',{name:'Play Zone',w:46,d:32,floor:floorT(0x1
   // ===== claw machines along the north wall
   CLAWS=[];[[3,0xff79b4],[6,0x46a9e6],[9,0xffd24a],[12,0x6cc76a]].forEach(function(q,k){var c=clawModel(dg,q[0],-13.6,q[1],k);CLAWS.push(c);addCol(ox+q[0]-.9,ox+q[0]+.9,-14.6,-12.6,'fun');
     ACTS.fun.push({x:ox+q[0],z:-11.8,r:1.1,label:['Plush Party','Mega Claw','Bean Grabber','Lucky Claw'][k],sub:'$2 a try · '+c.n+' prizes inside',fn:function(){startClaw(c);}});});
+  commCabs(g,ox);
   // ===== the arcade: the original cabinets plus new ones
   var cabs=ARC_CAB.concat(ARC_X);
   cabs.forEach(function(c,i){var col=i%6,row=Math.floor(i/6),cx=4+col*2.8,cz=-6.5+row*5,face=row===0?Math.PI:0,cab=new T.Group();cab.position.set(cx,0,cz);cab.rotation.y=face;g.add(cab);

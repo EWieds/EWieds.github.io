@@ -146,7 +146,7 @@ function crate(k,p,x,y,z){var s=SUP[k],m=rb(.7,.5,.55,.06,toon(s.col),x||0,y||0,
 function carryView(){var h=P.hand;if(!h)return;while(h.children.length)h.remove(h.children[0]);P.carry.forEach(function(k,i){crate(k,h,0,i*.52,0);});}
 function enterVeh(v){if(P.carry.length){toast('Put the crates down first (load them into the bed).','bad');return;}drv={v:v,speed:0};P.me.root.visible=false;yaw=v.g.rotation.y+Math.PI;try{tone(180,.2,'sawtooth',.03,0,320);}catch(e){}
   if(v.kind==='truck'){var aw=v.g.userData.awning;if(aw)aw.rotation.z=0;}}
-function exitVeh(){
+function exitVeh(){if(drv&&drv.v){drv.v.mine=1;drv.v.ticketed=0;drv.v.parkT=0;}
   if(!drv)return true;var v=drv.v,g=v.g,h=g.rotation.y,c=Math.cos(h),s=Math.sin(h),cand=[[-1.9,0],[1.9,0],[0,-3.6],[0,3.6],[-1.9,1.5],[1.9,-1.5]];
   for(var i=0;i<cand.length;i++){var lx=cand[i][0],lz=cand[i][1],x=g.position.x+lx*c+lz*s,z=g.position.z-lx*s+lz*c;
     if(!blocked(x,z,.35)&&inBounds(x,z)){P.x=x;P.z=z;P.me.root.visible=true;drv=null;yaw=h+Math.PI;v.sv.x=g.position.x;v.sv.z=g.position.z;v.sv.ry=h;save();
