@@ -22,6 +22,24 @@ document.head.appendChild(feedbackPopupScript);
     let auth = null;
     let firebaseAuth = null;
 
+    // ---------- Return-to page ----------
+    // Every page saves itself as prevPage (per tab), so signing in or up
+    // brings people back to the last page they were on. Pages that are part
+    // of signing in don't, and nor does any page with
+    // <meta name="cz-no-return"> (e.g. the 404 page).
+    const NO_RETURN_PATHS = [
+        '/m/auth/sign-in', '/m/auth/sign-up', '/m/auth/choose-username',
+        '/m/auth/action', '/m/auth/reset-password', '/m/auth/verify-email'
+    ];
+
+    function rememberPage() {
+        const here = location.pathname.toLowerCase();
+        if (NO_RETURN_PATHS.some(path => here.startsWith(path))) return;
+        if (document.querySelector('meta[name="cz-no-return"]')) return;
+        try { sessionStorage.setItem('prevPage', location.href); } catch (e) { /* ignore */ }
+    }
+    rememberPage();
+
     function normalisePath(path) {
         path = decodeURIComponent(path).toLowerCase().replace(/m/index\.html$/, '');
         return path.endsWith('/m/') ? path : path + '/m/';
@@ -185,13 +203,6 @@ document.head.appendChild(feedbackPopupScript);
         showUser(readCache());   // instant guess from last visit, confirmed by Firebase below
         watchSignIn();
 
-        // Remember where people were so sign-in can send them back here.
-        document.querySelectorAll('[data-cz-auth-link]').forEach(link => {
-            link.addEventListener('click', () => {
-                if (location.pathname.startsWith('/m/auth/')) return;
-                try { sessionStorage.setItem('prevPage', location.href); } catch (e) { /* ignore */ }
-            });
-        });
         document.querySelectorAll('[data-cz-sign-out]').forEach(b => b.addEventListener('click', signOut));
 
         // Account dropdown (desktop) — on small screens the avatar opens the drawer.
