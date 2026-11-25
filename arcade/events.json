@@ -51,6 +51,7 @@
       "candleLighting": "17:25",
       "candleReward": 600,
       "candlePenalty": 400,
+      "candleLiePenalty": 1000,
       "missions": [
         {
           "id": "c-days4",

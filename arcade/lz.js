@@ -264,6 +264,34 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 const today = (d) => { const x = d || new Date(); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
 // Candle-lighting Date for an event today (local), from its "candleLighting" HH:MM, else null.
 function candleAt(e, base) { if (!e || !e.candleLighting) return null; const p = String(e.candleLighting).split(":"); const c = base ? new Date(base) : new Date(); c.setHours(+p[0] || 0, +p[1] || 0, 0, 0); return c; }
+/* Boca Raton zmanim (SunCalc-derived): time the sun reaches a given altitude, rising or setting. */
+function sunAngleTime(date, angleDeg, rising) {
+  const PI = Math.PI, rad = PI / 180, dayMs = 86400000, J1970 = 2440588, J2000 = 2451545, e = rad * 23.4397, LAT = 26.3587, LNG = -80.0831;
+  const d = (date.valueOf() / dayMs - 0.5 + J1970) - J2000, lw = rad * -LNG, phi = rad * LAT;
+  const n = Math.round(d - 0.0009 - lw / (2 * PI)), ds = 0.0009 + lw / (2 * PI) + n;
+  const M = rad * (357.5291 + 0.98560028 * ds);
+  const L = M + rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M)) + rad * 102.9372 + PI;
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const Jnoon = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+  const w = Math.acos((Math.sin(angleDeg * rad) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec)));
+  const Jset = J2000 + (0.0009 + (w + lw) / (2 * PI) + n) + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+  const J = rising ? (2 * Jnoon - Jset) : Jset;
+  return new Date((J + 0.5 - J1970) * dayMs);
+}
+/* The widest halachic window to light Chanukah candles, b'dieved: from plag ha-mincha
+   (earliest, ~1.25 seasonal hours before shki'a) to alos ha-shachar next morning (latest,
+   ~72 min before sunrise). If this whole window is under 30 minutes a "held off 30 min" claim
+   is impossible — but at Boca it's ~13 hours, so the guard only trips in degenerate cases and
+   never falsely flags an honest person. */
+function candleBdievedWindow(base) {
+  try {
+    const d = base ? new Date(base) : new Date();
+    const sunrise = sunAngleTime(d, -0.833, true), shkiah = sunAngleTime(d, -0.833, false);
+    const plag = new Date(shkiah.getTime() - 1.25 * ((shkiah - sunrise) / 12));
+    const alos = new Date(sunAngleTime(new Date(d.getTime() + 864e5), -0.833, true).getTime() - 72 * 60000);
+    return { earliest: plag, latest: alos, gapMin: (alos - plag) / 60000 };
+  } catch (e) { return null; }
+}
 // Sundown-aware day for an event: after candle-lighting, the Jewish day has rolled to tomorrow.
 function eventDay(e) { const c = candleAt(e); if (c && new Date() >= c) { const t = new Date(); t.setDate(t.getDate() + 1); return today(t); } return today(); }
 const dayNum = (s) => Math.round(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5);
@@ -458,10 +486,11 @@ async function claimCandle(night, outcome) {
   const p = getProg(), k = "candle:" + night;
   if (p.claims[k]) return { already: true };
   const ev = (((await extras()).events) || []).find((e) => e.theme === "chanukah") || {};
-  const reward = ev.candleReward || 600, penalty = ev.candlePenalty || 400;
+  const reward = ev.candleReward || 600, penalty = ev.candlePenalty || 400, liePenalty = ev.candleLiePenalty || 1000;
   p.claims[k] = outcome; setProg(p);
   if (outcome === "clean") { await creditBonus(reward); return { lp: reward }; }
   if (outcome === "played") { await adjustLP(-penalty); return { lp: -penalty }; }
+  if (outcome === "lied") { await adjustLP(-liePenalty); return { lp: -liePenalty, lied: true }; }
   return { lp: 0 };
 }
 // If tonight is a candle-lighting night, which day of Chanukah is it?
@@ -510,11 +539,17 @@ function showCandleModal(ev, info) {
     if (a === "snooze") { try { localStorage.setItem("lzCandleSnooze:" + info.night, String(Date.now() + 20 * 60000)); } catch (e) {} candleShown = false; return close(); }
     back.querySelectorAll("button").forEach((x) => (x.disabled = true));
     let outcome = a;
-    if (a === "clean") { let last = 0; try { last = +(localStorage.getItem("lzLastPlay") || 0); } catch (e) {} const c = candleAt(ev); if (c && last >= c.getTime()) outcome = "played"; }
+    if (a === "clean") {
+      let last = 0; try { last = +(localStorage.getItem("lzLastPlay") || 0); } catch (e) {}
+      const c = candleAt(ev), win = candleBdievedWindow();
+      // Claimed they held off, but they played after candle-lighting — or there was no 30-min window
+      // to light in even b'dieved. Either way the claim is false: that's lying, not an honest "I played".
+      if ((c && last >= c.getTime()) || (win && win.gapMin < 30)) outcome = "lied";
+    }
     const r = await claimCandle(info.night, outcome);
     const el = back.querySelector("#lzCandleMsg");
     if (outcome === "clean") { el.style.color = "#7ee081"; el.textContent = "+" + (r.lp || 0) + " Lazer Points — a lichtige Chanukah! 🕯️"; }
-    else if (a === "clean") { el.style.color = "#ff8aa0"; el.textContent = (r.lp || 0) + " LP — looks like you did play. Next light!"; }
+    else if (outcome === "lied") { el.style.color = "#ff8aa0"; el.textContent = (r.lp || 0) + " LP — that doesn't add up. Be straight next light."; }
     else { el.style.color = "#ff8aa0"; el.textContent = (r.lp || 0) + " Lazer Points. Catch the next light."; }
     setTimeout(close, 2100);
   });
