@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vote for the Best Sect of Judaism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* One narrow scoreboard column: hero, tug-of-war bar, a row per side, match progress, rules. */
+:root {
+  --bg: #0e1726; --panel: #16223a; --line: #2b3b5c; --text: #f4efe4; --muted: #a3b3cf;
+  --chassidish: #f2b632; --chabad: #3fbf7f; --litvish: #5aa2ff; --sefardi: #ee6b52; --other: #7c8ba7;
+  --display: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); line-height: 1.5; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 48px; display: flex; flex-direction: column; gap: 28px; }
+:focus-visible { outline: 3px solid var(--litvish); outline-offset: 3px; }
+a { color: var(--chassidish); }
+.eyebrow { margin: 0; color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.8rem, 12vw, 5.2rem); line-height: .95; margin: .3rem 0 .4rem; text-wrap: balance; }
+.disclaimer { margin: 0 0 1rem; color: var(--muted); font-size: .72rem; max-width: 34rem; }
+.lede { font-size: 1.08rem; max-width: 36rem; margin: 0 0 1.1rem; }
+.cta { display: inline-block; background: var(--chassidish); color: #1a1405; font-weight: 700; font-size: 1.05rem; padding: .85rem 1.4rem; border-radius: 10px; text-decoration: none; }
+.cta:hover { filter: brightness(1.08); }
+.matchline { margin: .75rem 0 0; color: var(--muted); font-size: .95rem; }
+h2 { font-family: var(--display); font-weight: 400; font-size: 1.7rem; letter-spacing: .02em; margin: 0 0 .5rem; }
+.tug { display: flex; height: 22px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.08); }
+.tug > i { display: block; height: 100%; background: var(--c); width: var(--w); transition: width .6s ease; }
+.tugcap { margin: 8px 0 16px; color: var(--muted); font-size: .9rem; }
+.rows { display: flex; flex-direction: column; gap: 12px; }
+.row { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 14px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 12px; align-items: end; }
+.name { font-family: var(--display); font-size: 2rem; line-height: 1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pill { font-family: var(--body); font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: var(--c); color: #111; padding: .2rem .55rem; border-radius: 999px; }
+.amt { font-family: var(--display); font-size: 2.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.meta { color: var(--muted); font-size: .85rem; }
+.bar { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--c); width: var(--w); transition: width .6s ease; }
+.row.quiet .name { font-size: 1.35rem; color: var(--muted); }
+.row.quiet .amt { font-size: 1.7rem; color: var(--muted); }
+.note { margin: 12px 0 0; color: var(--muted); font-size: .85rem; }
+.goal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.goalhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.big { font-family: var(--display); font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.of { color: var(--muted); }
+.goal .bar { --c: var(--chassidish); }
+.goal p { margin: 0; color: var(--muted); font-size: .9rem; }
+.rules ol { margin: 0 0 1rem; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 6px; }
+.rules p { margin: 0 0 .6rem; }
+footer { color: var(--muted); font-size: .8rem; }
+@media (prefers-reduced-motion: reduce) { .tug > i, .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="eyebrow">Evan · 9th grade · Yeshiva Tiferes Torah of Boca Raton</p>
+    <h1>Vote for the best sect of Judaism</h1>
+    <p class="disclaimer">Disclaimer: this is all in good fun. We don't actually think any one group is better than another. Every Yid is precious, and all the money goes to the same yeshiva.</p>
+    <p class="lede">I'm raising money for my yeshiva, and every dollar you give is a vote. Chassidish, Chabad, Litvish or Sefardi: write your side in the comment when you donate, and watch your side climb. Even $1 counts. I want as many people in on this as possible.</p>
+    <a class="cta" href="https://causematch.com/TTB/evan" target="_top">Donate and vote</a>
+    <p class="matchline">Every gift is doubled by the match.</p>
+  </header>
+
+  <section aria-labelledby="score-h">
+    <h2 id="score-h">Live scoreboard</h2>
+    <div id="tug" class="tug" role="img" aria-label="Loading votes"></div>
+    <p id="tugcap" class="tugcap">Loading the latest votes…</p>
+    <div id="rows" class="rows"></div>
+    <p class="note">Gifts without a side in the comment sit in the grey row and don't count toward the winner.</p>
+  </section>
+
+  <section class="goal" aria-labelledby="goal-h">
+    <h2 id="goal-h">Campaign goal</h2>
+    <div class="goalhead"><span id="matched" class="big">–</span><span id="goaltext" class="of"></span></div>
+    <div id="goalbar" class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="15000"><i></i></div>
+    <p id="goalnote"></p>
+  </section>
+
+  <section class="rules" aria-labelledby="how-h">
+    <h2 id="how-h">How it works</h2>
+    <ol>
+      <li>Tap Donate and give any amount. A dollar counts.</li>
+      <li>Type Chassidish, Chabad, Litvish or Sefardi in the comment box.</li>
+      <li>Your dollars land on your side, doubled, within a few minutes.</li>
+    </ol>
+    <p>The winning side picks the theme of my next game on <a href="https://ewieds.github.io/arcade" target="_top">Lazer Arcade</a>.</p>
+    <p>I'm adding $1 of my own for every $100 raised.</p>
+  </section>
+
+  <footer id="foot">Scores update about every 5 minutes.</footer>
+</main>
+<script>
+var SIDES = [
+  { k: 'chassidish', n: 'Chassidish' }, { k: 'chabad', n: 'Chabad' },
+  { k: 'litvish', n: 'Litvish' }, { k: 'sefardi', n: 'Sefardi' }
+];
+function money(n) { return '$' + Math.round(Number(n)).toLocaleString('en-US'); }
+function el(tag, cls, text) { var x = document.createElement(tag); if (cls) x.className = cls; if (text !== undefined) x.textContent = text; return x; }
+
+function render(R) {
+  var teamTotal = SIDES.reduce(function (s, x) { return s + R.sides[x.k].d; }, 0);
+  var tug = document.getElementById('tug'), cap = document.getElementById('tugcap');
+  tug.textContent = '';
+  if (teamTotal > 0) {
+    SIDES.forEach(function (s) {
+      var d = R.sides[s.k].d; if (d <= 0) return;
+      var seg = document.createElement('i');
+      seg.style.setProperty('--c', 'var(--' + s.k + ')');
+      seg.style.setProperty('--w', (d / teamTotal * 100) + '%');
+      tug.appendChild(seg);
+    });
+    tug.setAttribute('aria-label', 'Vote split: ' + SIDES.map(function (s) { return s.n + ' ' + money(R.sides[s.k].d); }).join(', '));
+    var lead = SIDES.filter(function (s) { return s.k === R.leader; })[0];
+    cap.textContent = lead ? lead.n + ' leads.' : 'Tied at the top.';
+  } else {
+    tug.setAttribute('aria-label', 'No votes yet');
+    cap.textContent = 'No votes yet. Be the first.';
+  }
+
+  var rows = document.getElementById('rows'); rows.textContent = '';
+  function addRow(k, name, quiet) {
+    var d = R.sides[k].d, n = R.sides[k].n;
+    var row = el('div', 'row' + (quiet ? ' quiet' : ''));
+    row.style.setProperty('--c', 'var(--' + k + ')');
+    var nm = el('div', 'name'); nm.appendChild(el('span', '', name));
+    if (!quiet && R.leader === k) nm.appendChild(el('span', 'pill', 'Leading'));
+    row.appendChild(nm);
+    row.appendChild(el('div', 'amt', money(d)));
+    var gifts = n === 1 ? '1 gift' : n + ' gifts';
+    var share = quiet ? '' : (teamTotal > 0 ? Math.round(d / teamTotal * 100) + '% of votes · ' : '');
+    row.appendChild(el('div', 'meta', share + gifts));
+    var bar = el('div', 'bar'), fill = document.createElement('i');
+    var pct = quiet ? (R.total > 0 ? d / R.total * 100 : 0) : (teamTotal > 0 ? d / teamTotal * 100 : 0);
+    fill.style.setProperty('--w', pct + '%'); bar.appendChild(fill); row.appendChild(bar);
+    rows.appendChild(row);
+  }
+  SIDES.forEach(function (s) { addRow(s.k, s.n, false); });
+  addRow('other', 'No side picked', true);
+
+  var goal = R.goal || 15000, matched = R.total;
+  document.getElementById('matched').textContent = money(matched);
+  document.getElementById('goaltext').textContent = 'of ' + money(goal) + ' with the match';
+  var gb = document.getElementById('goalbar');
+  gb.setAttribute('aria-valuenow', String(matched));
+  gb.firstChild.style.setProperty('--w', Math.min(100, matched / goal * 100) + '%');
+  document.getElementById('goalnote').textContent = R.donors + (R.donors === 1 ? ' donor' : ' donors') + ' so far. Every gift is doubled.';
+  document.getElementById('foot').textContent = 'Last change ' + R.updated + '. Scores update about every 5 minutes. All amounts include the match.';
+}
+
+function load() {
+  fetch('scores.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(render)
+    .catch(function () { document.getElementById('tugcap').textContent = 'Could not load the scores. Refresh in a minute.'; });
+}
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

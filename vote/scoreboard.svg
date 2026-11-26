@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="414" viewBox="0 0 600 414" font-family="Arial, Helvetica, sans-serif">
+<rect width="600" height="414" rx="18" fill="#0e1726"/>
+<text x="30" y="46" font-size="30" font-weight="700" fill="#f4efe4">Vote for the best sect of Judaism</text>
+<text x="30" y="72" font-size="14" fill="#a3b3cf">Every dollar is a vote. Write your side in the comment.</text>
+<text x="30" y="118" font-size="24" font-weight="700" fill="#f4efe4">Chassidish</text><text x="230" y="118" font-size="13" font-weight="700" fill="#f2b632">LEADING</text>
+<text x="570" y="118" font-size="24" font-weight="700" fill="#f4efe4" text-anchor="end">$216</text>
+<rect x="30" y="130" width="540" height="10" rx="5" fill="#2b3b5c"/>
+<rect x="30" y="130" width="540.0" height="10" rx="5" fill="#f2b632"/>
+<text x="30" y="180" font-size="24" font-weight="700" fill="#f4efe4">Chabad</text>
+<text x="570" y="180" font-size="24" font-weight="700" fill="#f4efe4" text-anchor="end">$0</text>
+<rect x="30" y="192" width="540" height="10" rx="5" fill="#2b3b5c"/>
+<rect x="30" y="192" width="0.0" height="10" rx="5" fill="#3fbf7f"/>
+<text x="30" y="242" font-size="24" font-weight="700" fill="#f4efe4">Litvish</text>
+<text x="570" y="242" font-size="24" font-weight="700" fill="#f4efe4" text-anchor="end">$0</text>
+<rect x="30" y="254" width="540" height="10" rx="5" fill="#2b3b5c"/>
+<rect x="30" y="254" width="0.0" height="10" rx="5" fill="#5aa2ff"/>
+<text x="30" y="304" font-size="24" font-weight="700" fill="#f4efe4">Sefardi</text>
+<text x="570" y="304" font-size="24" font-weight="700" fill="#f4efe4" text-anchor="end">$0</text>
+<rect x="30" y="316" width="540" height="10" rx="5" fill="#2b3b5c"/>
+<rect x="30" y="316" width="0.0" height="10" rx="5" fill="#ee6b52"/>
+<text x="30" y="380" font-size="16" fill="#f4efe4">$216 of $15,000 with the match · 1 donor</text>
+<text x="30" y="400" font-size="11" fill="#a3b3cf">All in good fun. We don't actually think any one group is better. Updated Nov 25, 2026, 10:20 PM ET</text>
+</svg>

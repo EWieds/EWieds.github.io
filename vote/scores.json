@@ -1,0 +1,30 @@
+{
+  "sides": {
+    "chassidish": {
+      "d": 216,
+      "n": 1
+    },
+    "chabad": {
+      "d": 0,
+      "n": 0
+    },
+    "litvish": {
+      "d": 0,
+      "n": 0
+    },
+    "sefardi": {
+      "d": 0,
+      "n": 0
+    },
+    "other": {
+      "d": 0,
+      "n": 0
+    }
+  },
+  "total": 216,
+  "donors": 1,
+  "leader": "chassidish",
+  "updated": "Nov 25, 2026, 10:20 PM ET",
+  "goal": 15000,
+  "multiplier": 2
+}
