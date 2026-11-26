@@ -392,6 +392,19 @@ service cloud.firestore {
       allow delete: if arcadeAccount() && request.auth.uid == uid;
     }
 
+    // Per-account saved progress for community games. Owner-only, size-capped. Just game
+    // state (not LP/scores), so no live-tab gate is needed.
+    match /communityGameSaves/{uid}/games/{gameId} {
+      allow read: if arcadeAccount() && request.auth.uid == uid;
+      allow create, update: if arcadeAccount() && request.auth.uid == uid
+        && gameId.matches('^[a-z0-9]{2,40}$')
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 200000
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if arcadeAccount() && request.auth.uid == uid;
+    }
+
     // Play counters used to sort games by popularity. Anyone may add exactly one play.
     match /arcadeStats/{gameId} {
       allow read: if true;

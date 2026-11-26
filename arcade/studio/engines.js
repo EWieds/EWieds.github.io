@@ -40,13 +40,13 @@ export const ENGINES = {
     tag: "The engine behind Crema Rush and Harbor Rush. Invent your own shop: products, machines, recipes, customers, districts, scripts.",
     play(host, project, opts) {
       opts = opts || {};
-      const f = frame(host, project.title, "/arcade/engines/rush/play.html"), key = "rushkit." + (opts.gameId || "test"), rep = reporter(opts, 20000);
-      let saved = null; if (opts.gameId) { try { saved = localStorage.getItem(key); } catch (e) {} }
+      const f = frame(host, project.title, "/arcade/engines/rush/play.html"), rep = reporter(opts, 20000);
+      const saved = opts.save || null;
       const onMsg = (e) => {
         if (e.source !== f.contentWindow || !e.data) return;
-        if (e.data.type === "rush-ready") f.contentWindow.postMessage({ type: "rush-pack", project, save: saved, persist: !!opts.gameId, allowScript: !!opts.allowScript }, "*");
+        if (e.data.type === "rush-ready") f.contentWindow.postMessage({ type: "rush-pack", project, save: saved, persist: true, allowScript: !!opts.allowScript }, "*");
         if (e.data.type === "rush-score") rep(e.data.score);
-        if (e.data.type === "rush-save" && opts.gameId && typeof e.data.data === "string" && e.data.data.length < 2000000) { try { localStorage.setItem(key, e.data.data); } catch (err) {} }
+        if (e.data.type === "rush-save" && typeof e.data.data === "string" && opts.onSave) opts.onSave(e.data.data);
       };
       window.addEventListener("message", onMsg);
       return { destroy() { window.removeEventListener("message", onMsg); f.remove(); }, pause() {}, sandboxed: true };
@@ -69,9 +69,22 @@ export const ENGINES = {
         + 'function fromDom(){var b=null;try{var els=document.querySelectorAll(\'[data-score],[id*="score" i],[class*="score" i],[id*="point" i],[class*="point" i]\');for(var i=0;i<els.length;i++){var el=els[i],t=el.getAttribute("data-score");if(t==null)t=el.textContent||"";var n=toNum(t);if(n!=null)b=(b==null?n:Math.max(b,n));}}catch(e){}return b;}'
         + 'var seen=null;setInterval(function(){if(window.__lzX)return;var vs=[fromGlobals(),fromDom()].filter(function(x){return x!=null});if(!vs.length)return;var v=Math.max.apply(null,vs);if(seen==null||v>seen){seen=v;parent.postMessage({type:"lz-score",score:v},"*");}},1500);'
         + '})();<\/script>';
-      let html = String(project.html || ""); html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + helper) : helper + html;
+      // Sandboxed frames (no same-origin) can't use localStorage — it throws. This polyfills it,
+      // seeded with the player's saved progress, and mirrors every write back to the parent to
+      // persist. Fixes games that would otherwise crash on localStorage, and saves their progress.
+      const storeShim = '<script>(function(){'
+        + 'var S={};try{S=JSON.parse(' + JSON.stringify(opts.save || "") + '||"{}")||{};}catch(e){S={};}'
+        + 'var T,post=function(){try{clearTimeout(T);}catch(e){}T=setTimeout(function(){try{parent.postMessage({type:"lz-store",data:JSON.stringify(S)},"*");}catch(e){}},200);};'
+        + 'var API={getItem:function(k){k=""+k;return Object.prototype.hasOwnProperty.call(S,k)?S[k]:null;},setItem:function(k,v){S[""+k]=""+v;post();},removeItem:function(k){delete S[""+k];post();},clear:function(){for(var k in S)delete S[k];post();},key:function(i){var ks=Object.keys(S);return i>=0&&i<ks.length?ks[i]:null;}};'
+        + 'var LS=new Proxy({},{get:function(t,p){if(p in API)return API[p];if(p==="length")return Object.keys(S).length;if(typeof p!=="string")return undefined;return Object.prototype.hasOwnProperty.call(S,p)?S[p]:undefined;},set:function(t,p,v){if(p in API||p==="length")return true;S[""+p]=""+v;post();return true;},has:function(t,p){return (p in API)||p==="length"||Object.prototype.hasOwnProperty.call(S,p);},deleteProperty:function(t,p){delete S[""+p];post();return true;}});'
+        + 'var ok=false;try{window.localStorage.setItem("__lz","1");window.localStorage.removeItem("__lz");ok=true;}catch(e){}'
+        + 'if(!ok){try{Object.defineProperty(window,"localStorage",{value:LS,configurable:true});}catch(e){try{window.localStorage=LS;}catch(e2){}}'
+        + 'var M={};try{Object.defineProperty(window,"sessionStorage",{value:{getItem:function(k){k=""+k;return Object.prototype.hasOwnProperty.call(M,k)?M[k]:null;},setItem:function(k,v){M[""+k]=""+v;},removeItem:function(k){delete M[""+k];},clear:function(){M={};},key:function(i){return Object.keys(M)[i]||null;},get length(){return Object.keys(M).length;}},configurable:true});}catch(e){}}'
+        + '})();<\/script>';
+      const inject = storeShim + helper;
+      let html = String(project.html || ""); html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + inject) : inject + html;
       const f = frame(host, project.title, null, html), rep = reporter(opts, 5000);
-      const onMsg = (e) => { if (e.source !== f.contentWindow || !e.data) return; if (e.data.type === "lz-score") rep(e.data.score); if (e.data.type === "lz-end" && opts.onEnd) opts.onEnd({ score: clampScore(e.data.score), won: !!e.data.won, time: 0 }); };
+      const onMsg = (e) => { if (e.source !== f.contentWindow || !e.data) return; if (e.data.type === "lz-score") rep(e.data.score); if (e.data.type === "lz-store" && typeof e.data.data === "string" && opts.onSave) opts.onSave(e.data.data); if (e.data.type === "lz-end" && opts.onEnd) opts.onEnd({ score: clampScore(e.data.score), won: !!e.data.won, time: 0 }); };
       window.addEventListener("message", onMsg);
       return { destroy() { window.removeEventListener("message", onMsg); f.remove(); }, pause() {}, sandboxed: true };
     }
@@ -98,13 +111,13 @@ export const ENGINES = {
     tag: "Harbor Rush's physics crane. Build your own ports, ships and cargo puzzles on the real engine — no code.",
     play(host, project, opts) {
       opts = opts || {};
-      const f = frame(host, project.title, "/arcade/engines/crane/play.html"), key = "cranekit." + (opts.gameId || "test"), rep = reporter(opts, 20000);
-      let saved = null; if (opts.gameId) { try { saved = localStorage.getItem(key); } catch (e) {} }
+      const f = frame(host, project.title, "/arcade/engines/crane/play.html"), rep = reporter(opts, 20000);
+      const saved = opts.save || null;
       const onMsg = (e) => {
         if (e.source !== f.contentWindow || !e.data) return;
-        if (e.data.type === "crane-ready") f.contentWindow.postMessage({ type: "crane-pack", project, save: saved, persist: !!opts.gameId, gameId: opts.gameId || "test" }, "*");
+        if (e.data.type === "crane-ready") f.contentWindow.postMessage({ type: "crane-pack", project, save: saved, persist: true, gameId: opts.gameId || "test" }, "*");
         if (e.data.type === "crane-score") rep(e.data.score);
-        if (e.data.type === "crane-save" && opts.gameId && typeof e.data.data === "string" && e.data.data.length < 2000000) { try { localStorage.setItem(key, e.data.data); } catch (e2) {} }
+        if (e.data.type === "crane-save" && typeof e.data.data === "string" && opts.onSave) opts.onSave(e.data.data);
       };
       window.addEventListener("message", onMsg);
       return { destroy() { window.removeEventListener("message", onMsg); f.remove(); }, pause() {}, sandboxed: true };

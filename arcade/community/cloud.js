@@ -44,6 +44,19 @@ export async function publish(project, thumb, existingId) {
   return { id, status };
 }
 export async function countPlay(id) { try { await setDoc(doc(db, "communityGames", id), { plays: increment(1) }, { merge: true }); } catch (e) { console.warn("play count", e.code || e); } }
+
+// Saved progress for a community game. Syncs to the account when signed in (follows you across
+// devices), and always mirrors to this browser's localStorage as a cache / signed-out fallback.
+const SAVE_MAX = 200000, saveKey = (id) => "cgs:" + id;
+export async function getGameSave(id) {
+  if (uid()) { try { const s = await getDoc(doc(db, "communityGameSaves", uid(), "games", id)); if (s.exists() && typeof s.data().data === "string") return s.data().data; } catch (e) { console.warn("load save", e.code || e); } }
+  try { return localStorage.getItem(saveKey(id)); } catch (e) { return null; }
+}
+export async function setGameSave(id, data) {
+  if (typeof data !== "string" || data.length > SAVE_MAX) return;
+  try { localStorage.setItem(saveKey(id), data); } catch (e) {}
+  if (uid()) { try { await setDoc(doc(db, "communityGameSaves", uid(), "games", id), { data, updatedAt: serverTimestamp() }); } catch (e) { console.warn("sync save", e.code || e); } }
+}
 export async function liked(id) { if (!uid()) return false; try { return (await getDoc(doc(db, "communityLikes", id, "users", uid()))).exists(); } catch (e) { return false; } }
 export async function setLike(id, on) {
   const b = writeBatch(db), lr = doc(db, "communityLikes", id, "users", uid()), gr = doc(db, "communityGames", id);

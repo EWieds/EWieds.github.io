@@ -83,10 +83,19 @@ if (!g || (["hidden", "pending", "rejected"].includes(g.status) && !isStaff() &&
   if (eng.id === "rush" || eng.id === "html") $("#stage").classList.add("rush");
   const stage = $("#stage"); let game = null, counted = false, likedNow = false;
   const cover = (html) => { const c = document.createElement("div"); c.className = "cover"; c.innerHTML = html; stage.appendChild(c); return c; };
+  // Saved progress: load once, then persist (debounced) whenever the game saves.
+  let gameSave = null; try { gameSave = await C.getGameSave(g.id); } catch (e) {}
+  let saveT = 0;
+  const onSave = (data) => {
+    if (typeof data !== "string" || data.length > 200000) return;
+    gameSave = data;
+    try { localStorage.setItem("cgs:" + g.id, data); } catch (e) {}
+    clearTimeout(saveT); saveT = setTimeout(() => { C.setGameSave(g.id, data).catch(() => {}); }, 800);
+  };
   const start = () => {
     audio(); stage.querySelectorAll(".cover").forEach((c) => c.remove()); if (game) game.destroy();
     if (!counted) { counted = true; C.countPlay(g.id).catch(() => {}).then(() => { $("#plays").textContent = fmt((g.plays || 0) + 1); }); }
-    game = eng.play(stage, JSON.parse(g.data), { onEnd: ended, gameId: g.id, allowScript: !!g.hasCode && (g.status === "live" || isStaff() || isOwner()) });
+    game = eng.play(stage, JSON.parse(g.data), { onEnd: ended, gameId: g.id, save: gameSave, onSave, allowScript: !!g.hasCode && (g.status === "live" || isStaff() || isOwner()) });
   };
   async function ended(r) {
     let line = "";
