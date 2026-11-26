@@ -140,6 +140,7 @@ function bindUI(){
   $('#o-in').onclick=function(){goBackIn();};$('#o-phb').onclick=function(){if(PH.open)closePhone();else openPhone();};
   $('#o-mini').onclick=function(){openPhone('maps');};$('#o-cut').onclick=function(){if(CUT)CUT.skip=true;};
   $('#ph-home').onclick=function(){if(PH.app==='home')closePhone();else{PH.app='home';renderPhone();}};
+  $('#ph-x').onclick=function(){closePhone();};
   $('#o-photo').querySelector('.save').onclick=savePhoto;$('#o-photo').querySelector('.done').onclick=function(){photoMode(false);};
   $('#bOut').onclick=function(){if(O.on)goBackIn();else O.walkOut();};
   $('#o-do').onclick=function(){if(popOpen())closePop();doBox();};

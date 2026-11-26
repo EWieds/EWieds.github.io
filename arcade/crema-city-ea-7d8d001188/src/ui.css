@@ -51,7 +51,10 @@ body.photo #ui,body.photo #o-ui>*:not(#o-photo){display:none!important}
 #o-phone.away{transform:translateY(110%);opacity:0}
 .ph{width:300px;height:600px;max-height:calc(100vh - 36px);border-radius:40px;background:#111;padding:12px;box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 2px #333;display:flex;flex-direction:column}
 .ph-scr{flex:1;border-radius:30px;background:#f6f1ea;overflow:hidden;display:flex;flex-direction:column;position:relative}
-.ph-st{display:flex;justify-content:space-between;padding:10px 20px 4px;font:800 12px var(--body,system-ui);color:#2a1a12}
+.ph-st{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 4px;font:800 12px var(--body,system-ui);color:#2a1a12}
+.ph-st .ph-sig{margin-left:auto;margin-right:8px}
+#ph-x{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:0;background:rgba(42,26,18,.08);color:#2a1a12;font:700 13px/1 var(--body,system-ui);display:flex;align-items:center;justify-content:center;cursor:pointer}
+#ph-x:active{background:rgba(42,26,18,.2)}
 #ph-body{flex:1;overflow:auto;padding:0 12px 10px}
 #ph-home{align-self:center;width:110px;height:5px;border-radius:3px;background:#555;border:0;margin-top:9px;cursor:pointer}
 .ph-wall{margin:8px 0 14px;padding:22px 10px;border-radius:22px;background:linear-gradient(160deg,#ffc63d,#e2553f);color:#fff;text-align:center}
