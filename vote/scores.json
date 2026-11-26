@@ -1,7 +1,7 @@
 {
   "sides": {
     "chassidish": {
-      "d": 216,
+      "d": 324,
       "n": 1
     },
     "chabad": {
@@ -21,10 +21,11 @@
       "n": 0
     }
   },
-  "total": 216,
+  "total": 324,
   "donors": 1,
   "leader": "chassidish",
-  "updated": "Nov 25, 2026, 10:20 PM ET",
-  "goal": 15000,
-  "multiplier": 2
+  "updated": "Nov 26, 2026, 2:36 PM ET",
+  "goal": 25000,
+  "bonusGoal": 30000,
+  "multiplier": 3
 }
