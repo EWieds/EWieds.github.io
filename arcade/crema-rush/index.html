@@ -2144,7 +2144,7 @@ function renderHud(){
   if(!G)return;var loc=curLoc();
   setText('cash',fmt(G.cash));
   if(frameNo%20===0){var ex=OUT&&OUT.empire?OUT.empire():null,inCity=ex!=null,r=totalRate()+(ex||0),rt=Math.abs(r)<.005?' ':(r>0?'+':'')+fmt(r)+(inCity?'/min from everything you own':'/min elsewhere');var el=$('#rate');if(hudC.rate!==rt){el.textContent=rt;el.className=r>0?'pos':r<0?'neg':'';hudC.rate=rt;}}
-  setText('dayl',SH?'Day '+SH.s.day:'Day '+(loc.days+1));
+  var cdy=OUT&&OUT.cityDay?OUT.cityDay():null;setText('dayl',cdy?'Day '+cdy:SH?'Day '+SH.s.day:'Day '+(loc.days+1));
   var f=SH?SH.t/SH.len:0;setText('clock',SH?(SH.phase==='open'?clockStr(f):'Closing'):'');
   $('#dbar i').style.transform='scaleX('+clamp(f,0,1).toFixed(3)+')';var cl=!!(SH&&SH.phase!=='open');if(hudC.cl!==cl){$('#dbar').classList.toggle('close',cl);hudC.cl=cl;}
   if(SH){var rev=SH.s.sales+SH.s.tips,gt='Goal '+fmtR(rev)+' / '+fmtR(SH.s.goal);setText('goal',gt);var ok=rev>=SH.s.goal;if(hudC.gok!==ok){$('#goal').classList.toggle('ok',ok);hudC.gok=ok;}}
@@ -3709,6 +3709,8 @@ function updDaylight(){
   if(lit!==lastLit){lastLit=lit;winMats.forEach(function(w){w.m.map=lit?w.night:w.day;w.m.needsUpdate=true;});}
 }
 function updClock(dt){
+  // out in the city, the city's own day runs the clock (a day is about 5 minutes, 7:00 to 7:00); inside a shop mid-shift, the shift does
+  if(O.on){clockSrc='world';dayTick(dt);clockH=(7+(W4().dayT||0)/DAY_SEC*24)%24;return;}
   if(SH&&SH.phase!=='done'){clockH=7+12*clamp(SH.t/SH.len,0,1);clockSrc='shift';}
   else{if(clockSrc==='shift'){clockSrc='world';}clockH+=dt*(12/150);if(clockH>=24)clockH-=24;}
 }
@@ -3871,7 +3873,7 @@ function econTick(dt){
     var r=truckRate(t,z),sold=r*dt/60/Math.max(1,IND[t.ind].pm*TM(t.city).pm*4);t.stock=Math.max(0,t.stock-sold);var m=r*dt/60;inc+=m;t.earned=(t.earned||0)+m;EBX['truck:'+t.name]=(EBX['truck:'+t.name]||0)+m;
     if(t.stock<=0)note(t.name+' sold out','Load crates or restock at Crema Supply Co.','bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});
     t.vis=(t.vis||0)+dt*Math.min(10,r/8)/60;if(t.vis>=1&&O.on){t.vis=0;truckCustomer(v);}});
-  if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}earnLog(EBL,EBX,dt);
+  if(inc){cityGain(inc/60*dt);G.stats.passive+=inc/60*dt;dayEarn(inc/60*dt);if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}earnLog(EBL,EBX,dt);
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
   homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);econTick2(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);
@@ -4243,7 +4245,7 @@ function updCut(dt){if(!CUT||!cutPlane)return;CUT.t+=dt;var c=CUT;
 /* ---------- your phone ---------- */
 var PH={open:false,app:'home',call:null,ring:null};
 function phoneOpen(){return PH.open;}
-var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['garage','Garage','#2f5f90','🚗'],['tut','How to play','#e2553f','▶'],['metro','Metro Chat','#7a5ad8','💬'],['gfx','Graphics','#3a3f4b','☼'],['arc','Arcade','#ff3d8a','🕹'],['bug','Report a bug','#e2553f','🐞']];
+var APPS=[['calls','Phone','#2fa860','☎'],['msgs','Messages','#2f8fd0','✉'],['maps','Maps','#ff9b3d','➤'],['goals','Goals','#ffb83d','★'],['hold','Holdings','#8a5a3a','▦'],['dir','Directory','#5a4a38','☏'],['cab','City Cab','#ffc63d','🚕'],['fly','Air Crema','#7a5ad8','✈'],['bank','Bank','#2f5a46','$'],['emp','Empire','#e2553f','★'],['cam','Camera','#3a3f4b','◉'],['stk','Stocks','#2fa860','↗'],['club','Crema Club','#7a2a22','♥'],['gig','CremaDash','#ff5a3d','➜'],['garage','Garage','#2f5f90','🚗'],['tut','How to play','#e2553f','▶'],['metro','Metro Chat','#7a5ad8','💬'],['gfx','Graphics','#3a3f4b','☼'],['arc','Arcade','#ff3d8a','🕹'],['days','Days & LP','#7a5ad8','☀'],['bug','Report a bug','#e2553f','🐞']];
 function openPhone(app){PH.open=true;PH.app=app||'home';if(app!=='msgs')PH.thread=null;$('#o-phone').hidden=false;$('#o-phone').classList.remove('away');renderPhone();try{sfx.pick();}catch(e){}if(app==='msgs'){W4().unread=0;badge();}}
 O.openPhone=openPhone;
 function closePhone(){PH.open=false;$('#o-phone').classList.add('away');setTimeout(function(){if(!PH.open)$('#o-phone').hidden=true;},250);stopRing();}
@@ -4263,6 +4265,7 @@ function renderPhone(){
     (W4().tax.visited?'<button type="button" class="ph-row" data-bank="tax"><div><b>Pay city taxes</b><small>'+(unpaid().length?plural(unpaid().length,'bill')+' due':'Nothing due')+'</small></div></button>':'')+'</div>';}
   else if(a==='goals'){var cur=misCur();h=phTop('Goals')+'<div class="ph-card gl"><small>NOW</small><b>'+esc(cur.t)+'</b></div><div class="ph-list">'+MIS.map(function(m,i){var d=i<W4().mis;return '<div class="ph-msg '+(d?'good':i===W4().mis?'info':'')+'"><b>'+(d?'✓ ':'')+esc(m.t)+'</b><span>'+esc(m.ch)+(i===W4().mis?' · '+esc(m.h):'')+'</span></div>';}).join('')+'</div>';}
   else if(a==='hold'){h=holdApp();}
+  else if(a==='days'){h=daysApp();}
   else if(a==='dir'){var bs=BUS.filter(function(b){return !b.home;}).sort(function(x,y){return Math.hypot(x.door.x-P.x,x.door.z-P.z)-Math.hypot(y.door.x-P.x,y.door.z-P.z);});PH.bs=bs;h=phTop('Directory · '+plan.name)+'<div class="ph-list">'+bs.map(function(b,i){var s=W4().biz[b.key]||{};return '<button type="button" class="ph-row" data-bz="'+i+'"><i style="background:'+(s.own?'#2fa860':'#8a5a3a')+'">'+esc(b.name.charAt(0))+'</i><div><b>'+esc(b.name)+'</b><small>'+(s.own?'Yours':b.owner+' · '+b.phone)+'</small></div><span>☎</span></button>';}).join('')+'</div>';}
   el.innerHTML=h;
   el.querySelectorAll('[data-bz]').forEach(function(bt){bt.onclick=function(){var b=PH.bs[+bt.dataset.bz];dial({n:b.name,col:'#8a5a3a',fn:function(){bizTalk(b,true);}});};});
@@ -5075,7 +5078,7 @@ function homeRoom(){
   ACTS.home.push({x:ox-3,z:3.4,r:1.6,label:'Watch the news',sub:'Channel 4',fn:function(){var n=(G.news||[]).slice(0,4).map(function(x){return '· '+x.text;}).join('\n');popup('Crema News',n||'Slow news day. A cat got stuck in a tree on Main St. It\'s fine now.',[{t:'Turn it off',cls:'sec'}]);}});
   ACTS.home.push({x:ox-7,z:3.4,r:1.4,label:'Open the laptop',sub:'Your holdings',fn:function(){openPhone('hold');}});
   ACTS.home.push({x:ox+5,z:-4.2,r:1.5,label:'Raid the fridge',sub:function(){var p=W4().pantry||{},n=Object.keys(p).filter(function(k){return p[k]>0;});return n.length?'Groceries: '+n.slice(0,3).join(', '):'Kitchen';},fn:function(){var w=W4(),p=w.pantry||{},n=Object.keys(p).filter(function(k){return p[k]>0;});if(!n.length){bubble(P.x,2.6,P.z,pick(['Leftover pizza. Perfect.','Just oat milk. Of course.','Cold brew. Your own.','Empty. Time for a trip to Mg1\'s.']),'');try{sfx.pick();}catch(e){}return;}var k=pick(n);p[k]--;w.buff=w.buff||{};w.buff.full=now()+600000;if(/Pie|Cookies/.test(k)){w.buff.fast=now()+120000;}addXP(4);bubble(P.x,2.6,P.z,'Mmm, '+k.toLowerCase()+'.','good');save();}});
-  ACTS.home.push({x:ox+6.4,z:1.2,r:1.5,label:function(){return TOUR?'Check out the bedroom':'Take a nap';},sub:function(){return TOUR?'Nice light in here':'You wake up rested';},fn:function(){if(TOUR){bubble(P.x,2.6,P.z,'Big closet. Nice.','');return;}fade(function(){addXP(10);toast('You feel rested. +10 XP','good');});}});
+  ACTS.home.push({x:ox+6.4,z:1.2,r:1.5,label:function(){return TOUR?'Check out the bedroom':clockH>=20||clockH<6?'Sleep until morning':'Take a nap';},sub:function(){return TOUR?'Nice light in here':clockH>=20||clockH<6?'Wake up at 7:00 on day '+(cityDay()+1):'You wake up rested';},fn:function(){if(TOUR){bubble(P.x,2.6,P.z,'Big closet. Nice.','');return;}if(clockH>=20||clockH<6){sleepTillMorning();addXP(10);return;}fade(function(){addXP(10);toast('You feel rested. +10 XP','good');});}});
   ACTS.home.push({x:ox-.5,z:2,r:1.6,label:function(){var h=AREAS.home.h;if(TOUR&&h)return 'Make '+h.owner+' an offer';var w=W4();return w.home&&AREAS.home.h&&w.home===AREAS.home.h.key?'Throw a house party':'Look around';},
     sub:function(){var h=AREAS.home.h;return TOUR&&h?'Asking '+fmt(dState(h).ask):'Neighbors come over · fame';},fn:function(){var h=AREAS.home.h;if(!h)return;if(TOUR){bizTalk(h,false);return;}var w=W4();if(w.home===h.key)houseParty(h);}});
   AREAS.home.h=null;
@@ -6632,7 +6635,7 @@ function home2Room(){var g=room('home2',{name:'Upstairs',w:22,d:14,floor:floorT(
   ACTS.home2.push({x:ox+10,z:3.6,r:1.6,label:'Bowl a frame',sub:'Your own lane',when:'bowling',fn:function(){startBowl(true);}});
   ACTS.home2.push({x:ox-3.6,z:5.4,r:1.6,label:'Wine cellar',sub:'Pour a glass for guests',when:'cellar',fn:function(){addFame(1);bubble(P.x,2.6,P.z,'A good year.','good');}});
   ACTS.home2.push({x:ox+2.2,z:5,r:1.6,label:'Cook something',sub:'Chef\'s kitchen',when:'kitchen',fn:function(){fade(function(){var w=W4();w.buff=w.buff||{};w.buff.full=now()+900000;addXP(8);bubble(P.x,2.6,P.z,'Home cooking.','good');save();});}});
-  ACTS.home2.push({x:ox-8.4,z:-2.4,r:1.8,label:'Take a nap',sub:'Skip ahead an hour',when:'bed',fn:function(){fade(function(){clockH=(clockH+1)%24;toast('You wake up refreshed.','good');});}});}
+  ACTS.home2.push({x:ox-8.4,z:-2.4,r:1.8,label:function(){return clockH>=20||clockH<6?'Sleep until morning':'Take a nap';},sub:function(){return clockH>=20||clockH<6?'Wake up at 7:00 on day '+(cityDay()+1):'Skip ahead an hour';},when:'bed',fn:function(){if(clockH>=20||clockH<6){sleepTillMorning();return;}fade(function(){clockH=Math.min(23.9,clockH+1);toast('You wake up refreshed.','good');});}});}
 function goHome2(h){var s=homeState(h),pr=(s.proj||[]).filter(function(p){return p.done;}),has=function(k){return pr.some(function(p){return p.k===k;});};
   Object.keys(H2).forEach(function(k){if(H2[k]&&H2[k].isObject3D)H2[k].visible=k==='bed'?has('floor2'):has(k);});var cu=pr.filter(function(p){return p.k==='custom'||!PROJ[p.k];});H2.custom.visible=cu.length>0;
   H2.plaques.forEach(function(q,i){var p=cu[i];q.m.visible=!!p;if(!p)return;var g2=q.c.getContext('2d');g2.fillStyle='#2a1a12';g2.fillRect(0,0,256,160);g2.fillStyle='#d4af37';g2.fillRect(6,6,244,148);g2.fillStyle='#2a1a12';g2.fillRect(10,10,236,140);g2.fillStyle='#ffe3a8';g2.textAlign='center';g2.font='bold 22px system-ui';wrapT(g2,p.label,128,60,220,26);g2.font='13px system-ui';g2.fillStyle='#c8b89a';g2.fillText('Built by Bob\'s Builders',128,130);q.t.needsUpdate=true;});
@@ -6860,7 +6863,7 @@ function talkCop(t,who,fine,pts,take){var L=lic(),clean=L.tickets<2&&L.pts<4,o={
   thinking(who,t,o);aiCall('You are '+who+', a fair, slightly tired traffic cop in a family-friendly city game. You pulled the player over. The driver\'s record: '+L.tickets+' tickets, '+L.pts+' points'+(L.warned?', already got '+L.warned+' warning(s)':'')+'. The player says something. Decide if they get a warning (only if they are polite AND their record is clean-ish) or the ticket. '+SAFE+'\nReturn only JSON: {"say": one short line, "warning": true|false}.',[],t.slice(0,200)).then(function(r){var warn=!!(r&&r.warning)&&clean;decide(warn,r&&r.say?clean2(r.say):'Uh huh.');});}
 function clean2(s){return clean(s).replace(/^"|"$/g,'');}
 function trafficSchool(){var L=lic(),c=Math.round(500*tierM());popup('Traffic school','Two hours of videos about stopping distances. Takes 4 points off'+(suspended()?' and ends your suspension':'')+'.\nYou have '+L.pts+' points.',[{t:'Sign up · '+fmt(c),off:!L.pts&&!suspended(),why:'Your record is clean.',fn:function(){if(!pay(c,'Traffic school'))return;fade(function(){L.pts=Math.max(0,L.pts-4);L.susp=0;clockH=(clockH+2)%24;banner('Graduated','Traffic school · −4 points','good');save();});}},{t:'No thanks',cls:'sec'}],'',{who:'Officer Diaz',role:'City Police',col:'#1f2f5a'});}
-var parkT=0;function lawSlow(dt){parkT+=dt;if(parkT>5){parkT=0;if(O.on&&P.area==='city'){eaNotice();parkCheck();if(cars.filter(function(c){return c.kind==='police';}).length<2){spawnCar('police',true);copBars();}}}}
+var parkT=0;function lawSlow(dt){parkT+=dt;if(parkT>5){parkT=0;if(O.on&&P.area==='city'){eaNotice();v41Note();parkCheck();if(cars.filter(function(c){return c.kind==='police';}).length<2){spawnCar('police',true);copBars();}}}}
 function copBars(){cars.filter(function(q){return q.kind==='police'&&!q.bar;}).forEach(function(q){var bar=new T.Group();bar.position.set(0,1.62,0);q.g.add(bar);q.bar=[bx(.42,.16,.32,new T.MeshBasicMaterial({color:0x661111}),-.3,0,0,bar),bx(.42,.16,.32,new T.MeshBasicMaterial({color:0x112266}),.3,0,0,bar)];});}
 /* cabs and buses follow the same rules: they stop on red and don't rear-end people */
 function ridePos(R,s){var pts=R.pts,acc=0;for(var k=0;k<pts.length-1;k++){var l=Math.hypot(pts[k+1].x-pts[k].x,pts[k+1].z-pts[k].z);if(acc+l>=s){var p=laneOff(pts,k,(s-acc)/Math.max(.01,l));return p;}acc+=l;}return null;}
@@ -7766,6 +7769,32 @@ function favorMenu(){var v=civ(),w=W4(),b=w.builds.filter(function(q){return cit
     {t:'Never mind',cls:'sec'}]);}
 function councilRoom(g,ox){bx(1.4,2.6,.15,toon(0x6b4a30),-11.85,1.3,-1.8,g).rotation.y=Math.PI/2;wallSign(g,'COUNCIL OFFICES',-11.8,3.1,-1.8,{bg:'#7a5ad8',fg:'#fff',w:3,h:.5,ry:Math.PI/2});
   ACTS.hall.push({x:ox-10.8,z:-1.8,r:1.4,label:function(){return councilOn()?'Your council office':'Council offices';},sub:function(){var v=civ();return councilOn()?(v.favors||0)+' favors · '+fmt(councilStipend())+'/min salary':'Members only';},fn:councilOffice});}
+
+
+/* ---------- 4.1: days pass in the city, and every day pays Lazer Points for what your empire earned ---------- */
+var DAYS={lastIn:now(),prevH:null,pend:0};
+var LP_PER_DOLLAR=.0015,LP_DAY_CAP=500,MIN_PER_DAY=5,DAY_SEC=300;
+function cityDay(){var w=W4();if(!w.cday)w.cday=1;return w.cday;}
+['keydown','pointerdown','touchstart','wheel'].forEach(function(ev){try{addEventListener(ev,function(){DAYS.lastIn=now();},{passive:true,capture:true});}catch(e){}});
+function dayTick(dt){var w=W4();cityDay();if(w.dayT==null)w.dayT=Math.max(0,((clockH-7+24)%24)/24*DAY_SEC);w.dayT+=Math.min(dt,1);if(w.dayT>=DAY_SEC){w.dayT=0;newDay(false);}}
+function dayEarn(amt){var w=W4();if(amt>0)w.dayEarn=(w.dayEarn||0)+amt;}
+function newDay(slept){var w=W4(),earned=Math.max(0,w.dayEarn||0),d=cityDay(),active=now()-DAYS.lastIn<150000;w.dayEarn=0;w.cday=d+1;
+  var lp=Math.min(LP_DAY_CAP,Math.round(earned*LP_PER_DOLLAR));if(earned>0&&lp<1)lp=1;w.dayLog=w.dayLog||[];w.dayLog.unshift({d:d,earned:Math.round(earned),lp:active?lp:0,t:now()});if(w.dayLog.length>30)w.dayLog.length=30;
+  banner('Day '+(d+1),plan.name+(slept?' · good morning':''),'good');
+  var txt='Your empire made '+fmt(earned)+' while you played.';
+  if(lp&&active&&window.LZ_GAME&&window.LZ){try{LZ.endSession(LZ_GAME,lp/(.04*.6),{passive:true,label:'from Day '+d+' in '+plan.name,day:d});}catch(e){}w.lpCity=(w.lpCity||0)+lp;txt+=' That\'s worth '+lp+' Lazer Points.';}
+  else if(lp&&!active)txt+=' No Lazer Points this time: you were away from the keyboard.';
+  else if(!earned)txt+=' Own something that earns and every day pays Lazer Points.';
+  note('Day '+d+' is over',txt,earned?'good':'info');save();}
+function sleepTillMorning(){fade(function(){var w=W4();w.dayT=0;clockH=7;newDay(true);w4Buff('fast',300000);});}
+function w4Buff(k,ms){var w=W4();w.buff=w.buff||{};w.buff[k]=now()+ms;}
+function daysApp(){var w=W4(),L=w.dayLog||[],rate=empireRate(),perDay=Math.min(LP_DAY_CAP,Math.round(rate*MIN_PER_DAY*LP_PER_DOLLAR));
+  return phTop('Days & Lazer Points')+'<div class="ph-card"><small>Today</small><b>Day '+cityDay()+' · '+clockStrH(clockH)+'</b><small>Earned so far today</small><b>'+fmt(w.dayEarn||0)+'</b></div>'+
+    '<p class="ph-note">A day in the city lasts about 5 minutes. When a day ends, you get 1 Lazer Point for every '+fmt(Math.round(1/LP_PER_DOLLAR))+' your city earned that day (up to '+LP_DAY_CAP+' a day). You need to be playing, not away from the keyboard. At '+fmt(rate)+'/min right now, a full day is worth about '+perDay+' LP. Sleeping at home skips to morning but doesn\'t earn extra.</p>'+
+    '<div class="ph-h">Recent days · '+fmt(w.lpCity||0)+' LP from the city so far</div><div class="ph-list">'+(L.length?L.map(function(x){return '<div class="ph-msg '+(x.lp?'good':'')+'"><b>Day '+x.d+' · '+fmt(x.earned)+'</b><span>'+(x.lp?'+'+x.lp+' Lazer Points':'No LP')+'</span></div>';}).join(''):'<p class="ph-empty">Your first day ends at 7:00 AM tomorrow.</p>')+'</div>';}
+O.cityDay=function(){return O.on&&G&&G.w4?cityDay():null;};
+function v41Note(){var w=W4();w.f=w.f||{};if(w.f.v41||!w.f.tut||popOpen())return;w.f.v41=1;save();
+  popup('New in 4.1: days pay Lazer Points','Days now pass in the city (about 5 minutes each). When a day ends, everything your empire earned that day turns into Lazer Points: 1 LP for every '+fmt(Math.round(1/LP_PER_DOLLAR))+', up to '+LP_DAY_CAP+' a day, as long as you\'re playing.\n\nSee today\'s progress in the new Days & LP app on your phone. At night, sleep at home to skip to morning.',[{t:'Nice'}]);}
 
 
 /* ---------- build a city ---------- */

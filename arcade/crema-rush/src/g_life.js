@@ -108,6 +108,8 @@ function updDaylight(){
   if(lit!==lastLit){lastLit=lit;winMats.forEach(function(w){w.m.map=lit?w.night:w.day;w.m.needsUpdate=true;});}
 }
 function updClock(dt){
+  // out in the city, the city's own day runs the clock (a day is about 5 minutes, 7:00 to 7:00); inside a shop mid-shift, the shift does
+  if(O.on){clockSrc='world';dayTick(dt);clockH=(7+(W4().dayT||0)/DAY_SEC*24)%24;return;}
   if(SH&&SH.phase!=='done'){clockH=7+12*clamp(SH.t/SH.len,0,1);clockSrc='shift';}
   else{if(clockSrc==='shift'){clockSrc='world';}clockH+=dt*(12/150);if(clockH>=24)clockH-=24;}
 }

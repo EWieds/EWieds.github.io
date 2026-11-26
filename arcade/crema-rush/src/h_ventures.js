@@ -134,7 +134,7 @@ function econTick(dt){
     var r=truckRate(t,z),sold=r*dt/60/Math.max(1,IND[t.ind].pm*TM(t.city).pm*4);t.stock=Math.max(0,t.stock-sold);var m=r*dt/60;inc+=m;t.earned=(t.earned||0)+m;EBX['truck:'+t.name]=(EBX['truck:'+t.name]||0)+m;
     if(t.stock<=0)note(t.name+' sold out','Load crates or restock at Crema Supply Co.','bad',{label:'Directions',fn:function(){navTo(placeById('supply'));}});
     t.vis=(t.vis||0)+dt*Math.min(10,r/8)/60;if(t.vis>=1&&O.on){t.vis=0;truckCustomer(v);}});
-  if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}earnLog(EBL,EBX,dt);
+  if(inc){G.cash+=inc/60*dt;G.stats.passive+=inc/60*dt;dayEarn(inc/60*dt);if(SH&&SH.phase!=='done')SH.s.passive+=inc/60*dt;}earnLog(EBL,EBX,dt);
   // tenants come and go
   Object.keys(w.land).forEach(function(k){var l=w.land[k];if(l.use==='lease'&&!l.tenant&&l.vac&&now()-l.vac>rnd(40000,90000)&&!l.dana){l.tenant=pick(TENANTS);l.vac=0;note('New tenant','Dana signed '+l.tenant.n+'. Rent starts now.','good');if(O.on&&cityOfLot(k)===O.city)O.dirty=true;}});
   homeTick(dt);apTick(dt);caterTick(dt);projTick();textTick(dt);civicTick(dt);festTick(dt);crashTick();mktTick(dt);courtTick();synTick();loanTick();crewTick(dt);econTick2(dt);chaiTick(dt);clubTick(dt);incTick(dt);chimeTick();celebTick(dt);victorTick(dt);

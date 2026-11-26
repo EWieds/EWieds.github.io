@@ -685,6 +685,8 @@ async function endSession(id, raw, info) {
   const early = await inEarlyAccess(id), mult = early ? 1 : await multiplier(id), base = await toLP(id, raw), lp = Math.round(base * mult);
   const won = early ? [] : await recordSession(id, lp, mult > 1);
   const entry = early ? { lp: 0, eaLp: lp, best: raw, plays: 1, last: raw, round: lp } : { lp, best: raw, plays: 1, last: raw, round: lp };
+  // passive earnings (e.g. a tycoon city paying out each in-game day) add LP without counting as a play or a best score
+  if (info && info.passive) { entry.best = 0; entry.plays = 0; entry.last = 0; entry.round = 0; }
   if (early) {
     const boost = (await gameInfo(id)).eaBoost || 1.5;
     if (signedIn()) { try { await addToAccount({ [id]: entry }); } catch (e) { stash(id, entry); } }
@@ -698,7 +700,7 @@ async function endSession(id, raw, info) {
     setTimeout(() => won.forEach((w, i) => setTimeout(() => toast(`${w.kind} unlocked: ${w.name} · +${fmt(w.bonus)} LP${signedIn() ? "" : " when you sign in"}`), i * 3800)), 3900);
   }
   if (signedIn()) {
-    try { await addToAccount({ [id]: entry }); toast(`+${fmt(lp)} Lazer Points saved${mult > 1 ? ` (${mult}× Game of the Day)` : ""}`); }
+    try { await addToAccount({ [id]: entry }); toast(`+${fmt(lp)} Lazer Points ${info && info.passive ? (info.label || "earned") : "saved"}${mult > 1 ? ` (${mult}× Game of the Day)` : ""}`); }
     catch (e) { console.warn("leaderboard", e.code || e); stash(id, entry); toast("Couldn't reach the leaderboard. Points are kept and will retry."); }
     flush();
   } else {
