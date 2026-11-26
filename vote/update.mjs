@@ -6,8 +6,9 @@ import { dirname, join } from "node:path";
 
 const CAMPAIGN_ID = 6744;
 const MY_LAYER = 622598;           // Evan's ambassador page
-const GOAL = 15000;                // matched goal
-const MULTIPLIER = 2;
+const GOAL = 25000;                // goal, including the match
+const BONUS_GOAL = 30000;          // bonus goal, including the match
+const MULTIPLIER = 3;
 // Manual side assignments by donation id (for gifts made before voting started).
 const OVERRIDES = { 4311599: "chassidish" };
 
@@ -75,7 +76,7 @@ export function svg(r) {
 <text x="30" y="46" font-size="30" font-weight="700" fill="#f4efe4">Vote for the best sect of Judaism</text>
 <text x="30" y="72" font-size="14" fill="#a3b3cf">Every dollar is a vote. Write your side in the comment.</text>
 ${rows}
-<text x="30" y="${H - 34}" font-size="16" fill="#f4efe4">${esc(money(matched))} of ${esc(money(GOAL))} with the match · ${r.donors} donor${r.donors === 1 ? "" : "s"}</text>
+<text x="30" y="${H - 34}" font-size="16" fill="#f4efe4">${esc(money(matched))} of ${esc(money(matched >= GOAL ? BONUS_GOAL : GOAL))}${matched >= GOAL ? " bonus goal" : ""} with the match · ${r.donors} donor${r.donors === 1 ? "" : "s"}</text>
 <text x="30" y="${H - 14}" font-size="11" fill="#a3b3cf">All in good fun. We don't actually think any one group is better. Updated ${esc(r.updated)}</text>
 </svg>`;
 }
@@ -86,10 +87,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const r = tally(mine);
   try {
     const old = JSON.parse(readFileSync(join(here, "scores.json"), "utf8"));
-    if (JSON.stringify(old.sides) === JSON.stringify(r.sides) && old.donors === r.donors) { console.log("no change"); process.exit(0); }
+    if (JSON.stringify(old.sides) === JSON.stringify(r.sides) && old.donors === r.donors && old.goal === GOAL && old.bonusGoal === BONUS_GOAL) { console.log("no change"); process.exit(0); }
   } catch {}
   r.updated = new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" }) + " ET";
-  r.goal = GOAL; r.multiplier = MULTIPLIER;
+  r.goal = GOAL; r.bonusGoal = BONUS_GOAL; r.multiplier = MULTIPLIER;
   writeFileSync(join(here, "scores.json"), JSON.stringify(r, null, 2));
   writeFileSync(join(here, "scoreboard.svg"), svg(r));
   console.log("ok", r.total, r.leader);

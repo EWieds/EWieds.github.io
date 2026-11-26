@@ -64,7 +64,7 @@ footer { color: var(--muted); font-size: .8rem; }
     <p class="disclaimer">Disclaimer: this is all in good fun. We don't actually think any one group is better than another. Every Yid is precious, and all the money goes to the same yeshiva.</p>
     <p class="lede">I'm raising money for my yeshiva, and every dollar you give is a vote. Chassidish, Chabad, Litvish or Sefardi: write your side in the comment when you donate, and watch your side climb. Even $1 counts. I want as many people in on this as possible.</p>
     <a class="cta" href="https://causematch.com/TTB/evan" target="_top">Donate and vote</a>
-    <p class="matchline">Every gift is doubled by the match.</p>
+    <p class="matchline">Every gift is tripled by the match.</p>
   </header>
 
   <section aria-labelledby="score-h">
@@ -78,7 +78,7 @@ footer { color: var(--muted); font-size: .8rem; }
   <section class="goal" aria-labelledby="goal-h">
     <h2 id="goal-h">Campaign goal</h2>
     <div class="goalhead"><span id="matched" class="big">–</span><span id="goaltext" class="of"></span></div>
-    <div id="goalbar" class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="15000"><i></i></div>
+    <div id="goalbar" class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="25000"><i></i></div>
     <p id="goalnote"></p>
   </section>
 
@@ -87,7 +87,7 @@ footer { color: var(--muted); font-size: .8rem; }
     <ol>
       <li>Tap Donate and give any amount. A dollar counts.</li>
       <li>Type Chassidish, Chabad, Litvish or Sefardi in the comment box.</li>
-      <li>Your dollars land on your side, doubled, within a few minutes.</li>
+      <li>Your dollars land on your side, tripled, within a few minutes.</li>
     </ol>
     <p>The winning side picks the theme of my next game on <a href="https://ewieds.github.io/arcade" target="_top">Lazer Arcade</a>.</p>
     <p>I'm adding $1 of my own for every $100 raised.</p>
@@ -143,13 +143,16 @@ function render(R) {
   SIDES.forEach(function (s) { addRow(s.k, s.n, false); });
   addRow('other', 'No side picked', true);
 
-  var goal = R.goal || 15000, matched = R.total;
+  var base = R.goal || 25000, bonus = R.bonusGoal || 30000, matched = R.total;
+  var onBonus = matched >= base, goal = onBonus ? bonus : base;
+  document.getElementById('goal-h').textContent = onBonus ? 'Bonus goal' : 'Campaign goal';
   document.getElementById('matched').textContent = money(matched);
   document.getElementById('goaltext').textContent = 'of ' + money(goal) + ' with the match';
+  document.getElementById('goalbar').setAttribute('aria-valuemax', String(goal));
   var gb = document.getElementById('goalbar');
   gb.setAttribute('aria-valuenow', String(matched));
   gb.firstChild.style.setProperty('--w', Math.min(100, matched / goal * 100) + '%');
-  document.getElementById('goalnote').textContent = R.donors + (R.donors === 1 ? ' donor' : ' donors') + ' so far. Every gift is doubled.';
+  document.getElementById('goalnote').textContent = R.donors + (R.donors === 1 ? ' donor' : ' donors') + ' so far. Every gift is tripled.' + (onBonus ? ' We passed ' + money(base) + '!' : ' Bonus goal: ' + money(bonus) + '.');
   document.getElementById('foot').textContent = 'Last change ' + R.updated + '. Scores update about every 5 minutes. All amounts include the match.';
 }
 
