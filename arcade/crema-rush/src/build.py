@@ -3,8 +3,8 @@
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = '/home/claude/ewieds.github.io'
-SRC = os.path.join(REPO, 'arcade/crema-rush/index.html')
-OUT = os.path.join(REPO, 'arcade/crema-city-ea-7d8d001188/index.html')
+SRC = os.path.join(REPO, 'arcade/crema-rush/v3/index.html')
+OUT = os.path.join(REPO, 'arcade/crema-rush/index.html')
 PARTS = ['a_core.js', 'b_plan.js', 'c_world.js', 'd_lots.js', 'e_blocks.js', 'f_vehicles.js', 'g_life.js', 'h_ventures.js', 'i_interiors.js', 'j_player.js', 'k_phone.js', 'c2_shops.js', 'm_deals.js', 'o_talk.js', 'p_cabin.js', 'q_nav.js', 'r_geo.js', 's_air.js', 'v_homes.js', 't_say.js', 'w_ai.js', 'x_air.js', 'y_jobs.js', 'z_world2.js', 'z_life2.js', 'z_wave3.js', 'z_extras.js', 'z_more.js', 'z_mall.js', 'z_food.js', 'z_cinema.js', 'z_roast.js', 'z_bob.js', 'z_bank.js', 'z_fresh.js', 'z_law.js', 'z_mall2.js', 'z_fun.js', 'z_econ.js', 'z_steps.js', 'z_mp.js', 'z_metro.js', 'z_cabin2.js', 'z_gfx.js', 'z_devin.js', 'z_earn.js', 'z_comm.js', 'z_shift.js', 'z_airvis.js', 'z_basics.js', 'z_council.js', 'l_main.js']
 
 s = open(SRC).read()
@@ -15,7 +15,11 @@ def rep(a, b, count=1):
         sys.exit('patch target found %d times (want %d): %r' % (n, count, a[:90]))
     s = s.replace(a, b)
 
-rep('<title>Crema Rush | Lazer Arcade</title>', '<title>Crema City · Crema Rush v4 (early access) | Lazer Arcade</title>\n<meta name="robots" content="noindex,nofollow">')
+rep('<title>Crema Rush Classic (v3) | Lazer Arcade</title>', '<title>Crema Rush v4: The City | Lazer Arcade</title>')
+rep('<meta name="robots" content="noindex">\n', '')
+rep("btn('Back to Lazer Arcade','arcade',{cls:'sec'})+'</div>':''),'pause');", "btn('Back to Lazer Arcade','arcade',{cls:'sec'})+'</div><div class=\"btns\">'+btn('Play classic v3','classic',{cls:'sec'})+'</div>':''),'pause');")
+rep("if(a==='arcade'){save();", "if(a==='classic'){save();if(window.LZ)LZ.flush();setTimeout(function(){location.href='/arcade/crema-rush/v3/';},250);return;}\n  if(a==='arcade'){save();")
+rep('content="Crema Rush v3: a 3D coffee shop tycoon. Juggle orders, grow a cafe empire and climb the Lazer Arcade leaderboard."', 'content="Crema Rush v4: grow one coffee shop into a whole 3D city. Buy businesses, build anything, run for mayor, fly between cities and play with others in Crema Metro."')
 css = open(os.path.join(HERE, 'ui.css')).read()
 i = s.index('</style>'); s = s[:i] + css + s[i:]
 rep('<button class="hb" id="bShop" type="button">Shop</button>',

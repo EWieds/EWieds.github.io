@@ -1,20 +1,8 @@
 {
  "items": [
   {
-   "name": "Crema Rush v4: The City",
-   "status": "next",
-   "hook": "Your coffee shop grows into a whole city: walk your own 3D superstore, drive between locations, buy out rivals, run food trucks, and work city hall. Your cash and progress carry over.",
-   "categories": [
-    "tycoon",
-    "3d",
-    "strategy"
-   ],
-   "launch": "2026-11-26T12:00:00-05:00",
-   "earlyAccess": true
-  },
-  {
    "name": "Castle Crushers",
-   "status": "queued",
+   "status": "next",
    "hook": "A physics siege puzzle where fire burns wood, ice cracks stone and one perfect shot brings the whole castle down.",
    "categories": [
     "puzzle",
